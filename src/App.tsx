@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Container, Box, Paper, Card, CardContent, CardMedia, Avatar, Chip, Stack, Grid, useTheme, useMediaQuery, IconButton, Menu, MenuItem } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Container, Box, Paper, Card, CardContent, CardMedia, Avatar, Chip, Stack, Grid, useTheme, useMediaQuery, IconButton, Menu, MenuItem, createTheme, ThemeProvider } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
@@ -17,6 +17,16 @@ import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-map
 import { useEffect, useState } from 'react';
 import Fab from '@mui/material/Fab';
 import ListIcon from '@mui/icons-material/ViewList';
+import PoolIcon from '@mui/icons-material/Pool';
+import LocalParkingIcon from '@mui/icons-material/LocalParking';
+import PetsIcon from '@mui/icons-material/Pets';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import FemaleIcon from '@mui/icons-material/Female';
+import MaleIcon from '@mui/icons-material/Male';
+import ApartmentIcon from '@mui/icons-material/Apartment';
+import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
+import GroupIcon from '@mui/icons-material/Group';
+import BedIcon from '@mui/icons-material/Bed';
 
 const listings = [
   {
@@ -33,6 +43,7 @@ const listings = [
     image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
     available: 'Jun 28, 2025 - Flexible',
     location: 'Del Rey, Marina del Rey',
+    amenities: ['piscina', 'estacionamiento', 'pet friendly'],
   },
   {
     id: 2,
@@ -48,6 +59,7 @@ const listings = [
     image: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=600&q=80',
     available: 'Jun 28, 2025 - Flexible',
     location: 'Manhattan Valley, Manhattan',
+    amenities: ['gimnasio', 'baño privado'],
   },
   {
     id: 3,
@@ -63,6 +75,7 @@ const listings = [
     image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=600&q=80',
     available: 'Jun 28, 2025 - 12 Months',
     location: "Hell's Kitchen, Manhattan",
+    amenities: ['amueblado', 'estacionamiento'],
   },
   {
     id: 4,
@@ -76,6 +89,7 @@ const listings = [
     image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
     available: 'Jun 28, 2025 - Flexible',
     location: 'Del Rey, Marina del Rey',
+    amenities: ['piscina', 'pet friendly'],
   },
   {
     id: 5,
@@ -89,6 +103,7 @@ const listings = [
     image: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=600&q=80',
     available: 'Jun 28, 2025 - Flexible',
     location: 'Manhattan Valley, Manhattan',
+    amenities: ['gimnasio', 'baño privado', 'amueblado'],
   },
   {
     id: 6,
@@ -102,6 +117,7 @@ const listings = [
     image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=600&q=80',
     available: 'Jun 28, 2025 - 12 Months',
     location: "Hell's Kitchen, Manhattan",
+    amenities: ['estacionamiento', 'pet friendly'],
   },
   {
     id: 7,
@@ -117,6 +133,7 @@ const listings = [
     image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=80',
     available: 'Jul 15, 2025 - 6 Months',
     location: 'Roma Norte, CDMX',
+    amenities: ['piscina', 'gimnasio', 'baño privado', 'amueblado'],
   },
   {
     id: 8,
@@ -132,6 +149,7 @@ const listings = [
     image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80',
     available: 'Aug 1, 2025 - Flexible',
     location: 'Condesa, CDMX',
+    amenities: ['estacionamiento', 'pet friendly', 'amueblado'],
   },
   {
     id: 9,
@@ -147,8 +165,113 @@ const listings = [
     image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=600&q=80',
     available: 'Jul 10, 2025 - 12 Months',
     location: 'Polanco, CDMX',
+    amenities: ['gimnasio', 'baño privado', 'piscina'],
   },
 ];
+
+// Crear tema personalizado con nueva paleta de colores
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1976d2',
+      light: '#42a5f5',
+      dark: '#1565c0',
+    },
+    secondary: {
+      main: '#81c784', // Verde mint suave
+      light: '#a5d6a7',
+      dark: '#66bb6a',
+    },
+    background: {
+      default: '#fafafa',
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#2c3e50',
+      secondary: '#7f8c8d',
+    },
+  },
+  typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    h1: {
+      fontWeight: 800,
+      fontSize: '2.5rem',
+      lineHeight: 1.2,
+    },
+    h2: {
+      fontWeight: 700,
+      fontSize: '2rem',
+      lineHeight: 1.3,
+    },
+    h3: {
+      fontWeight: 600,
+      fontSize: '1.5rem',
+      lineHeight: 1.4,
+    },
+    h4: {
+      fontWeight: 600,
+      fontSize: '1.25rem',
+      lineHeight: 1.4,
+    },
+    h5: {
+      fontWeight: 500,
+      fontSize: '1.125rem',
+      lineHeight: 1.5,
+    },
+    h6: {
+      fontWeight: 600,
+      fontSize: '1rem',
+      lineHeight: 1.5,
+    },
+    body1: {
+      fontSize: '1rem',
+      lineHeight: 1.6,
+    },
+    body2: {
+      fontSize: '0.875rem',
+      lineHeight: 1.6,
+    },
+  },
+  shape: {
+    borderRadius: 12,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          borderRadius: 8,
+          fontWeight: 600,
+          transition: 'all 0.2s ease-in-out',
+          '&:hover': {
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          },
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 16,
+          transition: 'all 0.3s ease-in-out',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
+          },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          fontWeight: 600,
+        },
+      },
+    },
+  },
+});
 
 function App() {
   const theme = useTheme();
@@ -182,8 +305,25 @@ function App() {
     setAmenidades(typeof value === 'string' ? value.split(',') : value);
   };
 
+  // Función para renderizar íconos de amenidades
+  const renderAmenityIcon = (amenity: string) => {
+    switch (amenity) {
+      case 'piscina':
+        return <PoolIcon sx={{ fontSize: 16, color: 'primary.main' }} />;
+      case 'gimnasio':
+        return <FitnessCenterIcon sx={{ fontSize: 16, color: 'primary.main' }} />;
+      case 'estacionamiento':
+        return <LocalParkingIcon sx={{ fontSize: 16, color: 'primary.main' }} />;
+      case 'pet friendly':
+        return <PetsIcon sx={{ fontSize: 16, color: 'primary.main' }} />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div>
+    <ThemeProvider theme={theme}>
+      <div>
       <AppBar position="static" elevation={0} sx={{ bgcolor: 'white', color: 'primary.main', boxShadow: 'none', borderBottom: '1px solid #e0e0e0' }}>
         <Toolbar sx={{ px: { xs: 1, sm: 2 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
@@ -286,9 +426,9 @@ function App() {
         </Toolbar>
       </AppBar>
       
-      <Container maxWidth="lg" sx={{ mt: { xs: 2, sm: 4, md: 8 }, px: { xs: 2, sm: 3 } }}>
+      <Container maxWidth="xl" sx={{ mt: { xs: 2, sm: 4, md: 8 }, px: { xs: 1, sm: 2, md: 3 } }}>
         <Grid container spacing={{ xs: 2, sm: 4 }} alignItems="center">
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={5}>
             <Typography 
               variant="h2" 
               component="h1" 
@@ -349,85 +489,151 @@ function App() {
               </Button>
             </Box>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={7}>
             <Paper elevation={3} sx={{ 
               p: { xs: 1, sm: 2 },
               bgcolor: '#f5f7fa',
               textAlign: 'center',
               borderRadius: 4,
-              minHeight: 0,
+              minHeight: 0
             }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                <TextField
-                  fullWidth
-                  label="¿En dónde buscas departamento?"
-                  variant="outlined"
-                  size="small"
-                  sx={{ bgcolor: 'white', borderRadius: 2, mb: 1 }}
-                />
-                <TextField
-                  fullWidth
-                  label="¿Qué precio buscas?"
-                  variant="outlined"
-                  sx={{ display: 'none' }}
-                />
-                <Box sx={{ mt: 0.5, px: 0 }}>
-                  <Typography gutterBottom sx={{ fontWeight: 500, color: 'primary.main', mb: 0.5, fontSize: '0.95rem', textAlign: 'left' }}>
-                    ¿Qué precio buscas?
-                  </Typography>
-                  <Slider
-                    value={precio}
-                    onChange={handlePrecioChange}
-                    valueLabelDisplay="auto"
-                    min={1000}
-                    max={80000}
-                    step={500}
-                    marks={[
-                      { value: 1000, label: <span style={{fontWeight:500, color:'#1976d2', fontSize:'0.85rem'}}>$1,000</span> },
-                      { value: 80000, label: <span style={{fontWeight:500, color:'#1976d2', fontSize:'0.85rem'}}>$80,000</span> }
-                    ]}
-                    sx={{ color: 'primary.main', height: 4, mb: 2, width: '100%' }}
-                  />
-                  <FormControl fullWidth sx={{ mt: 1.5, bgcolor: 'white', borderRadius: 2 }} size="small">
-                    <InputLabel id="amenidad-label" sx={{ fontSize: '0.95rem' }}>¿Qué amenidades buscas?</InputLabel>
-                    <Select
-                      labelId="amenidad-label"
-                      id="amenidad-select"
-                      multiple
-                      value={amenidades}
-                      onChange={handleAmenidadChange}
-                      input={<OutlinedInput label="¿Qué amenidades buscas?" />}
-                      renderValue={(selected) => (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {(selected as string[]).map((value) => (
-                            <Chip key={value} label={value} size="small" />
-                          ))}
-                        </Box>
-                      )}
-                    >
-                      <MenuItem value="amueblado">Amueblado</MenuItem>
-                      <MenuItem value="baño privado">Baño privado</MenuItem>
-                      <MenuItem value="pet friendly">Pet friendly</MenuItem>
-                      <MenuItem value="estacionamiento">Estacionamiento</MenuItem>
-                      <MenuItem value="piscina">Piscina</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Box>
-              </Box>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <TextField
+                      fullWidth
+                      label="¿En dónde buscas departamento?"
+                      variant="outlined"
+                      size="small"
+                      sx={{ bgcolor: 'white', borderRadius: 2, mb: 1 }}
+                    />
+                    <TextField
+                      fullWidth
+                      label="¿Qué precio buscas?"
+                      variant="outlined"
+                      sx={{ display: 'none' }}
+                    />
+                    <Box sx={{ mt: 0.5, px: 2.5 }}>
+                      <Typography gutterBottom sx={{ fontWeight: 500, color: 'primary.main', mb: 0.5, fontSize: '0.95rem', textAlign: 'left' }}>
+                        ¿Qué precio buscas?
+                      </Typography>
+                      <Slider
+                        value={precio}
+                        onChange={handlePrecioChange}
+                        valueLabelDisplay="auto"
+                        min={1000}
+                        max={80000}
+                        step={500}
+                        marks={[
+                          { value: 1000, label: <span style={{fontWeight:500, color:'#1976d2', fontSize:'0.85rem'}}>$1,000</span> },
+                          { value: 80000, label: <span style={{fontWeight:500, color:'#1976d2', fontSize:'0.85rem'}}>$80,000</span> }
+                        ]}
+                        sx={{ color: 'primary.main', height: 4, mb: 2, width: '100%' }}
+                      />
+                    </Box>
+                    <FormControl fullWidth sx={{ mt: 1.5, bgcolor: 'white', borderRadius: 2 }} size="small">
+                      <InputLabel id="amenidad-label" sx={{ fontSize: '0.95rem' }}>¿Qué amenidades buscas?</InputLabel>
+                      <Select
+                        fullWidth
+                        labelId="amenidad-label"
+                        id="amenidad-select"
+                        multiple
+                        value={amenidades}
+                        onChange={handleAmenidadChange}
+                        input={<OutlinedInput label="¿Qué amenidades buscas?" />}
+                        renderValue={(selected) => (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {(selected as string[]).map((value) => (
+                              <Chip key={value} label={value} size="small" />
+                            ))}
+                          </Box>
+                        )}
+                      >
+                        <MenuItem value="amueblado">
+                          <BedIcon sx={{ color: '#6d4c41', fontSize: 20, mr: 1 }} />
+                          Amueblado
+                        </MenuItem>
+                        <MenuItem value="baño privado">
+                          <MeetingRoomIcon sx={{ color: '#43a047', fontSize: 20, mr: 1 }} />
+                          Baño privado
+                        </MenuItem>
+                        <MenuItem value="pet friendly">
+                          <PetsIcon sx={{ color: '#ff9800', fontSize: 20, mr: 1 }} />
+                          Pet friendly
+                        </MenuItem>
+                        <MenuItem value="estacionamiento">
+                          <LocalParkingIcon sx={{ color: '#1976d2', fontSize: 20, mr: 1 }} />
+                          Estacionamiento
+                        </MenuItem>
+                        <MenuItem value="piscina">
+                          <PoolIcon sx={{ color: '#00bcd4', fontSize: 20, mr: 1 }} />
+                          Piscina
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <FormControl fullWidth sx={{ bgcolor: 'white', borderRadius: 2 }} size="small">
+                      <InputLabel id="tipo-propiedad-label" sx={{ fontSize: '0.95rem' }}>Tipo de propiedad</InputLabel>
+                      <Select
+                        labelId="tipo-propiedad-label"
+                        id="tipo-propiedad-select"
+                        label="Tipo de propiedad"
+                        defaultValue=""
+                      >
+                        <MenuItem value="departamento">
+                          <ApartmentIcon sx={{ color: '#1976d2', fontSize: 20, mr: 1 }} />
+                          Departamento completo
+                        </MenuItem>
+                        <MenuItem value="privada">
+                          <MeetingRoomIcon sx={{ color: '#43a047', fontSize: 20, mr: 1 }} />
+                          Habitación privada
+                        </MenuItem>
+                        <MenuItem value="compartida">
+                          <GroupIcon sx={{ color: '#fbc02d', fontSize: 20, mr: 1 }} />
+                          Habitación compartida
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+                    <FormControl fullWidth sx={{ bgcolor: 'white', borderRadius: 2, mt: { xs: 2, md: 4 } }} size="small">
+                      <InputLabel id="genero-label" sx={{ fontSize: '0.95rem' }}>Preferencia de roomie</InputLabel>
+                      <Select
+                        labelId="genero-label"
+                        id="genero-select"
+                        label="Preferencia de roomie"
+                        defaultValue=""
+                      >
+                        <MenuItem value="mujeres">
+                          <FemaleIcon sx={{ color: '#e91e63', fontSize: 20, mr: 1 }} />
+                          Solo mujeres
+                        </MenuItem>
+                        <MenuItem value="hombres">
+                          <MaleIcon sx={{ color: '#1976d2', fontSize: 20, mr: 1 }} />
+                          Solo hombres
+                        </MenuItem>
+                        <MenuItem value="igual">
+                          <span style={{ fontSize: 20, marginRight: 8 }}>⚧️</span>
+                          Me da igual
+                        </MenuItem>
+                        <MenuItem value="lgbtq">
+                          <span style={{ fontSize: 20, marginRight: 8 }}>🏳️‍🌈</span>
+                          LGBTQ+
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Box>
+                </Grid>
+              </Grid>
             </Paper>
           </Grid>
         </Grid>
         
         {/* Vista tipo Google Maps: mapa de fondo y lista de cards encima */}
-        <Box sx={{ position: 'relative', width: '100%', minHeight: '60vh', mt: { xs: 4, sm: 6, md: 8 } }}>
+        <Box sx={{ position: 'relative', width: '100%', minHeight: '100vh', mt: { xs: 4, sm: 6, md: 8 } }}>
           {/* Google Maps de fondo */}
-          <Box sx={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            zIndex: 0,
-          }}>
+          <Box sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0 }}>
             {isLoaded && (
               <GoogleMap
                 mapContainerStyle={{ width: '100%', height: '100%' }}
@@ -533,7 +739,7 @@ function App() {
                   }
                 }}
               >
-                <Box sx={{ overflowY: 'auto', maxHeight: '60vh' }}>
+                <Box sx={{ overflowY: 'auto', maxHeight: '100vh' }}>
                   {listings.map((listing, index) => (
                     <Card
                       key={`${listing.id}-${index}`}
@@ -576,6 +782,19 @@ function App() {
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                           {listing.location}
                         </Typography>
+                        {/* Íconos de amenidades */}
+                        {listing.amenities && listing.amenities.length > 0 && (
+                          <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                            {listing.amenities.slice(0, 4).map((amenity, idx) => (
+                              <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                {renderAmenityIcon(amenity)}
+                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                                  {amenity}
+                                </Typography>
+                              </Box>
+                            ))}
+                          </Box>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
@@ -588,7 +807,7 @@ function App() {
               zIndex: 1,
               width: { xs: '100%', sm: 400 },
               maxWidth: 480,
-              height: { xs: 340, sm: 500 },
+              height: { xs: 340, sm: 500, md: '100vh' },
               overflowY: 'auto',
               bgcolor: 'white',
               border: '1px solid #e0e0e0',
@@ -639,6 +858,19 @@ function App() {
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                       {listing.location}
                     </Typography>
+                    {/* Íconos de amenidades */}
+                    {listing.amenities && listing.amenities.length > 0 && (
+                      <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                        {listing.amenities.slice(0, 4).map((amenity, idx) => (
+                          <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            {renderAmenityIcon(amenity)}
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                              {amenity}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -646,7 +878,6 @@ function App() {
           )}
         </Box>
       </Container>
-      
       <Box sx={{ bgcolor: 'primary.main', color: 'white', py: { xs: 4, sm: 6 }, mt: { xs: 4, sm: 6, md: 8 } }}>
         <Container maxWidth="md">
           <Typography 
@@ -719,7 +950,6 @@ function App() {
           </Grid>
         </Container>
       </Box>
-      
       <Box sx={{ bgcolor: '#222', color: 'white', py: 3, textAlign: 'center' }}>
         <Typography 
           variant="body2"
@@ -728,8 +958,9 @@ function App() {
           &copy; {new Date().getFullYear()} RoomFi. Todos los derechos reservados.
         </Typography>
       </Box>
-    </div>
+      </div>
+    </ThemeProvider>
   );
 }
 
-export default App; 
+export default App;
