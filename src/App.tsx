@@ -1,5 +1,7 @@
-import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Container, Box, Paper, Card, CardContent, CardMedia, Avatar, Chip, Stack, Grid, useTheme, useMediaQuery, IconButton, Menu, MenuItem } from '@mui/material';
+import React, { useState } from 'react';
+import { ethers } from 'ethers';
+import { Portal } from '@portal-hq/web';
+import { AppBar, Toolbar, Typography, Button, Container, Box, Paper, Card, CardContent, CardMedia, Avatar, Chip, Stack, Grid, useTheme, useMediaQuery, IconButton, Menu, MenuItem, Modal, Snackbar, Alert } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
@@ -102,6 +104,70 @@ function App() {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [precio, setPrecio] = React.useState([1000, 80000]);
   const [amenidades, setAmenidades] = React.useState<string[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [account, setAccount] = useState<string | null>(null);
+  const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
+  const [balance, setBalance] = useState<number>(0);
+  const [showFundingModal, setShowFundingModal] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [notification, setNotification] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+
+  const handleOnboardingOpen = () => setShowOnboarding(true);
+  const handleOnboardingClose = () => setShowOnboarding(false);
+
+  const handleFundingModalOpen = () => setShowFundingModal(true);
+  const handleFundingModalClose = () => {
+    setShowFundingModal(false);
+    setDepositAmount(''); // Reset amount on close
+  };
+  
+  const handleNotificationClose = () => {
+    setNotification({ ...notification, open: false });
+  };
+
+  const handleDeposit = () => {
+    const amount = parseFloat(depositAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setNotification({ open: true, message: 'Por favor, introduce un monto válido.', severity: 'error' });
+      return;
+    }
+
+    // --- SIMULACIÓN DE API ---
+    //la API de Juno.
+    // Por ahora, simulamos el éxito inmediato.
+    console.log(`Simulando depósito de ${amount} MXN...`);
+    
+    setBalance(prevBalance => prevBalance + amount);
+    setNotification({ open: true, message: `¡${amount} MXBNT añadidos a tu wallet!`, severity: 'success' });
+    handleFundingModalClose();
+  };
+
+  const connectWithMetaMask = async () => {
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+        await web3Provider.send("eth_requestAccounts", []);
+        const signer = web3Provider.getSigner();
+        const address = await signer.getAddress();
+        
+        setProvider(web3Provider);
+        setAccount(address);
+        handleOnboardingClose();
+      } catch (error) {
+        console.error("Error connecting with MetaMask:", error);
+      }
+    } else {
+      alert("MetaMask no está instalado. Por favor, instálalo para continuar.");
+    }
+  };
+
+  const createVirtualWallet = async () => {
+    // NOTE: This is a placeholder for the actual Portal SDK integration.
+    const simulatedAddress = ethers.Wallet.createRandom().address;
+    setAccount(simulatedAddress);
+    setNotification({ open: true, message: `Wallet virtual creada: ${simulatedAddress.substring(0, 10)}...`, severity: 'success' });
+    handleOnboardingClose();
+  };
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -206,27 +272,84 @@ function App() {
             </>
           ) : (
             <>
-              <Button color="inherit" sx={{ fontSize: { sm: '0.875rem', md: '1rem' }, color: 'primary.main' }}>
-                Iniciar sesión
-              </Button>
-              <Button 
-                color="primary" 
-                variant="outlined" 
-                sx={{ 
-                  ml: 2, 
-                  bgcolor: 'white', 
-                  color: 'primary.main', 
-                  borderColor: 'primary.main',
-                  fontSize: { sm: '0.875rem', md: '1rem' },
-                  '&:hover': { bgcolor: '#f5f7fa' }
-                }}
-              >
-                Regístrate
-              </Button>
+              {account ? (
+                <Paper elevation={2} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 2, borderRadius: 2 }}>
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{balance.toFixed(2)} MXBNT</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>{`${account.substring(0, 6)}...${account.substring(account.length - 4)}`}</Typography>
+                  </Box>
+                  <Button variant="contained" size="small" onClick={handleFundingModalOpen}>Añadir Fondos</Button>
+                </Paper>
+              ) : (
+                <Button 
+                  color="primary" 
+                  variant="contained" 
+                  onClick={handleOnboardingOpen}
+                  sx={{ 
+                    ml: 2, 
+                    bgcolor: 'primary.main', 
+                    color: 'white',
+                    fontSize: { sm: '0.875rem', md: '1rem' },
+                    '&:hover': { bgcolor: 'primary.dark' }
+                  }}
+                >
+                  Conectar
+                </Button>
+              )}
             </>
           )}
         </Toolbar>
       </AppBar>
+
+      <Modal
+        open={showOnboarding}
+        onClose={handleOnboardingClose}
+        aria-labelledby="onboarding-modal-title"
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
+          <Typography id="onboarding-modal-title" variant="h6" component="h2" sx={{ mb: 2 }}>
+            Conecta tu Wallet
+          </Typography>
+          <Stack spacing={2}>
+            <Button variant="contained" fullWidth onClick={connectWithMetaMask}>
+              Conectar con MetaMask
+            </Button>
+            <Button variant="outlined" fullWidth onClick={createVirtualWallet}>
+              Crear Wallet con Email
+            </Button>
+          </Stack>
+        </Paper>
+      </Modal>
+
+      <Modal
+        open={showFundingModal}
+        onClose={handleFundingModalClose}
+        aria-labelledby="funding-modal-title"
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
+          <Typography id="funding-modal-title" variant="h6" component="h2" sx={{ mb: 2 }}>
+            Añadir Fondos
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Los depósitos se realizan vía SPEI y se convierten automáticamente a MXBNT (1 MXN = 1 MXBNT).
+          </Typography>
+          <Stack spacing={2}>
+            <TextField
+              label="Monto a depositar (MXN)"
+              type="number"
+              variant="outlined"
+              fullWidth
+              value={depositAmount}
+              onChange={(e) => setDepositAmount(e.target.value)}
+            />
+            <Button variant="contained" fullWidth onClick={handleDeposit}>
+              Generar Ficha de Pago SPEI
+            </Button>
+          </Stack>
+        </Paper>
+      </Modal>
       
       <Container maxWidth="lg" sx={{ mt: { xs: 2, sm: 4, md: 8 }, px: { xs: 2, sm: 3 } }}>
         <Grid container spacing={{ xs: 2, sm: 4 }} alignItems="center">
@@ -569,6 +692,12 @@ function App() {
           &copy; {new Date().getFullYear()} RoomFi. Todos los derechos reservados.
         </Typography>
       </Box>
+
+      <Snackbar open={notification.open} autoHideDuration={6000} onClose={handleNotificationClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert onClose={handleNotificationClose} severity={notification.severity} sx={{ width: '100%' }}>
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
