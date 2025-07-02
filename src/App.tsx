@@ -22,6 +22,7 @@ import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import GroupIcon from '@mui/icons-material/Group';
 import BedIcon from '@mui/icons-material/Bed';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { useGoogleLogin } from '@react-oauth/google';
 
 // CORRECCIÓN: Añadir tipos para window.ethereum para que TypeScript no se queje
 declare global {
@@ -404,6 +405,27 @@ function App() {
     }
   };
 
+  const login = useGoogleLogin({
+    onSuccess: async tokenResponse => {
+      if (tokenResponse.access_token) {
+        const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: {
+            Authorization: `Bearer ${tokenResponse.access_token}`,
+          },
+        });
+        const profile = await res.json();
+        setAccount(profile.email);
+        handleOnboardingClose();
+        setNotification({ open: true, message: `Sesión iniciada: ${profile.email}`, severity: 'success' });
+      }
+    },
+    onError: () => {
+      setNotification({ open: true, message: 'Error al iniciar sesión con Google', severity: 'error' });
+    },
+    flow: 'implicit',
+    scope: 'openid email profile',
+  });
+
   return (
     <Box>
       <AppBar position="static" elevation={0} sx={{ bgcolor: 'white', color: 'primary.main', boxShadow: 'none', borderBottom: '1px solid #e0e0e0' }}>
@@ -487,7 +509,21 @@ function App() {
           <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Conecta tu Wallet</Typography>
           <Stack spacing={2}>
             <Button variant="contained" fullWidth onClick={connectWithMetaMask}>Conectar con MetaMask</Button>
-            <Button variant="outlined" fullWidth onClick={createVirtualWallet}>Crear Wallet con Email</Button>
+            <Button
+              variant="outlined"
+              fullWidth
+              startIcon={
+                <img
+                  src="https://developers.google.com/identity/images/g-logo.png"
+                  alt="Google"
+                  style={{ width: 20, height: 20 }}
+                />
+              }
+              onClick={() => login()}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
+            >
+              Iniciar sesión con Google
+            </Button>
           </Stack>
         </Paper>
       </Modal>
