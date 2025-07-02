@@ -274,6 +274,12 @@ const customTheme = createTheme({
   },
 });
 
+const ERC20_ABI = [
+  "function balanceOf(address owner) view returns (uint256)",
+  "function decimals() view returns (uint8)"
+];
+const TOKEN_ADDRESS = "0x82B9e52b26A2954E113F94Ff26647754d5a4247D"; // Proxy address
+
 function App() {
   const isMobile = useMediaQuery(customTheme.breakpoints.down('md'));
   const isMobileOnly = useMediaQuery(customTheme.breakpoints.down('sm'));
@@ -288,8 +294,7 @@ function App() {
   // Estados de Web3
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [account, setAccount] = useState<string | null>(null);
-  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null); // CORRECCIÓN: Usar BrowserProvider de ethers v6
-  const [balance, setBalance] = useState<number>(0);
+  const [provider, setProvider] = useState<ethers.JsonRpcProvider | ethers.BrowserProvider | null>(null);
   const [showFundingModal, setShowFundingModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [notification, setNotification] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
@@ -300,6 +305,13 @@ function App() {
     googleMapsApiKey: 'AIzaSyB4fQPo0OIqzCgW5muQsodw-xOPMCz5oP0', // <-- Reemplaza por tu API Key
   });
   const [selectedListing, setSelectedListing] = useState<typeof listings[0] | null>(null);
+
+  // Siempre usar el RPC de Arbitrum Sepolia
+  const ARBITRUM_SEPOLIA_RPC = "https://sepolia-rollup.arbitrum.io/rpc";
+  const ARBITRUM_SEPOLIA_CHAIN = {
+    chainId: 421614,
+    name: "arbitrum-sepolia"
+  };
 
   // Handlers UI
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
@@ -320,43 +332,61 @@ function App() {
   };
   const handleNotificationClose = () => setNotification({ ...notification, open: false });
 
-  const handleDeposit = () => {
+  const [tokenBalance, setTokenBalance] = useState<number>(0);
+
+  const fetchTokenBalance = async (
+    prov: ethers.JsonRpcProvider | ethers.BrowserProvider,
+    acc: string
+  ) => {
+    if (prov && acc) {
+      const contract = new ethers.Contract(TOKEN_ADDRESS, ERC20_ABI, prov);
+      const rawBalance = await contract.balanceOf(acc);
+      setTokenBalance(Number(ethers.formatUnits(rawBalance, 6)));
+    }
+  };
+
+  const handleDeposit = async () => {
     const amount = parseFloat(depositAmount);
     if (isNaN(amount) || amount <= 0) {
       setNotification({ open: true, message: 'Por favor, introduce un monto válido.', severity: 'error' });
       return;
     }
     console.log(`Simulando depósito de ${amount} MXN...`);
-    setBalance(prevBalance => prevBalance + amount);
-    setNotification({ open: true, message: `¡${amount} MXBNT añadidos a tu wallet!`, severity: 'success' });
+    if (provider && account) {
+      await fetchTokenBalance(provider, account); // Actualiza el balance real después del depósito
+    }
+    setNotification({ open: true, message: `¡${amount} MXNB añadidos a tu wallet!`, severity: 'success' });
     handleFundingModalClose();
   };
 
   const connectWithMetaMask = async () => {
-    if (typeof window.ethereum !== 'undefined') {
-      try {
-        // CORRECCIÓN: Sintaxis de Ethers v6
-        const web3Provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await web3Provider.getSigner();
-        const address = await signer.getAddress();
-        
-        setProvider(web3Provider);
-        setAccount(address);
-        handleOnboardingClose();
-      } catch (error) {
-        console.error("Error connecting with MetaMask:", error);
-        setNotification({ open: true, message: 'Error al conectar con MetaMask.', severity: 'error' });
+    try {
+      const web3Provider = new ethers.JsonRpcProvider(ARBITRUM_SEPOLIA_RPC, ARBITRUM_SEPOLIA_CHAIN);
+      let address = null;
+      if (typeof window.ethereum !== 'undefined') {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        address = accounts[0];
+      } else {
+        address = ethers.Wallet.createRandom().address;
       }
-    } else {
-      setNotification({ open: true, message: 'MetaMask no está instalado.', severity: 'error' });
+      setProvider(web3Provider);
+      setAccount(address);
+      handleOnboardingClose();
+      await fetchTokenBalance(web3Provider, address); // Actualiza el balance real después de conectar
+    } catch (error) {
+      console.error("Error connecting with MetaMask:", error);
+      setNotification({ open: true, message: 'Error al conectar con MetaMask.', severity: 'error' });
     }
   };
 
   const createVirtualWallet = async () => {
-    const simulatedAddress = ethers.Wallet.createRandom().address;
-    setAccount(simulatedAddress);
-    setNotification({ open: true, message: `Wallet virtual creada: ${simulatedAddress.substring(0, 10)}...`, severity: 'success' });
+    const web3Provider = new ethers.JsonRpcProvider(ARBITRUM_SEPOLIA_RPC, ARBITRUM_SEPOLIA_CHAIN);
+    const simulatedWallet = ethers.Wallet.createRandom().connect(web3Provider);
+    setProvider(web3Provider);
+    setAccount(simulatedWallet.address);
+    setNotification({ open: true, message: `Wallet virtual creada: ${simulatedWallet.address.substring(0, 10)}...`, severity: 'success' });
     handleOnboardingClose();
+    setTokenBalance(0);
   };
 
   const renderAmenityIcon = (amenity: string) => {
@@ -432,7 +462,7 @@ function App() {
               {account ? (
                 <Paper elevation={2} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 2, borderRadius: 2 }}>
                   <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{balance.toFixed(2)} MXBNT</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{tokenBalance.toFixed(2)} MXNB</Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>{`${account.substring(0, 6)}...${account.substring(account.length - 4)}`}</Typography>
                   </Box>
                   <Button variant="contained" size="small" onClick={handleFundingModalOpen}>Añadir Fondos</Button>
@@ -466,7 +496,7 @@ function App() {
          <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
           <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Añadir Fondos</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Los depósitos se realizan vía SPEI y se convierten automáticamente a MXBNT (1 MXN = 1 MXBNT).
+            Los depósitos se realizan vía SPEI y se convierten automáticamente a MXNB (1 MXN = 1 MXNB).
           </Typography>
           <Stack spacing={2}>
             <TextField label="Monto a depositar (MXN)" type="number" variant="outlined" fullWidth value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
@@ -653,6 +683,10 @@ function App() {
                       key={listing.id}
                       position={{ lat: listing.lat, lng: listing.lng }}
                       onClick={() => setSelectedListing(listing)}
+                      icon={{
+                        url: "/roomcasa.png",
+                        scaledSize: new window.google.maps.Size(40, 40)
+                      }}
                     />
                   ) : null
                 ))}
