@@ -11,9 +11,11 @@ interface HeaderProps {
   onFundingModalOpen?: () => void;
   onConnectGoogle: () => void;
   onConnectMetaMask: () => void;
+  onViewNFTClick: () => void;
+  tenantPassportData: any; // Puedes refinar este tipo si lo deseas
 }
 
-export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask }: HeaderProps) {
+export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onViewNFTClick, tenantPassportData }: HeaderProps) {
   const [drawerMenuOpen, setDrawerMenuOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const isMobile = window.innerWidth < 900;
@@ -85,6 +87,9 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>{`${account?.substring(0, 6)}...${account?.substring(account.length - 4)}`}</Typography>
                   </Box>
                   <Button variant="contained" size="small" onClick={onFundingModalOpen}>Añadir Fondos</Button>
+                  {account && (
+                    <Button variant="outlined" size="small" onClick={onViewNFTClick}>Ver mi NFT</Button>
+                  )}
                 </Paper>
               ) : (
                 <Button
