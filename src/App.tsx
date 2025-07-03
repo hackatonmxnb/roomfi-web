@@ -306,7 +306,7 @@ function App() {
   // Estados del Mapa
   const mapCenter = { lat: 19.4326, lng: -99.1333 };
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: 'AIzaSyB4fQPo0OIqzCgW5muQsodw-xOPMCz5oP0', // <-- Reemplaza por tu API Key
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
   });
   const [selectedListing, setSelectedListing] = useState<typeof listings[0] | null>(null);
 

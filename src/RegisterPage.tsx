@@ -48,7 +48,7 @@ export default function RegisterPage() {
     setError('');
     try {
       // Enviar todos los datos del usuario
-      const res = await fetch('https://242cbd11-9c48-4748-bd9e-b883fe733a56.mock.pstmn.io/db/new/user', {
+      const res = await fetch(process.env.REACT_APP_API + "/db/new/user" || '', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, name, picture, ...form }),
