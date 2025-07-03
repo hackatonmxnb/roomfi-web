@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import Portal from '@portal-hq/web'; // CORRECCIÓN: Importación por defecto
-import { 
-  AppBar, Toolbar, Typography, Button, Container, Box, Paper, Card, CardContent, 
-  CardMedia, Avatar, Chip, Stack, Grid, useTheme, useMediaQuery, IconButton, 
-  Menu, MenuItem, Modal, Snackbar, Alert, Drawer, List, ListItem, ListItemButton, 
-  ListItemText, TextField, Slider, FormControl, InputLabel, Select, OutlinedInput, 
-  createTheme, ThemeProvider, Fab 
+import {
+  AppBar, Toolbar, Typography, Button, Container, Box, Paper, Card, CardContent,
+  CardMedia, Avatar, Chip, Stack, Grid, useTheme, useMediaQuery, IconButton,
+  Menu, MenuItem, Modal, Snackbar, Alert, Drawer, List, ListItem, ListItemButton,
+  ListItemText, TextField, Slider, FormControl, InputLabel, Select, OutlinedInput,
+  createTheme, ThemeProvider, Fab
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -23,6 +23,9 @@ import GroupIcon from '@mui/icons-material/Group';
 import BedIcon from '@mui/icons-material/Bed';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { useGoogleLogin } from '@react-oauth/google';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import RegisterPage from './RegisterPage';
+import Header from './Header';
 
 // CORRECCIÓN: Añadir tipos para window.ethereum para que TypeScript no se queje
 declare global {
@@ -284,7 +287,7 @@ const TOKEN_ADDRESS = "0x82B9e52b26A2954E113F94Ff26647754d5a4247D"; // Proxy add
 function App() {
   const isMobile = useMediaQuery(customTheme.breakpoints.down('md'));
   const isMobileOnly = useMediaQuery(customTheme.breakpoints.down('sm'));
-  
+
   // Estados de UI
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [drawerCardsOpen, setDrawerCardsOpen] = useState(false);
@@ -405,6 +408,8 @@ function App() {
     }
   };
 
+  const navigate = useNavigate();
+
   const login = useGoogleLogin({
     onSuccess: async tokenResponse => {
       if (tokenResponse.access_token) {
@@ -414,9 +419,13 @@ function App() {
           },
         });
         const profile = await res.json();
+        console.log('Google profile:', profile);
         setAccount(profile.email);
         handleOnboardingClose();
         setNotification({ open: true, message: `Sesión iniciada: ${profile.email}`, severity: 'success' });
+        // Simulación: siempre son nuevos por ahora
+        const fullName = profile.name || (profile.given_name ? (profile.given_name + (profile.family_name ? ' ' + profile.family_name : '')) : '');
+        navigate('/register', { state: { email: profile.email, name: fullName, picture: profile.picture } });
       }
     },
     onError: () => {
@@ -427,424 +436,325 @@ function App() {
   });
 
   return (
-    <Box>
-      <AppBar position="static" elevation={0} sx={{ bgcolor: 'white', color: 'primary.main', boxShadow: 'none', borderBottom: '1px solid #e0e0e0' }}>
-        <Toolbar sx={{ px: { xs: 1, sm: 2 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
-            <img
-              src="/roomfilogo2.png"
-              alt="RoomFi Logo"
-              style={{ height: '50px', objectFit: 'contain', display: 'block' }}
-            />
-          </Box>
-          {!isMobile && (
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexGrow: 1 }}>
-              <Button sx={{ color: 'primary.main', fontWeight: 600 }}>Como funciona</Button>
-              <Button sx={{ color: 'primary.main', fontWeight: 600 }}>Verifica roomie</Button>
-              <Button sx={{ color: 'primary.main', fontWeight: 600 }}>Para empresas</Button>
-            </Box>
-          )}
-          {isMobile && <Box sx={{ flexGrow: 1 }} />}
-          {isMobile ? (
-            <>
-              <IconButton
-                size="large"
-                aria-label="menu"
-                onClick={() => setDrawerMenuOpen(true)}
-                sx={{ color: 'primary.main' }}
-              >
-                <MenuIcon />
-              </IconButton>
-              <Drawer anchor="left" open={drawerMenuOpen} onClose={() => setDrawerMenuOpen(false)}>
-                <Box
-                  sx={{ width: 250 }}
-                  role="presentation"
-                  onClick={() => setDrawerMenuOpen(false)}
-                  onKeyDown={() => setDrawerMenuOpen(false)}
-                >
-                  <List>
-                    <ListItem disablePadding>
-                      <ListItemButton><ListItemText primary="Como funciona" /></ListItemButton>
-                    </ListItem>
-                    <ListItem disablePadding>
-                      <ListItemButton><ListItemText primary="Verifica roomie" /></ListItemButton>
-                    </ListItem>
-                    <ListItem disablePadding>
-                      <ListItemButton><ListItemText primary="Para empresas" /></ListItemButton>
-                    </ListItem>
-                    <ListItem disablePadding>
-                      <ListItemButton onClick={handleOnboardingOpen}><ListItemText primary="Conectar" /></ListItemButton>
-                    </ListItem>
-                  </List>
-                </Box>
-              </Drawer>
-            </>
-          ) : (
-            <>
-              {account ? (
-                <Paper elevation={2} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 2, borderRadius: 2 }}>
-                  <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{tokenBalance.toFixed(2)} MXNB</Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>{`${account.substring(0, 6)}...${account.substring(account.length - 4)}`}</Typography>
-                  </Box>
-                  <Button variant="contained" size="small" onClick={handleFundingModalOpen}>Añadir Fondos</Button>
-                </Paper>
-              ) : (
-                <Button 
-                  color="primary" 
-                  variant="contained" 
-                  onClick={handleOnboardingOpen}
-                  sx={{ ml: 2, bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
-                >
-                  Conectar
-                </Button>
-              )}
-            </>
-          )}
-        </Toolbar>
-      </AppBar>
-
-      <Modal open={showOnboarding} onClose={handleOnboardingClose} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
-          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Conecta tu Wallet</Typography>
-          <Stack spacing={2}>
-            <Button variant="contained" fullWidth onClick={connectWithMetaMask}>Conectar con MetaMask</Button>
-            <Button
-              variant="outlined"
-              fullWidth
-              startIcon={
-                <img
-                  src="https://developers.google.com/identity/images/g-logo.png"
-                  alt="Google"
-                  style={{ width: 20, height: 20 }}
-                />
-              }
-              onClick={() => login()}
-              sx={{ textTransform: 'none', fontWeight: 600 }}
-            >
-              Iniciar sesión con Google
-            </Button>
-          </Stack>
-        </Paper>
-      </Modal>
-
-      <Modal open={showFundingModal} onClose={handleFundingModalClose} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-         <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
-          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Añadir Fondos</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Los depósitos se realizan vía SPEI y se convierten automáticamente a MXNB (1 MXN = 1 MXNB).
-          </Typography>
-          <Stack spacing={2}>
-            <TextField label="Monto a depositar (MXN)" type="number" variant="outlined" fullWidth value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
-            <Button variant="contained" fullWidth onClick={handleDeposit}>Generar Ficha de Pago SPEI</Button>
-          </Stack>
-        </Paper>
-      </Modal>
-      
-      <Container maxWidth="xl" sx={{ mt: { xs: 2, sm: 4, md: 8 }, px: { xs: 1, sm: 2, md: 3 } }}>
-        <Grid container spacing={{ xs: 2, sm: 4 }} alignItems="center">
-          <Grid item xs={12} md={5}>
-            <Typography 
-              variant="h2" 
-              component="h1" 
-              gutterBottom 
-              sx={{ 
-                fontWeight: 800, 
-                color: 'primary.main',
-                fontSize: { xs: '1.3rem', sm: '1.7rem', md: '2.2rem' },
-                lineHeight: { xs: 1.1, sm: 1.2, md: 1.25 },
-                mb: 1
-              }}
-            >
-              Encuentra tu Roomie ideal
-            </Typography>
-            <Typography 
-              variant="h5" 
-              color="text.secondary" 
-              paragraph
-              sx={{
-                fontSize: { xs: '0.95rem', sm: '1rem', md: '1.1rem' },
-                lineHeight: { xs: 1.3, sm: 1.4, md: 1.5 },
-                mb: 1
-              }}
-            >
-              Somos RoomFi, una plataforma amigable, confiable y tecnológica para encontrar compañeros de cuarto y compartir hogar de forma segura gracias a Web3, ¡sin complicaciones!
-            </Typography>
-            <Box sx={{ 
-              mt: 2,
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              gap: { xs: 1, sm: 1.5 }
-            }}>
-              <Button 
-                variant="contained" 
-                size="small" 
-                color="primary" 
-                sx={{ 
-                  width: { xs: '100%', sm: 'auto' },
-                  fontSize: { xs: '0.95rem', sm: '1rem' },
-                  py: 1.1,
-                  px: 2.5
-                }}
-              >
-                Buscar habitaciones
-              </Button>
-              <Button 
-                variant="outlined" 
-                size="small" 
-                color="primary"
-                sx={{ 
-                  width: { xs: '100%', sm: 'auto' },
-                  fontSize: { xs: '0.95rem', sm: '1rem' },
-                  py: 1.1,
-                  px: 2.5
-                }}
-              >
-                Publicar anuncio
-              </Button>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={7}>
-            <Paper elevation={3} sx={{ 
-              p: { xs: 1, sm: 2 },
-              bgcolor: '#f5f7fa',
-              textAlign: 'center',
-              borderRadius: 4,
-              minHeight: 0
-            }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    <TextField
-                      fullWidth
-                      label="¿En dónde buscas departamento?"
+    <>
+      <Header
+        account={account}
+        tokenBalance={tokenBalance}
+        onFundingModalOpen={handleFundingModalOpen}
+        onConnectGoogle={login}
+        onConnectMetaMask={connectWithMetaMask}
+      />
+      <Routes>
+        <Route path="/" element={
+          <>
+            <Container maxWidth="xl" sx={{ mt: { xs: 2, sm: 4, md: 8 }, px: { xs: 1, sm: 2, md: 3 } }}>
+              <Grid container spacing={{ xs: 2, sm: 4 }} alignItems="center">
+                <Grid item xs={12} md={5}>
+                  <Typography
+                    variant="h2"
+                    component="h1"
+                    gutterBottom
+                    sx={{
+                      fontWeight: 800,
+                      color: 'primary.main',
+                      fontSize: { xs: '1.3rem', sm: '1.7rem', md: '2.2rem' },
+                      lineHeight: { xs: 1.1, sm: 1.2, md: 1.25 },
+                      mb: 1
+                    }}
+                  >
+                    Encuentra tu Roomie ideal
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    color="text.secondary"
+                    paragraph
+                    sx={{
+                      fontSize: { xs: '0.95rem', sm: '1rem', md: '1.1rem' },
+                      lineHeight: { xs: 1.3, sm: 1.4, md: 1.5 },
+                      mb: 1
+                    }}
+                  >
+                    Somos RoomFi, una plataforma amigable, confiable y tecnológica para encontrar compañeros de cuarto y compartir hogar de forma segura gracias a Web3, ¡sin complicaciones!
+                  </Typography>
+                  <Box sx={{
+                    mt: 2,
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: { xs: 1, sm: 1.5 }
+                  }}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      color="primary"
+                      sx={{
+                        width: { xs: '100%', sm: 'auto' },
+                        fontSize: { xs: '0.95rem', sm: '1rem' },
+                        py: 1.1,
+                        px: 2.5
+                      }}
+                    >
+                      Buscar habitaciones
+                    </Button>
+                    <Button
                       variant="outlined"
                       size="small"
-                      sx={{ bgcolor: 'white', borderRadius: 2, mb: 1 }}
-                    />
-                    <Box sx={{ mt: 0.5, px: 2.5 }}>
-                      <Typography gutterBottom sx={{ fontWeight: 500, color: 'primary.main', mb: 0.5, fontSize: '0.95rem', textAlign: 'left' }}>
-                        ¿Qué precio buscas?
-                      </Typography>
-                      <Slider
-                        value={precio}
-                        onChange={handlePrecioChange}
-                        valueLabelDisplay="auto"
-                        min={1000}
-                        max={80000}
-                        step={500}
-                        marks={[
-                          { value: 1000, label: <span style={{fontWeight:500, color:'#1976d2', fontSize:'0.85rem'}}>$1,000</span> },
-                          { value: 80000, label: <span style={{fontWeight:500, color:'#1976d2', fontSize:'0.85rem'}}>$80,000</span> }
-                        ]}
-                        sx={{ color: 'primary.main', height: 4, mb: 2, width: '100%' }}
-                      />
-                    </Box>
-                    <FormControl fullWidth sx={{ mt: 1.5, bgcolor: 'white', borderRadius: 2 }} size="small">
-                      <InputLabel id="amenidad-label" sx={{ fontSize: '0.95rem' }}>¿Qué amenidades buscas?</InputLabel>
-                      <Select
-                        fullWidth
-                        labelId="amenidad-label"
-                        id="amenidad-select"
-                        multiple
-                        value={amenidades}
-                        onChange={handleAmenidadChange}
-                        input={<OutlinedInput label="¿Qué amenidades buscas?" />}
-                        renderValue={(selected) => (
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                            {(selected as string[]).map((value) => (
-                              <Chip key={value} label={value} size="small" />
-                            ))}
-                          </Box>
-                        )}
-                      >
-                        <MenuItem value="amueblado"><BedIcon sx={{ color: '#6d4c41', fontSize: 20, mr: 1 }} />Amueblado</MenuItem>
-                        <MenuItem value="baño privado"><MeetingRoomIcon sx={{ color: '#43a047', fontSize: 20, mr: 1 }} />Baño privado</MenuItem>
-                        <MenuItem value="pet friendly"><PetsIcon sx={{ color: '#ff9800', fontSize: 20, mr: 1 }} />Pet friendly</MenuItem>
-                        <MenuItem value="estacionamiento"><LocalParkingIcon sx={{ color: '#1976d2', fontSize: 20, mr: 1 }} />Estacionamiento</MenuItem>
-                        <MenuItem value="piscina"><PoolIcon sx={{ color: '#00bcd4', fontSize: 20, mr: 1 }} />Piscina</MenuItem>
-                      </Select>
-                    </FormControl>
+                      color="primary"
+                      sx={{
+                        width: { xs: '100%', sm: 'auto' },
+                        fontSize: { xs: '0.95rem', sm: '1rem' },
+                        py: 1.1,
+                        px: 2.5
+                      }}
+                    >
+                      Publicar anuncio
+                    </Button>
                   </Box>
                 </Grid>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    <FormControl fullWidth sx={{ bgcolor: 'white', borderRadius: 2 }} size="small">
-                      <InputLabel id="tipo-propiedad-label" sx={{ fontSize: '0.95rem' }}>Tipo de propiedad</InputLabel>
-                      <Select
-                        labelId="tipo-propiedad-label"
-                        id="tipo-propiedad-select"
-                        label="Tipo de propiedad"
-                        defaultValue=""
-                      >
-                        <MenuItem value="departamento"><ApartmentIcon sx={{ color: '#1976d2', fontSize: 20, mr: 1 }} />Departamento completo</MenuItem>
-                        <MenuItem value="privada"><MeetingRoomIcon sx={{ color: '#43a047', fontSize: 20, mr: 1 }} />Habitación privada</MenuItem>
-                        <MenuItem value="compartida"><GroupIcon sx={{ color: '#fbc02d', fontSize: 20, mr: 1 }} />Habitación compartida</MenuItem>
-                      </Select>
-                    </FormControl>
-                    <FormControl fullWidth sx={{ bgcolor: 'white', borderRadius: 2, mt: { xs: 2, md: 4 } }} size="small">
-                      <InputLabel id="genero-label" sx={{ fontSize: '0.95rem' }}>Preferencia de roomie</InputLabel>
-                      <Select
-                        labelId="genero-label"
-                        id="genero-select"
-                        label="Preferencia de roomie"
-                        defaultValue=""
-                      >
-                        <MenuItem value="mujeres"><FemaleIcon sx={{ color: '#e91e63', fontSize: 20, mr: 1 }} />Solo mujeres</MenuItem>
-                        <MenuItem value="hombres"><MaleIcon sx={{ color: '#1976d2', fontSize: 20, mr: 1 }} />Solo hombres</MenuItem>
-                        <MenuItem value="igual"><span style={{ fontSize: 20, marginRight: 8 }}>⚧️</span>Me da igual</MenuItem>
-                        <MenuItem value="lgbtq"><span style={{ fontSize: 20, marginRight: 8 }}>🏳️‍🌈</span>LGBTQ+</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Box>
+                <Grid item xs={12} md={7}>
+                  <Paper elevation={3} sx={{
+                    p: { xs: 1, sm: 2 },
+                    bgcolor: '#f5f7fa',
+                    textAlign: 'center',
+                    borderRadius: 4,
+                    minHeight: 0
+                  }}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={6}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <TextField
+                            fullWidth
+                            label="¿En dónde buscas departamento?"
+                            variant="outlined"
+                            size="small"
+                            sx={{ bgcolor: 'white', borderRadius: 2, mb: 1 }}
+                          />
+                          <Box sx={{ mt: 0.5, px: 2.5 }}>
+                            <Typography gutterBottom sx={{ fontWeight: 500, color: 'primary.main', mb: 0.5, fontSize: '0.95rem', textAlign: 'left' }}>
+                              ¿Qué precio buscas?
+                            </Typography>
+                            <Slider
+                              value={precio}
+                              onChange={handlePrecioChange}
+                              valueLabelDisplay="auto"
+                              min={1000}
+                              max={80000}
+                              step={500}
+                              marks={[
+                                { value: 1000, label: <span style={{ fontWeight: 500, color: '#1976d2', fontSize: '0.85rem' }}>$1,000</span> },
+                                { value: 80000, label: <span style={{ fontWeight: 500, color: '#1976d2', fontSize: '0.85rem' }}>$80,000</span> }
+                              ]}
+                              sx={{ color: 'primary.main', height: 4, mb: 2, width: '100%' }}
+                            />
+                          </Box>
+                          <FormControl fullWidth sx={{ mt: 1.5, bgcolor: 'white', borderRadius: 2 }} size="small">
+                            <InputLabel id="amenidad-label" sx={{ fontSize: '0.95rem' }}>¿Qué amenidades buscas?</InputLabel>
+                            <Select
+                              fullWidth
+                              labelId="amenidad-label"
+                              id="amenidad-select"
+                              multiple
+                              value={amenidades}
+                              onChange={handleAmenidadChange}
+                              input={<OutlinedInput label="¿Qué amenidades buscas?" />}
+                              renderValue={(selected) => (
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                  {(selected as string[]).map((value) => (
+                                    <Chip key={value} label={value} size="small" />
+                                  ))}
+                                </Box>
+                              )}
+                            >
+                              <MenuItem value="amueblado"><BedIcon sx={{ color: '#6d4c41', fontSize: 20, mr: 1 }} />Amueblado</MenuItem>
+                              <MenuItem value="baño privado"><MeetingRoomIcon sx={{ color: '#43a047', fontSize: 20, mr: 1 }} />Baño privado</MenuItem>
+                              <MenuItem value="pet friendly"><PetsIcon sx={{ color: '#ff9800', fontSize: 20, mr: 1 }} />Pet friendly</MenuItem>
+                              <MenuItem value="estacionamiento"><LocalParkingIcon sx={{ color: '#1976d2', fontSize: 20, mr: 1 }} />Estacionamiento</MenuItem>
+                              <MenuItem value="piscina"><PoolIcon sx={{ color: '#00bcd4', fontSize: 20, mr: 1 }} />Piscina</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <FormControl fullWidth sx={{ bgcolor: 'white', borderRadius: 2 }} size="small">
+                            <InputLabel id="tipo-propiedad-label" sx={{ fontSize: '0.95rem' }}>Tipo de propiedad</InputLabel>
+                            <Select
+                              labelId="tipo-propiedad-label"
+                              id="tipo-propiedad-select"
+                              label="Tipo de propiedad"
+                              defaultValue=""
+                            >
+                              <MenuItem value="departamento"><ApartmentIcon sx={{ color: '#1976d2', fontSize: 20, mr: 1 }} />Departamento completo</MenuItem>
+                              <MenuItem value="privada"><MeetingRoomIcon sx={{ color: '#43a047', fontSize: 20, mr: 1 }} />Habitación privada</MenuItem>
+                              <MenuItem value="compartida"><GroupIcon sx={{ color: '#fbc02d', fontSize: 20, mr: 1 }} />Habitación compartida</MenuItem>
+                            </Select>
+                          </FormControl>
+                          <FormControl fullWidth sx={{ bgcolor: 'white', borderRadius: 2, mt: { xs: 2, md: 4 } }} size="small">
+                            <InputLabel id="genero-label" sx={{ fontSize: '0.95rem' }}>Preferencia de roomie</InputLabel>
+                            <Select
+                              labelId="genero-label"
+                              id="genero-select"
+                              label="Preferencia de roomie"
+                              defaultValue=""
+                            >
+                              <MenuItem value="mujeres"><FemaleIcon sx={{ color: '#e91e63', fontSize: 20, mr: 1 }} />Solo mujeres</MenuItem>
+                              <MenuItem value="hombres"><MaleIcon sx={{ color: '#1976d2', fontSize: 20, mr: 1 }} />Solo hombres</MenuItem>
+                              <MenuItem value="igual"><span style={{ fontSize: 20, marginRight: 8 }}>⚧️</span>Me da igual</MenuItem>
+                              <MenuItem value="lgbtq"><span style={{ fontSize: 20, marginRight: 8 }}>🏳️‍🌈</span>LGBTQ+</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Paper>
                 </Grid>
               </Grid>
-            </Paper>
-          </Grid>
-        </Grid>
-        
-        <Box sx={{ position: 'relative', width: '100%', minHeight: '100vh', mt: { xs: 4, sm: 6, md: 8 } }}>
-          <Box sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0 }}>
-            {isLoaded && (
-              <GoogleMap
-                mapContainerStyle={{ width: '100%', height: '100%' }}
-                center={mapCenter}
-                zoom={13}
-                options={{ disableDefaultUI: true, gestureHandling: 'greedy', styles: [ { featureType: 'poi', stylers: [{ visibility: 'off' }] }, { featureType: 'transit', stylers: [{ visibility: 'off' }] } ] }}
-                onClick={() => setSelectedListing(null)}
-              >
-                {listings.map((listing) => (
-                  listing.lat && listing.lng ? (
-                    <Marker
-                      key={listing.id}
-                      position={{ lat: listing.lat, lng: listing.lng }}
-                      onClick={() => setSelectedListing(listing)}
-                      icon={{
-                        url: "/roomcasa.png",
-                        scaledSize: new window.google.maps.Size(40, 40)
-                      }}
-                    />
-                  ) : null
-                ))}
-                {selectedListing && selectedListing.lat && selectedListing.lng && (
-                    <InfoWindow
-                      position={{ lat: selectedListing.lat, lng: selectedListing.lng }}
-                      onCloseClick={() => setSelectedListing(null)}
+
+              <Box sx={{ position: 'relative', width: '100%', minHeight: '100vh', mt: { xs: 4, sm: 6, md: 8 } }}>
+                <Box sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0 }}>
+                  {isLoaded && (
+                    <GoogleMap
+                      mapContainerStyle={{ width: '100%', height: '100%' }}
+                      center={mapCenter}
+                      zoom={13}
+                      options={{ disableDefaultUI: true, gestureHandling: 'greedy', styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }, { featureType: 'transit', stylers: [{ visibility: 'off' }] }] }}
+                      onClick={() => setSelectedListing(null)}
                     >
-                      <Box sx={{ minWidth: 220, maxWidth: 260 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Avatar src={selectedListing.user.avatar} alt={selectedListing.user.name} sx={{ mr: 1 }} />
-                          <Typography fontWeight={700}>{selectedListing.user.name}</Typography>
-                          <Chip label={selectedListing.date} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
-                          <Chip label={`${selectedListing.roommates} ROOMMATE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
-                          <img src={selectedListing.image} alt={selectedListing.location} style={{ width: '100%', borderRadius: 8, maxHeight: 100, objectFit: 'cover' }} />
-                        </Box>
-                        <Typography variant="h6" fontWeight={800} gutterBottom>
-                          ${selectedListing.price.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">/ mo</Typography>
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">{selectedListing.type} · {selectedListing.bedrooms} Bedrooms · {selectedListing.propertyType}</Typography>
-                        <Typography variant="body2" color="text.secondary">{selectedListing.available}</Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{selectedListing.location}</Typography>
-                      </Box>
-                    </InfoWindow>
-                )}
-              </GoogleMap>
-            )}
-          </Box>
-          {isMobileOnly ? (
-            <>
-              <Fab color="primary" aria-label="Ver lista" onClick={() => setDrawerCardsOpen(true)} sx={{ position: 'absolute', bottom: 24, right: 24, zIndex: 2 }}>
-                <ListIcon />
-              </Fab>
-              <Drawer
-                anchor="bottom"
-                open={drawerCardsOpen}
-                onClose={() => setDrawerCardsOpen(false)}
-                PaperProps={{ sx: { borderTopLeftRadius: 16, borderTopRightRadius: 16, bgcolor: 'white', border: '1px solid #e0e0e0', maxHeight: '70vh', p: 2 } }}
-              >
-                <Box sx={{ overflowY: 'auto', maxHeight: '100vh' }}>
-                  {listings.map((listing, index) => (
-                    <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
-                        <Avatar src={listing.user.avatar} alt={listing.user.name} sx={{ mr: 1 }} />
-                        <Typography fontWeight={700}>{listing.user.name}</Typography>
-                        <Chip label={listing.date} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
-                        <Chip label={`${listing.roommates} ROOMMATE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
-                      </Box>
-                      <CardMedia component="img" height="120" image={listing.image} alt={listing.location} sx={{ objectFit: 'cover', borderRadius: 2, m: 2, mb: 0 }} />
-                      <CardContent sx={{ p: 2 }}>
-                        <Typography variant="h6" fontWeight={800} gutterBottom>${listing.price.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">/ mo</Typography></Typography>
-                        <Typography variant="body2" color="text.secondary">{listing.type} · {listing.bedrooms} Bedrooms · {listing.propertyType}</Typography>
-                        <Typography variant="body2" color="text.secondary">{listing.available}</Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{listing.location}</Typography>
-                        {listing.amenities && listing.amenities.length > 0 && (
-                          <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                            {listing.amenities.slice(0, 4).map((amenity, idx) => (
-                              <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                {renderAmenityIcon(amenity)}
-                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>{amenity}</Typography>
-                              </Box>
-                            ))}
+                      {listings.map((listing) => (
+                        listing.lat && listing.lng ? (
+                          <Marker
+                            key={listing.id}
+                            position={{ lat: listing.lat, lng: listing.lng }}
+                            onClick={() => setSelectedListing(listing)}
+                            icon={{
+                              url: "/roomcasa.png",
+                              scaledSize: new window.google.maps.Size(40, 40)
+                            }}
+                          />
+                        ) : null
+                      ))}
+                      {selectedListing && selectedListing.lat && selectedListing.lng && (
+                        <InfoWindow
+                          position={{ lat: selectedListing.lat, lng: selectedListing.lng }}
+                          onCloseClick={() => setSelectedListing(null)}
+                        >
+                          <Box sx={{ minWidth: 220, maxWidth: 260 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                              <Avatar src={selectedListing.user.avatar} alt={selectedListing.user.name} sx={{ mr: 1 }} />
+                              <Typography fontWeight={700}>{selectedListing.user.name}</Typography>
+                              <Chip label={selectedListing.date} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
+                              <Chip label={`${selectedListing.roommates} ROOMMATE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+                              <img src={selectedListing.image} alt={selectedListing.location} style={{ width: '100%', borderRadius: 8, maxHeight: 100, objectFit: 'cover' }} />
+                            </Box>
+                            <Typography variant="h6" fontWeight={800} gutterBottom>
+                              ${selectedListing.price.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">/ mo</Typography>
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">{selectedListing.type} · {selectedListing.bedrooms} Bedrooms · {selectedListing.propertyType}</Typography>
+                            <Typography variant="body2" color="text.secondary">{selectedListing.available}</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{selectedListing.location}</Typography>
                           </Box>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </InfoWindow>
+                      )}
+                    </GoogleMap>
+                  )}
                 </Box>
-              </Drawer>
-            </>
-          ) : (
-            <Box sx={{ position: 'relative', zIndex: 1, width: { xs: '100%', sm: 400 }, maxWidth: 480, height: { xs: 340, sm: 500, md: '100vh' }, overflowY: 'auto', bgcolor: 'white', border: '1px solid #e0e0e0', borderRadius: 3, p: 2, ml: { sm: 4 }, mt: { xs: 0, sm: 0 } }}>
-              {listings.map((listing, index) => (
-                <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
-                    <Avatar src={listing.user.avatar} alt={listing.user.name} sx={{ mr: 1 }} />
-                    <Typography fontWeight={700}>{listing.user.name}</Typography>
-                    <Chip label={listing.date} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
-                    <Chip label={`${listing.roommates} ROOMMATE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
-                  </Box>
-                  <CardMedia component="img" height="120" image={listing.image} alt={listing.location} sx={{ objectFit: 'cover', borderRadius: 2, m: 2, mb: 0 }} />
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography variant="h6" fontWeight={800} gutterBottom>${listing.price.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">/ mo</Typography></Typography>
-                    <Typography variant="body2" color="text.secondary">{listing.type} · {listing.bedrooms} Bedrooms · {listing.propertyType}</Typography>
-                    <Typography variant="body2" color="text.secondary">{listing.available}</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{listing.location}</Typography>
-                    {listing.amenities && listing.amenities.length > 0 && (
-                      <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                        {listing.amenities.slice(0, 4).map((amenity, idx) => (
-                          <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            {renderAmenityIcon(amenity)}
-                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>{amenity}</Typography>
-                          </Box>
+                {isMobileOnly ? (
+                  <>
+                    <Fab color="primary" aria-label="Ver lista" onClick={() => setDrawerCardsOpen(true)} sx={{ position: 'absolute', bottom: 24, right: 24, zIndex: 2 }}>
+                      <ListIcon />
+                    </Fab>
+                    <Drawer
+                      anchor="bottom"
+                      open={drawerCardsOpen}
+                      onClose={() => setDrawerCardsOpen(false)}
+                      PaperProps={{ sx: { borderTopLeftRadius: 16, borderTopRightRadius: 16, bgcolor: 'white', border: '1px solid #e0e0e0', maxHeight: '70vh', p: 2 } }}
+                    >
+                      <Box sx={{ overflowY: 'auto', maxHeight: '100vh' }}>
+                        {listings.map((listing, index) => (
+                          <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
+                              <Avatar src={listing.user.avatar} alt={listing.user.name} sx={{ mr: 1 }} />
+                              <Typography fontWeight={700}>{listing.user.name}</Typography>
+                              <Chip label={listing.date} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
+                              <Chip label={`${listing.roommates} ROOMMATE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
+                            </Box>
+                            <CardMedia component="img" height="120" image={listing.image} alt={listing.location} sx={{ objectFit: 'cover', borderRadius: 2, m: 2, mb: 0 }} />
+                            <CardContent sx={{ p: 2 }}>
+                              <Typography variant="h6" fontWeight={800} gutterBottom>${listing.price.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">/ mo</Typography></Typography>
+                              <Typography variant="body2" color="text.secondary">{listing.type} · {listing.bedrooms} Bedrooms · {listing.propertyType}</Typography>
+                              <Typography variant="body2" color="text.secondary">{listing.available}</Typography>
+                              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{listing.location}</Typography>
+                              {listing.amenities && listing.amenities.length > 0 && (
+                                <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                                  {listing.amenities.slice(0, 4).map((amenity, idx) => (
+                                    <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                      {renderAmenityIcon(amenity)}
+                                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>{amenity}</Typography>
+                                    </Box>
+                                  ))}
+                                </Box>
+                              )}
+                            </CardContent>
+                          </Card>
                         ))}
                       </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </Box>
-          )}
-        </Box>
-      </Container>
-      
-      <Box sx={{ bgcolor: 'primary.main', color: 'white', py: { xs: 4, sm: 6 }, mt: { xs: 4, sm: 6, md: 8 } }}>
-        {/* ... Footer ... */}
-      </Box>
-      
-      <Box sx={{ bgcolor: '#222', color: 'white', py: 3, textAlign: 'center' }}>
-        <Typography variant="body2" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-          &copy; {new Date().getFullYear()} RoomFi. Todos los derechos reservados.
-        </Typography>
-      </Box>
+                    </Drawer>
+                  </>
+                ) : (
+                  <Box sx={{ position: 'relative', zIndex: 1, width: { xs: '100%', sm: 400 }, maxWidth: 480, height: { xs: 340, sm: 500, md: '100vh' }, overflowY: 'auto', bgcolor: 'white', border: '1px solid #e0e0e0', borderRadius: 3, p: 2, ml: { sm: 4 }, mt: { xs: 0, sm: 0 } }}>
+                    {listings.map((listing, index) => (
+                      <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
+                          <Avatar src={listing.user.avatar} alt={listing.user.name} sx={{ mr: 1 }} />
+                          <Typography fontWeight={700}>{listing.user.name}</Typography>
+                          <Chip label={listing.date} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
+                          <Chip label={`${listing.roommates} ROOMMATE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
+                        </Box>
+                        <CardMedia component="img" height="120" image={listing.image} alt={listing.location} sx={{ objectFit: 'cover', borderRadius: 2, m: 2, mb: 0 }} />
+                        <CardContent sx={{ p: 2 }}>
+                          <Typography variant="h6" fontWeight={800} gutterBottom>${listing.price.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">/ mo</Typography></Typography>
+                          <Typography variant="body2" color="text.secondary">{listing.type} · {listing.bedrooms} Bedrooms · {listing.propertyType}</Typography>
+                          <Typography variant="body2" color="text.secondary">{listing.available}</Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{listing.location}</Typography>
+                          {listing.amenities && listing.amenities.length > 0 && (
+                            <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                              {listing.amenities.slice(0, 4).map((amenity, idx) => (
+                                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  {renderAmenityIcon(amenity)}
+                                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>{amenity}</Typography>
+                                </Box>
+                              ))}
+                            </Box>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            </Container>
 
-      <Snackbar open={notification.open} autoHideDuration={6000} onClose={handleNotificationClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-        <Alert onClose={handleNotificationClose} severity={notification.severity} sx={{ width: '100%' }}>
-          {notification.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+            <Box sx={{ bgcolor: 'primary.main', color: 'white', py: { xs: 4, sm: 6 }, mt: { xs: 4, sm: 6, md: 8 } }}>
+              {/* ... Footer ... */}
+            </Box>
+
+            <Box sx={{ bgcolor: '#222', color: 'white', py: 3, textAlign: 'center' }}>
+              <Typography variant="body2" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+                &copy; {new Date().getFullYear()} RoomFi. Todos los derechos reservados.
+              </Typography>
+            </Box>
+
+            <Snackbar open={notification.open} autoHideDuration={6000} onClose={handleNotificationClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+              <Alert onClose={handleNotificationClose} severity={notification.severity} sx={{ width: '100%' }}>
+                {notification.message}
+              </Alert>
+            </Snackbar>
+          </>
+        } />
+        <Route path="/register" element={<RegisterPage />} />
+      </Routes>
+    </>
   );
 }
 
