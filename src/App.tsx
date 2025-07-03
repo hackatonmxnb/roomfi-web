@@ -26,12 +26,22 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import RegisterPage from './RegisterPage';
 import Header from './Header';
+import { TENANT_PASSPORT_ABI, TENANT_PASSPORT_ADDRESS, NETWORK_CONFIG } from './web3/config';
+
 
 // CORRECCIÓN: Añadir tipos para window.ethereum para que TypeScript no se queje
 declare global {
   interface Window {
     ethereum?: any;
   }
+}
+
+interface TenantPassportData {
+  reputation: number;
+  paymentsMade: number;
+  paymentsMissed: number;
+  outstandingBalance: number;
+  tokenId: number;
 }
 
 const listings = [
@@ -302,6 +312,8 @@ function App() {
   const [showFundingModal, setShowFundingModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [notification, setNotification] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+  const [tenantPassportData, setTenantPassportData] = useState<TenantPassportData | null>(null);
+  const [showTenantPassportModal, setShowTenantPassportModal] = useState(false);
 
   // Estados del Mapa
   const mapCenter = { lat: 19.4326, lng: -99.1333 };
@@ -309,13 +321,6 @@ function App() {
     googleMapsApiKey: 'AIzaSyB4fQPo0OIqzCgW5muQsodw-xOPMCz5oP0', // <-- Reemplaza por tu API Key
   });
   const [selectedListing, setSelectedListing] = useState<typeof listings[0] | null>(null);
-
-  // Siempre usar el RPC de Arbitrum Sepolia
-  const ARBITRUM_SEPOLIA_RPC = "https://sepolia-rollup.arbitrum.io/rpc";
-  const ARBITRUM_SEPOLIA_CHAIN = {
-    chainId: 421614,
-    name: "arbitrum-sepolia"
-  };
 
   // Handlers UI
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
@@ -336,6 +341,15 @@ function App() {
   };
   const handleNotificationClose = () => setNotification({ ...notification, open: false });
 
+  const handleViewNFTClick = async () => {
+    if (account) {
+      await getOrCreateTenantPassport(account);
+      setShowTenantPassportModal(true);
+    } else {
+      setNotification({ open: true, message: 'Por favor, conecta tu wallet primero.', severity: 'error' });
+    }
+  };
+
   const [tokenBalance, setTokenBalance] = useState<number>(0);
 
   const fetchTokenBalance = async (
@@ -346,6 +360,47 @@ function App() {
       const contract = new ethers.Contract(TOKEN_ADDRESS, ERC20_ABI, prov);
       const rawBalance = await contract.balanceOf(acc);
       setTokenBalance(Number(ethers.formatUnits(rawBalance, 6)));
+    }
+  };
+
+  const getOrCreateTenantPassport = async (userAddress: string) => {
+    try {
+      const provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl);
+      // IMPORTANTE: Reemplaza con una clave privada de tu instancia de Anvil
+      const signer = new ethers.Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", provider);
+      const contract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, signer);
+
+      const balance = await contract.balanceOf(userAddress);
+
+      let finalTokenId;
+
+      if (balance.toString() === '0') {
+        console.log("No Tenant Passport found. Minting a new one...");
+        const tx = await contract.mintForSelf();
+        await tx.wait();
+        console.log("Tenant Passport minted successfully!");
+        setNotification({ open: true, message: '¡Tu Tenant Passport se ha creado!', severity: 'success' });
+        finalTokenId = BigInt(userAddress);
+      } else {
+        console.log("Tenant Passport already exists.");
+        finalTokenId = BigInt(userAddress);
+      }
+
+      const info = await contract.getTenantInfo(finalTokenId);
+      const passportData = {
+        reputation: Number(info.reputation),
+        paymentsMade: Number(info.paymentsMade),
+        paymentsMissed: Number(info.paymentsMissed),
+        outstandingBalance: Number(info.outstandingBalance),
+        tokenId: Number(finalTokenId),
+      };
+
+      setTenantPassportData(passportData);
+      return passportData;
+    } catch (error) {
+      console.error("Error getting or creating Tenant Passport:", error);
+      setNotification({ open: true, message: 'Error al gestionar el Tenant Passport.', severity: 'error' });
+      return null;
     }
   };
 
@@ -365,7 +420,9 @@ function App() {
 
   const connectWithMetaMask = async () => {
     try {
-      const web3Provider = new ethers.JsonRpcProvider(ARBITRUM_SEPOLIA_RPC, ARBITRUM_SEPOLIA_CHAIN);
+      const web3Provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl, { chainId: NETWORK_CONFIG.chainId, name: 'anvil', ensAddress: undefined });
+      web3Provider.pollingInterval = 4000; // Intervalo de 4 segundos
+
       let address = null;
       if (typeof window.ethereum !== 'undefined') {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -376,7 +433,7 @@ function App() {
       setProvider(web3Provider);
       setAccount(address);
       handleOnboardingClose();
-      await fetchTokenBalance(web3Provider, address); // Actualiza el balance real después de conectar
+      await fetchTokenBalance(web3Provider, address);
     } catch (error) {
       console.error("Error connecting with MetaMask:", error);
       setNotification({ open: true, message: 'Error al conectar con MetaMask.', severity: 'error' });
@@ -384,7 +441,8 @@ function App() {
   };
 
   const createVirtualWallet = async () => {
-    const web3Provider = new ethers.JsonRpcProvider(ARBITRUM_SEPOLIA_RPC, ARBITRUM_SEPOLIA_CHAIN);
+    const web3Provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl, { chainId: NETWORK_CONFIG.chainId, name: 'anvil', ensAddress: undefined });
+    web3Provider.pollingInterval = -1;
     const simulatedWallet = ethers.Wallet.createRandom().connect(web3Provider);
     setProvider(web3Provider);
     setAccount(simulatedWallet.address);
@@ -420,10 +478,16 @@ function App() {
         });
         const profile = await res.json();
         console.log('Google profile:', profile);
-        setAccount(profile.email);
+
+        // Crear una wallet virtual determinista basada en el email del usuario
+        const privateKey = ethers.id(profile.email);
+        const wallet = new ethers.Wallet(privateKey);
+        const userAddress = wallet.address;
+
+        setAccount(userAddress);
         handleOnboardingClose();
         setNotification({ open: true, message: `Sesión iniciada: ${profile.email}`, severity: 'success' });
-        // Simulación: siempre son nuevos por ahora
+        
         const fullName = profile.name || (profile.given_name ? (profile.given_name + (profile.family_name ? ' ' + profile.family_name : '')) : '');
         navigate('/register', { state: { email: profile.email, name: fullName, picture: profile.picture } });
       }
@@ -443,6 +507,8 @@ function App() {
         onFundingModalOpen={handleFundingModalOpen}
         onConnectGoogle={login}
         onConnectMetaMask={connectWithMetaMask}
+        onViewNFTClick={handleViewNFTClick}
+        tenantPassportData={tenantPassportData}
       />
       <Routes>
         <Route path="/" element={
@@ -750,6 +816,34 @@ function App() {
                 {notification.message}
               </Alert>
             </Snackbar>
+
+            <Modal open={showTenantPassportModal} onClose={() => setShowTenantPassportModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
+                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Tu Tenant Passport</Typography>
+                {tenantPassportData ? (
+                  <Stack spacing={1}>
+                    <Typography variant="body1">
+                      <Typography component="span" fontWeight="bold">Reputación:</Typography> {tenantPassportData.reputation}%
+                    </Typography>
+                    <Typography variant="body1">
+                      <Typography component="span" fontWeight="bold">Pagos a tiempo:</Typography> {tenantPassportData.paymentsMade}
+                    </Typography>
+                    <Typography variant="body1">
+                      <Typography component="span" fontWeight="bold">Pagos no realizados:</Typography> {tenantPassportData.paymentsMissed}
+                    </Typography>
+                    <Typography variant="body1">
+                      <Typography component="span" fontWeight="bold">Saldo pendiente:</Typography> ${tenantPassportData.outstandingBalance.toLocaleString()} MXNB
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                      Token ID: {tenantPassportData.tokenId}
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Typography variant="body1">No se encontró un Tenant Passport para tu wallet.</Typography>
+                )}
+                <Button variant="contained" fullWidth onClick={() => setShowTenantPassportModal(false)} sx={{ mt: 3 }}>Cerrar</Button>
+              </Paper>
+            </Modal>
           </>
         } />
         <Route path="/register" element={<RegisterPage />} />
