@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, TextField, Button, Alert, Avatar, Tabs, Tab, Stack, Chip, MenuItem, FormControl, InputLabel, Select, OutlinedInput } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from './Header';
@@ -45,6 +45,7 @@ export default function RegisterPage() {
     }
     return '';
   });
+  const [lastMatches, setLastMatches] = useState<any>(null);
 
   // Dummy handlers for Header (replace with real logic if needed)
   const handleFundingModalOpen = () => {};
@@ -57,6 +58,12 @@ export default function RegisterPage() {
   };
 
   const handleContinue = () => setTab(1);
+
+  useEffect(() => {
+    if (success && lastMatches) {
+      navigate('/', { state: { matches: lastMatches } });
+    }
+  }, [success, lastMatches, navigate]);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -75,8 +82,7 @@ export default function RegisterPage() {
       const user_id = userId;
       const matchRes = await fetch(process.env.REACT_APP_API + `/matchmaking/match/top?user_id=${user_id}`);
       const matchData = await matchRes.json();
-      // Redirigir a App y pasar los matches por state
-      navigate('/', { state: { matches: matchData } });
+      setLastMatches(matchData);
       return;
     } catch (err: any) {
       setError(err.message || 'Error desconocido');
@@ -110,8 +116,6 @@ export default function RegisterPage() {
       },
     });
   };
-
-  if (success) return <Box p={4}><Typography variant="h5">¡Registro exitoso!</Typography></Box>;
 
   return (
     <>

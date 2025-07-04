@@ -306,7 +306,7 @@ function App() {
   const isMobile = useMediaQuery(customTheme.breakpoints.down('md'));
   const isMobileOnly = useMediaQuery(customTheme.breakpoints.down('sm'));
   const location = useLocation();
-  const matches = location.state?.matches;
+  const [matches, setMatches] = useState<any[] | null>(null);
 
   // Estados de UI
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -539,6 +539,29 @@ function App() {
     scope: 'openid email profile',
   });
 
+  // Al montar, si no hay matches en el state, simula sesión y carga matches
+  useEffect(() => {
+    if (location.state?.matches) {
+      setMatches(location.state.matches);
+    } else {
+      // Simula sesión existente
+      const user_id = '7c74d216-7c65-47e6-b02d-1e6954f39ba7';
+      fetch(process.env.REACT_APP_API + "/matchmaking/match/top?user_id=" + user_id, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data.property_matches)) {
+            setMatches(data.property_matches);
+          } else {
+            setMatches([]);
+          }
+        })
+        .catch(() => setMatches(null));
+    }
+  }, [location.state]);
+
   return (
     <>
       <Header
@@ -726,7 +749,7 @@ function App() {
                       options={{ disableDefaultUI: true, gestureHandling: 'greedy', styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }, { featureType: 'transit', stylers: [{ visibility: 'off' }] }] }}
                       onClick={() => setSelectedListing(null)}
                     >
-                      {(matches || listings).map((listing: any) => (
+                      {(matches ?? []).map((listing: any) => (
                         listing.lat && listing.lng ? (
                           <Marker
                             key={listing.id}
@@ -778,7 +801,7 @@ function App() {
                       PaperProps={{ sx: { borderTopLeftRadius: 16, borderTopRightRadius: 16, bgcolor: 'white', border: '1px solid #e0e0e0', maxHeight: '70vh', p: 2 } }}
                     >
                       <Box sx={{ overflowY: 'auto', maxHeight: '100vh' }}>
-                        {(matches || listings).map((listing: any, index: number) => (
+                        {(matches ?? []).map((listing: any, index: number) => (
                           <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
                               <Avatar src={listing.user.avatar} alt={listing.user.name} sx={{ mr: 1 }} />
@@ -810,15 +833,15 @@ function App() {
                   </>
                 ) : (
                   <Box sx={{ position: 'relative', zIndex: 1, width: { xs: '100%', sm: 400 }, maxWidth: 480, height: { xs: 340, sm: 500, md: '100vh' }, overflowY: 'auto', bgcolor: 'white', border: '1px solid #e0e0e0', borderRadius: 3, p: 2, ml: { sm: 4 }, mt: { xs: 0, sm: 0 } }}>
-                    {(matches || listings).map((listing: any, index: number) => (
+                    {(matches ?? []).map((listing: any, index: number) => (
                       <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
-                          <Avatar src={listing.user.avatar} alt={listing.user.name} sx={{ mr: 1 }} />
-                          <Typography fontWeight={700}>{listing.user.name}</Typography>
+                          <Avatar src="https://randomuser.me/api/portraits/men/1.jpg" alt={listing.owner_user_id} sx={{ mr: 1 }} />
+                          <Typography fontWeight={700}>{listing.owner_user_id}</Typography>
                           <Chip label={listing.date} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
                           <Chip label={`${listing.roommates} ROOMMATE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
                         </Box>
-                        <CardMedia component="img" height="120" image={listing.image} alt={listing.location} sx={{ objectFit: 'cover', borderRadius: 2, m: 2, mb: 0 }} />
+                        <CardMedia component="img" height="120" image="https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80" alt={listing.location} sx={{ objectFit: 'cover', borderRadius: 2, m: 2, mb: 0 }} />
                         <CardContent sx={{ p: 2 }}>
                           <Typography variant="h6" fontWeight={800} gutterBottom>${listing.price.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">/ mo</Typography></Typography>
                           <Typography variant="body2" color="text.secondary">{listing.type} · {listing.bedrooms} Bedrooms · {listing.propertyType}</Typography>
