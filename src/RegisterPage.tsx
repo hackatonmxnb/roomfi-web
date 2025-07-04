@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { Box, Typography, Paper, TextField, Button, Alert, Avatar, Tabs, Tab, Stack, Chip, MenuItem, FormControl, InputLabel, Select, OutlinedInput } from '@mui/material';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Header from './Header';
 import { renderGenderIcon } from './utils/icons';
 import type { SelectChangeEvent } from '@mui/material/Select';
 
 export default function RegisterPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   // Recibe datos de Google: email, name, picture, given_name, family_name
   const { email = '', name = '', picture = '', given_name = '', family_name = '' } = location.state || {};
   const [tab, setTab] = useState(0);
   const [form, setForm] = useState({
-    city: '',
     first_name: given_name || '',
     last_name: family_name || '',
     gender: '',
@@ -29,6 +29,22 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [userId, setUserId] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('roomfi_user_id');
+      if (stored) return stored;
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        const uuid = crypto.randomUUID();
+        localStorage.setItem('roomfi_user_id', uuid);
+        return uuid;
+      } else {
+        const uuid = Math.random().toString(36).substring(2) + Date.now().toString(36);
+        localStorage.setItem('roomfi_user_id', uuid);
+        return uuid;
+      }
+    }
+    return '';
+  });
 
   // Dummy handlers for Header (replace with real logic if needed)
   const handleFundingModalOpen = () => {};
@@ -47,14 +63,21 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
     try {
-      // Enviar todos los datos del usuario
       const res = await fetch(process.env.REACT_APP_API + "/db/new/user" || '', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name, picture, ...form }),
+        body: JSON.stringify({ user_id: userId, "profile_image_url": picture, ...form }),
       });
       if (!res.ok) throw new Error('Error al registrar usuario');
       setSuccess(true);
+      localStorage.removeItem('roomfi_user_id');
+      // Llamar al endpoint de matchmaking
+      const user_id = userId;
+      const matchRes = await fetch(process.env.REACT_APP_API + `/matchmaking/match/top?user_id=${user_id}`);
+      const matchData = await matchRes.json();
+      // Redirigir a App y pasar los matches por state
+      navigate('/', { state: { matches: matchData } });
+      return;
     } catch (err: any) {
       setError(err.message || 'Error desconocido');
     } finally {
@@ -107,7 +130,6 @@ export default function RegisterPage() {
           </Tabs>
           {tab === 0 && (
             <Box>
-              <Typography variant="subtitle2" color="text.secondary" fontWeight={700} mb={1}>RENTER PREFERENCES:</Typography>
               <Stack direction="row" spacing={2} mb={2}>
                 <Chip label="FYI" color="primary" size="small" />
                 <Typography variant="body2" color="text.secondary">
