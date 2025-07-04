@@ -41,7 +41,8 @@ interface TenantPassportData {
   paymentsMade: number;
   paymentsMissed: number;
   outstandingBalance: number;
-  tokenId: number;
+  tokenId: BigInt;
+  mintingWalletAddress?: string; // Nueva propiedad para la dirección de la wallet
 }
 
 const listings = [
@@ -341,6 +342,31 @@ function App() {
   };
   const handleNotificationClose = () => setNotification({ ...notification, open: false });
 
+  const mintNewTenantPassport = async () => {
+    if (!account) {
+      setNotification({ open: true, message: 'Por favor, conecta tu wallet primero para mintear.', severity: 'error' });
+      return;
+    }
+    try {
+      const provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl);
+      const signer = new ethers.Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", provider);
+      const contract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, signer);
+
+      console.log("Minting a new Tenant Passport...");
+      const tx = await contract.mintForSelf();
+      await tx.wait();
+      console.log("Tenant Passport minted successfully!");
+      setNotification({ open: true, message: '¡Tu Tenant Passport se ha minteado exitosamente!', severity: 'success' });
+
+      // Después de mintear, actualizamos la vista del NFT principal
+      await getOrCreateTenantPassport(account);
+
+    } catch (error) {
+      console.error("Error minting new Tenant Passport:", error);
+      setNotification({ open: true, message: 'Error al mintear un nuevo Tenant Passport.', severity: 'error' });
+    }
+  };
+
   const handleViewNFTClick = async () => {
     if (account) {
       await getOrCreateTenantPassport(account);
@@ -372,7 +398,7 @@ function App() {
 
       const balance = await contract.balanceOf(userAddress);
 
-      let finalTokenId;
+      let finalTokenId: BigInt;
 
       if (balance.toString() === '0') {
         console.log("No Tenant Passport found. Minting a new one...");
@@ -392,7 +418,8 @@ function App() {
         paymentsMade: Number(info.paymentsMade),
         paymentsMissed: Number(info.paymentsMissed),
         outstandingBalance: Number(info.outstandingBalance),
-        tokenId: Number(finalTokenId),
+        tokenId: finalTokenId,
+        mintingWalletAddress: userAddress, // Añadir la dirección de la wallet
       };
 
       setTenantPassportData(passportData);
@@ -508,6 +535,7 @@ function App() {
         onConnectGoogle={login}
         onConnectMetaMask={connectWithMetaMask}
         onViewNFTClick={handleViewNFTClick}
+        onMintNFTClick={mintNewTenantPassport} // Pasar la nueva función
         tenantPassportData={tenantPassportData}
       />
       <Routes>
@@ -835,8 +863,13 @@ function App() {
                       <Typography component="span" fontWeight="bold">Saldo pendiente:</Typography> ${tenantPassportData.outstandingBalance.toLocaleString()} MXNB
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                      Token ID: {tenantPassportData.tokenId}
+                      Token ID: {tenantPassportData.tokenId.toString()}
                     </Typography>
+                    {tenantPassportData.mintingWalletAddress && (
+                      <Typography variant="body2" color="text.secondary">
+                        Wallet: {tenantPassportData.mintingWalletAddress.substring(0, 6)}...{tenantPassportData.mintingWalletAddress.substring(tenantPassportData.mintingWalletAddress.length - 4)}
+                      </Typography>
+                    )}
                   </Stack>
                 ) : (
                   <Typography variant="body1">No se encontró un Tenant Passport para tu wallet.</Typography>
