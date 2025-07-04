@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import Portal from '@portal-hq/web'; // CORRECCIÓN: Importación por defecto
 import {
   AppBar, Toolbar, Typography, Button, Container, Box, Paper, Card, CardContent,
   CardMedia, Avatar, Chip, Stack, Grid, useTheme, useMediaQuery, IconButton,
@@ -23,10 +22,11 @@ import GroupIcon from '@mui/icons-material/Group';
 import BedIcon from '@mui/icons-material/Bed';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { useGoogleLogin } from '@react-oauth/google';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import RegisterPage from './RegisterPage';
 import Header from './Header';
 import { TENANT_PASSPORT_ABI, TENANT_PASSPORT_ADDRESS, NETWORK_CONFIG } from './web3/config';
+import Portal from '@portal-hq/web';
 
 
 // CORRECCIÓN: Añadir tipos para window.ethereum para que TypeScript no se queje
@@ -294,9 +294,19 @@ const ERC20_ABI = [
 ];
 const TOKEN_ADDRESS = "0x82B9e52b26A2954E113F94Ff26647754d5a4247D"; // Proxy address
 
+const portal = new Portal({
+  apiKey: process.env.REACT_APP_PORTAL_API_KEY,
+  rpcConfig: {
+    [NETWORK_CONFIG.chainId.toString()]: NETWORK_CONFIG.rpcUrl,
+  },
+  chainId: NETWORK_CONFIG.chainId.toString(),
+});
+
 function App() {
   const isMobile = useMediaQuery(customTheme.breakpoints.down('md'));
   const isMobileOnly = useMediaQuery(customTheme.breakpoints.down('sm'));
+  const location = useLocation();
+  const matches = location.state?.matches;
 
   // Estados de UI
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -311,16 +321,17 @@ function App() {
   const [provider, setProvider] = useState<ethers.JsonRpcProvider | ethers.BrowserProvider | null>(null);
   const [showFundingModal, setShowFundingModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
-  const [notification, setNotification] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+  const [notification, setNotification] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ open: false, message: '', severity: 'success' });
   const [tenantPassportData, setTenantPassportData] = useState<TenantPassportData | null>(null);
   const [showTenantPassportModal, setShowTenantPassportModal] = useState(false);
+  const [isCreatingWallet, setIsCreatingWallet] = useState(false);
 
   // Estados del Mapa
   const mapCenter = { lat: 19.4326, lng: -99.1333 };
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
   });
-  const [selectedListing, setSelectedListing] = useState<typeof listings[0] | null>(null);
+  const [selectedListing, setSelectedListing] = useState<any>(null);
 
   // Handlers UI
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
@@ -451,6 +462,21 @@ function App() {
     setTokenBalance(0);
   };
 
+  // Función para crear wallet MPC con Portal HQ
+  const createPortalWallet = async () => {
+    return new Promise<string>(resolve => {
+      portal.onReady(async () => {
+        const walletExists = await portal.doesWalletExist();
+        if (!walletExists) {
+          await portal.createWallet();
+        } else {
+        }
+        const ethAddress = await portal.getEip155Address();
+        resolve(ethAddress);
+      });
+    });
+  };
+
   const renderAmenityIcon = (amenity: string) => {
     switch (amenity) {
       case 'piscina':
@@ -471,25 +497,39 @@ function App() {
   const login = useGoogleLogin({
     onSuccess: async tokenResponse => {
       if (tokenResponse.access_token) {
-        const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-          headers: {
-            Authorization: `Bearer ${tokenResponse.access_token}`,
-          },
-        });
-        const profile = await res.json();
-        console.log('Google profile:', profile);
+        try {
+          const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: {
+              Authorization: `Bearer ${tokenResponse.access_token}`,
+            },
+          });
+          const profile = await res.json();
+          setIsCreatingWallet(true);
 
-        // Crear una wallet virtual determinista basada en el email del usuario
-        const privateKey = ethers.id(profile.email);
-        const wallet = new ethers.Wallet(privateKey);
-        const userAddress = wallet.address;
+          // Crear wallet MPC con Portal HQ
+          const ethAddress = await createPortalWallet();
+          setAccount(ethAddress);
 
-        setAccount(userAddress);
-        handleOnboardingClose();
-        setNotification({ open: true, message: `Sesión iniciada: ${profile.email}`, severity: 'success' });
-        
-        const fullName = profile.name || (profile.given_name ? (profile.given_name + (profile.family_name ? ' ' + profile.family_name : '')) : '');
-        navigate('/register', { state: { email: profile.email, name: fullName, picture: profile.picture } });
+          setIsCreatingWallet(false);
+          handleOnboardingClose();
+
+          const fullName = profile.name || (profile.given_name ? (profile.given_name + (profile.family_name ? ' ' + profile.family_name : '')) : '');
+          navigate('/register', {
+            state: {
+              email: profile.email,
+              name: fullName,
+              picture: profile.picture,
+              walletAddress: ethAddress
+            }
+          });
+        } catch (error) {
+          setIsCreatingWallet(false);
+          setNotification({
+            open: true,
+            message: 'Error al procesar el login de Google',
+            severity: 'error'
+          });
+        }
       }
     },
     onError: () => {
@@ -509,6 +549,7 @@ function App() {
         onConnectMetaMask={connectWithMetaMask}
         onViewNFTClick={handleViewNFTClick}
         tenantPassportData={tenantPassportData}
+        isCreatingWallet={isCreatingWallet}
       />
       <Routes>
         <Route path="/" element={
@@ -685,7 +726,7 @@ function App() {
                       options={{ disableDefaultUI: true, gestureHandling: 'greedy', styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }, { featureType: 'transit', stylers: [{ visibility: 'off' }] }] }}
                       onClick={() => setSelectedListing(null)}
                     >
-                      {listings.map((listing) => (
+                      {(matches || listings).map((listing: any) => (
                         listing.lat && listing.lng ? (
                           <Marker
                             key={listing.id}
@@ -698,27 +739,27 @@ function App() {
                           />
                         ) : null
                       ))}
-                      {selectedListing && selectedListing.lat && selectedListing.lng && (
+                      {selectedListing && (selectedListing as any).lat && (selectedListing as any).lng && (
                         <InfoWindow
-                          position={{ lat: selectedListing.lat, lng: selectedListing.lng }}
+                          position={{ lat: (selectedListing as any).lat, lng: (selectedListing as any).lng }}
                           onCloseClick={() => setSelectedListing(null)}
                         >
                           <Box sx={{ minWidth: 220, maxWidth: 260 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                              <Avatar src={selectedListing.user.avatar} alt={selectedListing.user.name} sx={{ mr: 1 }} />
-                              <Typography fontWeight={700}>{selectedListing.user.name}</Typography>
-                              <Chip label={selectedListing.date} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
-                              <Chip label={`${selectedListing.roommates} ROOMMATE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
+                              <Avatar src={(selectedListing as any).user?.avatar} alt={(selectedListing as any).user?.name} sx={{ mr: 1 }} />
+                              <Typography fontWeight={700}>{(selectedListing as any).user?.name}</Typography>
+                              <Chip label={(selectedListing as any).date} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
+                              <Chip label={`${(selectedListing as any).roommates} ROOMMATE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
                             </Box>
                             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
-                              <img src={selectedListing.image} alt={selectedListing.location} style={{ width: '100%', borderRadius: 8, maxHeight: 100, objectFit: 'cover' }} />
+                              <img src={(selectedListing as any).image} alt={(selectedListing as any).location} style={{ width: '100%', borderRadius: 8, maxHeight: 100, objectFit: 'cover' }} />
                             </Box>
                             <Typography variant="h6" fontWeight={800} gutterBottom>
-                              ${selectedListing.price.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">/ mo</Typography>
+                              ${(selectedListing as any).price?.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">/ mo</Typography>
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">{selectedListing.type} · {selectedListing.bedrooms} Bedrooms · {selectedListing.propertyType}</Typography>
-                            <Typography variant="body2" color="text.secondary">{selectedListing.available}</Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{selectedListing.location}</Typography>
+                            <Typography variant="body2" color="text.secondary">{(selectedListing as any).type} · {(selectedListing as any).bedrooms} Bedrooms · {(selectedListing as any).propertyType}</Typography>
+                            <Typography variant="body2" color="text.secondary">{(selectedListing as any).available}</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{(selectedListing as any).location}</Typography>
                           </Box>
                         </InfoWindow>
                       )}
@@ -737,7 +778,7 @@ function App() {
                       PaperProps={{ sx: { borderTopLeftRadius: 16, borderTopRightRadius: 16, bgcolor: 'white', border: '1px solid #e0e0e0', maxHeight: '70vh', p: 2 } }}
                     >
                       <Box sx={{ overflowY: 'auto', maxHeight: '100vh' }}>
-                        {listings.map((listing, index) => (
+                        {(matches || listings).map((listing: any, index: number) => (
                           <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
                               <Avatar src={listing.user.avatar} alt={listing.user.name} sx={{ mr: 1 }} />
@@ -753,7 +794,7 @@ function App() {
                               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{listing.location}</Typography>
                               {listing.amenities && listing.amenities.length > 0 && (
                                 <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                                  {listing.amenities.slice(0, 4).map((amenity, idx) => (
+                                  {listing.amenities.slice(0, 4).map((amenity: any, idx: any) => (
                                     <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                       {renderAmenityIcon(amenity)}
                                       <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>{amenity}</Typography>
@@ -769,7 +810,7 @@ function App() {
                   </>
                 ) : (
                   <Box sx={{ position: 'relative', zIndex: 1, width: { xs: '100%', sm: 400 }, maxWidth: 480, height: { xs: 340, sm: 500, md: '100vh' }, overflowY: 'auto', bgcolor: 'white', border: '1px solid #e0e0e0', borderRadius: 3, p: 2, ml: { sm: 4 }, mt: { xs: 0, sm: 0 } }}>
-                    {listings.map((listing, index) => (
+                    {(matches || listings).map((listing: any, index: number) => (
                       <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
                           <Avatar src={listing.user.avatar} alt={listing.user.name} sx={{ mr: 1 }} />
@@ -785,7 +826,7 @@ function App() {
                           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{listing.location}</Typography>
                           {listing.amenities && listing.amenities.length > 0 && (
                             <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                              {listing.amenities.slice(0, 4).map((amenity, idx) => (
+                              {listing.amenities.slice(0, 4).map((amenity: any, idx: any) => (
                                 <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                   {renderAmenityIcon(amenity)}
                                   <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>{amenity}</Typography>

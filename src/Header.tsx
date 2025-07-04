@@ -13,9 +13,10 @@ interface HeaderProps {
   onConnectMetaMask: () => void;
   onViewNFTClick: () => void;
   tenantPassportData: any; // Puedes refinar este tipo si lo deseas
+  isCreatingWallet?: boolean;
 }
 
-export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onViewNFTClick, tenantPassportData }: HeaderProps) {
+export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onViewNFTClick, tenantPassportData, isCreatingWallet }: HeaderProps) {
   const [drawerMenuOpen, setDrawerMenuOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const isMobile = window.innerWidth < 900;
@@ -134,9 +135,10 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
               />
             }
             onClick={() => { onConnectGoogle(); handleCloseOnboarding(); }}
+            disabled={isCreatingWallet}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
-            Iniciar sesión con Google
+            {isCreatingWallet ? 'Creando wallet...' : 'Iniciar sesión con Google'}
           </Button>
         </Box>
       </Modal>
