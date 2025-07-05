@@ -34,6 +34,7 @@ import {
   NETWORK_CONFIG
 } from './web3/config';
 import Portal from '@portal-hq/web';
+import { renderAmenityIcon, getDaysAgo } from './utils/icons';
 
 
 // CORRECCIÓN: Añadir tipos para window.ethereum para que TypeScript no se queje
@@ -554,21 +555,6 @@ function App() {
     });
   };
 
-  const renderAmenityIcon = (amenity: string) => {
-    switch (amenity) {
-      case 'piscina':
-        return <PoolIcon sx={{ fontSize: 16, color: 'primary.main' }} />;
-      case 'gimnasio':
-        return <FitnessCenterIcon sx={{ fontSize: 16, color: 'primary.main' }} />;
-      case 'estacionamiento':
-        return <LocalParkingIcon sx={{ fontSize: 16, color: 'primary.main' }} />;
-      case 'pet friendly':
-        return <PetsIcon sx={{ fontSize: 16, color: 'primary.main' }} />;
-      default:
-        return null;
-    }
-  };
-
   const navigate = useNavigate();
 
   const login = useGoogleLogin({
@@ -715,7 +701,7 @@ function App() {
                         px: 2.5
                       }}
                     >
-                      Publicar anuncio
+                      Buscar roomies
                     </Button>
                   </Box>
                 </Grid>
@@ -851,7 +837,7 @@ function App() {
                               <Avatar src={(selectedListing as any).user?.avatar} alt={(selectedListing as any).user?.name} sx={{ mr: 1 }} />
                               <Typography fontWeight={700}>{(selectedListing as any).user?.name}</Typography>
                               <Chip label={(selectedListing as any).date} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
-                              <Chip label={`${(selectedListing as any).roommates} ROOMMATE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
+                              <Chip label={`1 ROOMIE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
                             </Box>
                             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
                               <img src={(selectedListing as any).image} alt={(selectedListing as any).location} style={{ width: '100%', borderRadius: 8, maxHeight: 100, objectFit: 'cover' }} />
@@ -883,23 +869,21 @@ function App() {
                         {(matches ?? []).map((listing: any, index: number) => (
                           <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
-                              <Avatar src={listing.user.avatar} alt={listing.user.name} sx={{ mr: 1 }} />
-                              <Typography fontWeight={700}>{listing.user.name}</Typography>
-                              <Chip label={listing.date} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
-                              <Chip label={`${listing.roommates} ROOMMATE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
+                              <Avatar src={listing.user?.avatar} alt={listing.user?.name} sx={{ mr: 1 }} />
+                              <Typography fontWeight={700}>Sara</Typography>
+                              <Chip label={getDaysAgo(listing.created_at)} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
+                              <Chip label={`1 ROOMIE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
                             </Box>
-                            <CardMedia component="img" height="120" image={listing.image} alt={listing.location} sx={{ objectFit: 'cover', borderRadius: 2, m: 2, mb: 0 }} />
+                            <CardMedia component="img" height="120" image="https://images.unsplash.com/photo-1571896349842-33c89424de2d" alt={listing.location} sx={{ objectFit: 'cover', borderRadius: 2, m: 2, mb: 0 }} />
                             <CardContent sx={{ p: 2 }}>
                               <Typography variant="h6" fontWeight={800} gutterBottom>${listing.price.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">/ mo</Typography></Typography>
-                              <Typography variant="body2" color="text.secondary">{listing.type} · {listing.bedrooms} Bedrooms · {listing.propertyType}</Typography>
                               <Typography variant="body2" color="text.secondary">{listing.available}</Typography>
-                              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{listing.location}</Typography>
+                              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{listing.address}</Typography>
                               {listing.amenities && listing.amenities.length > 0 && (
                                 <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
                                   {listing.amenities.slice(0, 4).map((amenity: any, idx: any) => (
                                     <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                       {renderAmenityIcon(amenity)}
-                                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>{amenity}</Typography>
                                     </Box>
                                   ))}
                                 </Box>
@@ -915,23 +899,24 @@ function App() {
                     {(matches ?? []).map((listing: any, index: number) => (
                       <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
-                          <Avatar src="https://randomuser.me/api/portraits/men/1.jpg" alt={listing.owner_user_id} sx={{ mr: 1 }} />
-                          <Typography fontWeight={700}>{listing.owner_user_id}</Typography>
-                          <Chip label={listing.date} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
-                          <Chip label={`${listing.roommates} ROOMMATE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
+                          <Avatar src={listing.user?.avatar || ''} alt={listing.user?.name || ''} sx={{ mr: 1 }} />
+                          <Typography fontWeight={700}>John</Typography>
+                          <Box sx={{ flexGrow: 1 }} />
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Chip label={getDaysAgo(listing.created_at)} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
+                            <Chip label={`1 ROOMIE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
+                          </Box>
                         </Box>
-                        <CardMedia component="img" height="120" image="https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80" alt={listing.location} sx={{ objectFit: 'cover', borderRadius: 2, m: 2, mb: 0 }} />
+                        <CardMedia component="img" height="120" image="https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80" alt={listing.address} sx={{ objectFit: 'cover', borderRadius: 2, m: 2, mb: 0 }} />
                         <CardContent sx={{ p: 2 }}>
-                          <Typography variant="h6" fontWeight={800} gutterBottom>${listing.price.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">/ mo</Typography></Typography>
-                          <Typography variant="body2" color="text.secondary">{listing.type} · {listing.bedrooms} Bedrooms · {listing.propertyType}</Typography>
+                          <Typography variant="h6" fontWeight={800} gutterBottom>${listing.price.toLocaleString()}</Typography>
                           <Typography variant="body2" color="text.secondary">{listing.available}</Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{listing.location}</Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{listing.address}</Typography>
                           {listing.amenities && listing.amenities.length > 0 && (
                             <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
                               {listing.amenities.slice(0, 4).map((amenity: any, idx: any) => (
                                 <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                   {renderAmenityIcon(amenity)}
-                                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>{amenity}</Typography>
                                 </Box>
                               ))}
                             </Box>

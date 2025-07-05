@@ -18,7 +18,7 @@ interface HeaderProps {
   isCreatingWallet?: boolean;
 }
 
-export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onViewNFTClick, onMintNFTClick, onViewMyPropertiesClick, tenantPassportData, isCreatingWallet }: HeaderProps) {
+export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onViewNFTClick, tenantPassportData, isCreatingWallet }: HeaderProps) {
   const [drawerMenuOpen, setDrawerMenuOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const isMobile = window.innerWidth < 900;
@@ -94,9 +94,6 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
                   <Button variant="contained" size="small" onClick={onFundingModalOpen}>Añadir Fondos</Button>
                   {account && (
                     <Button variant="outlined" size="small" onClick={onViewNFTClick}>Ver mi NFT</Button>
-                  )}
-                  {account && (
-                    <Button variant="outlined" size="small" onClick={onMintNFTClick}>Mintear nuevo NFT</Button>
                   )}
                 </Paper>
               ) : (
