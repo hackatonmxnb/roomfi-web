@@ -45,11 +45,6 @@ contract PropertyInterestPool {
     event InterestWithdrawn(uint256 indexed propertyId, address indexed tenant, uint256 depositAmount);
     event PoolCanceled(uint256 indexed propertyId);
 
-    /**
-     * @dev Modifier to ensure a function is called only when the property is in a specific state.
-     * @param _propertyId The ID of the property to check.
-     * @param _state The required state.
-     */
     modifier onlyState(uint256 _propertyId, State _state) {
         require(properties[_propertyId].state == _state, "Property not in correct state");
         _;
@@ -121,8 +116,7 @@ contract PropertyInterestPool {
     }
 
     /**
-     * @dev Allows a tenant to fund their share of the rent.
-     * @param _propertyId The ID of the property.
+     * @dev Permite hjacer el fund rate para todos
      */
     function fundRent(uint256 _propertyId) external onlyState(_propertyId, State.FUNDING) {
         require(_isInterested(_propertyId, msg.sender), "Not an interested tenant");
@@ -141,8 +135,7 @@ contract PropertyInterestPool {
     }
 
     /**
-     * @dev Allows the landlord to claim the full rent amount once it's funded.
-     * @param _propertyId The ID of the property.
+     * @dev Permite  poder reclamar el alquiler una vez que se ha financiado completamente.
      */
     function claimLease(uint256 _propertyId) external onlyLandlord(_propertyId) {
         Property storage property = properties[_propertyId];
@@ -157,10 +150,7 @@ contract PropertyInterestPool {
         emit LeaseClaimed(_propertyId, property.landlord, property.totalRentAmount);
     }
 
-    /**
-     * @dev Allows the landlord to cancel a property pool before it is leased.
-     * @param _propertyId The ID of the property to cancel.
-     */
+    //Cancelacion de la poool
     function cancelPool(uint256 _propertyId) external onlyLandlord(_propertyId) {
         State currentState = properties[_propertyId].state;
         require(currentState == State.OPEN || currentState == State.FUNDING, "Pool can only be canceled if OPEN or FUNDING");
@@ -170,8 +160,7 @@ contract PropertyInterestPool {
     }
 
     /**
-     * @dev Allows a tenant to withdraw their seriousness deposit if the pool is canceled.
-     * @param _propertyId The ID of the property.
+     * @dev Permite retirar el dinero
      */
     function withdrawInterest(uint256 _propertyId) external onlyState(_propertyId, State.CANCELED) {
         Property storage property = properties[_propertyId];
@@ -188,10 +177,7 @@ contract PropertyInterestPool {
     }
 
     /**
-     * @dev Internal function to check if a user is in the interested tenants list.
-     * @param _propertyId The ID of the property.
-     * @param _tenant The address of the user to check.
-     * @return bool True if the user is an interested tenant, false otherwise.
+     * @dev IFunction para verificar si el usuario esta interesado
      */
     function _isInterested(uint256 _propertyId, address _tenant) internal view returns (bool) {
         address[] memory tenants = properties[_propertyId].interestedTenants;
