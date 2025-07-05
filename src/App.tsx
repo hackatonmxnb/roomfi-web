@@ -23,9 +23,16 @@ import BedIcon from '@mui/icons-material/Bed';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { useGoogleLogin } from '@react-oauth/google';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import CreatePoolPage from './CreatePoolPage';
 import RegisterPage from './RegisterPage';
 import Header from './Header';
-import { TENANT_PASSPORT_ABI, TENANT_PASSPORT_ADDRESS, NETWORK_CONFIG } from './web3/config';
+import {
+  TENANT_PASSPORT_ABI,
+  TENANT_PASSPORT_ADDRESS,
+  PROPERTY_INTEREST_POOL_ADDRESS,
+  PROPERTY_INTEREST_POOL_ABI,
+  NETWORK_CONFIG
+} from './web3/config';
 import Portal from '@portal-hq/web';
 
 
@@ -343,6 +350,33 @@ function App() {
     setAmenidades(typeof value === 'string' ? value.split(',') : value);
   };
 
+  const [showMyPropertiesModal, setShowMyPropertiesModal] = useState(false);
+  const [myProperties, setMyProperties] = useState<any[]>([]);
+
+  const handleViewMyProperties = async () => {
+    if (!account) {
+      setNotification({ open: true, message: 'Por favor, conecta tu wallet primero.', severity: 'error' });
+      return;
+    }
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, provider);
+      const count = await contract.propertyCounter();
+      const properties = [];
+      for (let i = 1; i <= count; i++) {
+        const p = await contract.properties(i);
+        if (p.landlord.toLowerCase() === account.toLowerCase()) {
+          properties.push({ id: i, ...p });
+        }
+      }
+      setMyProperties(properties);
+      setShowMyPropertiesModal(true);
+    } catch (error) {
+      console.error("Error fetching properties:", error);
+      setNotification({ open: true, message: 'Error al obtener tus propiedades.', severity: 'error' });
+    }
+  };
+
   // Handlers Web3
   const handleOnboardingOpen = () => setShowOnboarding(true);
   const handleOnboardingClose = () => setShowOnboarding(false);
@@ -402,35 +436,51 @@ function App() {
 
   const getOrCreateTenantPassport = async (userAddress: string) => {
     try {
+      // Usamos un proveedor general para leer datos
       const provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl);
-      // IMPORTANTE: Reemplaza con una clave privada de tu instancia de Anvil
-      const signer = new ethers.Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", provider);
-      const contract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, signer);
+      const readOnlyContract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, provider);
 
-      const balance = await contract.balanceOf(userAddress);
+      const balance = await readOnlyContract.balanceOf(userAddress);
 
       let finalTokenId: BigInt;
 
       if (balance.toString() === '0') {
-        console.log("No Tenant Passport found. Minting a new one...");
-        const tx = await contract.mintForSelf();
+        console.log("No Tenant Passport found. Minting a new one for the connected user...");
+        
+        // Para escribir (mintear), necesitamos el signer del usuario
+        if (!window.ethereum) {
+          throw new Error("MetaMask is not installed.");
+        }
+        const userProvider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await userProvider.getSigner();
+        const contractWithSigner = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, signer);
+
+        const tx = await contractWithSigner.mintForSelf();
         await tx.wait();
+        
         console.log("Tenant Passport minted successfully!");
         setNotification({ open: true, message: '¡Tu Tenant Passport se ha creado!', severity: 'success' });
-        finalTokenId = BigInt(userAddress);
+        
+        // El tokenId se puede derivar o necesitarías obtenerlo del evento de minteo.
+        // Por ahora, asumimos que el contrato lo asigna de una manera predecible si es el caso,
+        // o lo ideal sería capturar el evento 'Transfer' para obtener el ID.
+        // Para este ejemplo, si el contrato usa el balance para asignar IDs, esto podría funcionar:
+        const newBalance = await readOnlyContract.balanceOf(userAddress);
+        finalTokenId = await readOnlyContract.tokenOfOwnerByIndex(userAddress, newBalance - 1);
+
       } else {
         console.log("Tenant Passport already exists.");
-        finalTokenId = BigInt(userAddress);
+        finalTokenId = await readOnlyContract.tokenOfOwnerByIndex(userAddress, 0);
       }
 
-      const info = await contract.getTenantInfo(finalTokenId);
+      const info = await readOnlyContract.getTenantInfo(finalTokenId);
       const passportData = {
         reputation: Number(info.reputation),
         paymentsMade: Number(info.paymentsMade),
         paymentsMissed: Number(info.paymentsMissed),
         outstandingBalance: Number(info.outstandingBalance),
         tokenId: finalTokenId,
-        mintingWalletAddress: userAddress, // Añadir la dirección de la wallet
+        mintingWalletAddress: userAddress,
       };
 
       setTenantPassportData(passportData);
@@ -599,6 +649,7 @@ function App() {
         onConnectMetaMask={connectWithMetaMask}
         onViewNFTClick={handleViewNFTClick}
         onMintNFTClick={mintNewTenantPassport} // Pasar la nueva función
+        onViewMyPropertiesClick={handleViewMyProperties}
         tenantPassportData={tenantPassportData}
         isCreatingWallet={isCreatingWallet}
       />
@@ -909,6 +960,38 @@ function App() {
               </Alert>
             </Snackbar>
 
+            <Modal open={showMyPropertiesModal} onClose={() => setShowMyPropertiesModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 600, width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
+                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Mis Propiedades Creadas</Typography>
+                {myProperties.length > 0 ? (
+                  <Stack spacing={2}>
+                    {myProperties.map(prop => (
+                      <Paper key={prop.id} variant="outlined" sx={{ p: 2 }}>
+                        <Typography variant="body1">
+                          <Typography component="span" fontWeight="bold">ID de Propiedad:</Typography> {prop.id.toString()}
+                        </Typography>
+                        <Typography variant="body1">
+                          <Typography component="span" fontWeight="bold">Renta Total:</Typography> {ethers.formatUnits(prop.totalRentAmount, 18)} MXNBT
+                        </Typography>
+                        <Typography variant="body1">
+                          <Typography component="span" fontWeight="bold">Estado:</Typography> {prop.state === 0 ? 'Abierto' : prop.state === 1 ? 'Fondeando' : prop.state === 2 ? 'Rentado' : 'Cancelado'}
+                        </Typography>
+                         <Typography variant="body1">
+                          <Typography component="span" fontWeight="bold">Inquilinos interesados:</Typography> {prop.interestedTenants ? prop.interestedTenants.length : 0} / {prop.requiredTenantCount.toString()}
+                        </Typography>
+                        <Typography variant="body1">
+                          <Typography component="span" fontWeight="bold">Monto fondeado:</Typography> {ethers.formatUnits(prop.amountPooledForRent, 18)} / {ethers.formatUnits(prop.totalRentAmount, 18)} MXNBT
+                        </Typography>
+                      </Paper>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Typography variant="body1">No has creado ninguna propiedad aún.</Typography>
+                )}
+                <Button variant="contained" fullWidth onClick={() => setShowMyPropertiesModal(false)} sx={{ mt: 3 }}>Cerrar</Button>
+              </Paper>
+            </Modal>
+
             <Modal open={showTenantPassportModal} onClose={() => setShowTenantPassportModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
                 <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Tu Tenant Passport</Typography>
@@ -944,6 +1027,7 @@ function App() {
           </>
         } />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/create-pool" element={<CreatePoolPage />} />
       </Routes>
     </>
   );

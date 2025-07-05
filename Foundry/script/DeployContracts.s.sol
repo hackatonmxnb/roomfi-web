@@ -5,15 +5,17 @@ import {Script, console} from "forge-std/Script.sol";
 import {RentalAgreement} from "../src/RentalAgreement.sol";
 import {TenantPassport} from "../src/tokens/TenantPassport.sol";
 import {MXNBT} from "../src/tokens/MXNBT.sol";
+import {PropertyInterestPool} from "../src/PropertyInterestPool.sol";
 
 contract DeployContracts is Script {
-    function run() external returns (address, address, address) {
+    function run() external returns (address, address, address, address) {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
         // --- Deployments ---
         MXNBT mxbntToken = new MXNBT();
         TenantPassport tenantPassport = new TenantPassport();
+        PropertyInterestPool propertyInterestPool = new PropertyInterestPool(address(mxbntToken));
 
         // --- Configuration ---
         address landlord = 0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf;
@@ -47,7 +49,8 @@ contract DeployContracts is Script {
         console.log("MXNBT deployed at:", address(mxbntToken));
         console.log("TenantPassport deployed at:", address(tenantPassport));
         console.log("RentalAgreement deployed at:", address(rentalAgreement));
+        console.log("PropertyInterestPool deployed at:", address(propertyInterestPool));
 
-        return (address(mxbntToken), address(tenantPassport), address(rentalAgreement));
+        return (address(mxbntToken), address(tenantPassport), address(rentalAgreement), address(propertyInterestPool));
     }
 }
