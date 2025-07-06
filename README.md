@@ -1,46 +1,76 @@
-# Getting Started with Create React App
+# RoomFi
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+RoomFi is a Web3 platform to find roommates and share a home in a secure, transparent, and trustworthy way. It leverages blockchain technology to manage identities, reputations, and payments in a decentralized manner.
 
-## Available Scripts
+## Main Features
 
-In the project directory, you can run:
+- **Search for rooms and roommates** with advanced filters.
+- **Tenant identity and reputation** via NFT (Tenant Passport).
+- **Property management** and rental agreements on blockchain.
+- **Payments and pooling** with MXNBT tokens.
+- **Google and MetaMask integration** for onboarding and login.
+- **Interactive map** to visualize properties.
 
-### `npm start`
+## Technologies Used
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **React** + **TypeScript** (frontend)
+- **Material UI** (UI/UX)
+- **ethers.js** (Web3)
+- **@portal-hq/web** (MPC wallets)
+- **Google Maps API**
+- **Solidity** (smart contracts in `Foundry/`)
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Installation
 
-### `npm test`
+1. Clone the repository:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+   ```bash
+   git clone https://github.com/youruser/roomfi.git
+   cd roomfi
+   ```
 
-### `npm run build`
+2. Install dependencies:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+   ```bash
+   npm install
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+3. Create a `.env` file with the following variables:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+   ```env
+   REACT_APP_GOOGLE_MAPS_API_KEY=your_api_key
+   REACT_APP_PORTAL_API_KEY=your_portal_api_key
+   REACT_APP_API=https://api.your-backend.com
+   ```
 
-### `npm run eject`
+4. Run the application:
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+   ```bash
+   npm start
+   ```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+The app will be available at [http://localhost:3000](http://localhost:3000).
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## Project Structure
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+- `src/` — React frontend
+- `Foundry/` — Solidity smart contracts and scripts
+- `public/` — Static assets
 
-## Learn More
+## Useful Scripts
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- `npm start` — Start the frontend in development mode
+- `npm run build` — Build the app for production
+- `npm test` — Run tests
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Smart Contracts
+
+The contracts are located in `Foundry/src/` and can be deployed using Foundry (`forge`).
+
+## Contributing
+
+Pull requests and suggestions are welcome! Please open an issue to discuss major changes before submitting a PR.
+
+## License
+
+MIT
