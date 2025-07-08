@@ -18,7 +18,7 @@ interface HeaderProps {
   isCreatingWallet?: boolean;
 }
 
-export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onViewNFTClick, tenantPassportData, isCreatingWallet }: HeaderProps) {
+export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onViewNFTClick, onMintNFTClick, onViewMyPropertiesClick, tenantPassportData, isCreatingWallet }: HeaderProps) {
   const [drawerMenuOpen, setDrawerMenuOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const isMobile = window.innerWidth < 900;
@@ -41,11 +41,17 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
           </Box>
           {!isMobile && (
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexGrow: 1 }}>
-              <Button component={RouterLink} to="/create-pool" sx={{ color: 'primary.main', fontWeight: 600 }}>Crear Pool</Button>
-<Button onClick={onViewMyPropertiesClick} sx={{ color: 'primary.main', fontWeight: 600 }}>Mis Propiedades</Button>
-<Button sx={{ color: 'primary.main', fontWeight: 600 }}>Como funciona</Button>
-<Button sx={{ color: 'primary.main', fontWeight: 600 }}>Verifica roomie</Button>
-<Button sx={{ color: 'primary.main', fontWeight: 600 }}>Para empresas</Button>
+              {/* Botones que solo aparecen si la wallet está conectada */}
+              {account && (
+                <>
+                  <Button component={RouterLink} to="/create-pool" sx={{ color: 'primary.main', fontWeight: 600 }}>Crear Pool</Button>
+                  <Button onClick={onViewMyPropertiesClick} sx={{ color: 'primary.main', fontWeight: 600 }}>Mis Propiedades</Button>
+                </>
+              )}
+              {/* Botones que siempre son visibles en desktop */}
+              <Button sx={{ color: 'primary.main', fontWeight: 600 }}>Como funciona</Button>
+              <Button sx={{ color: 'primary.main', fontWeight: 600 }}>Verifica roomie</Button>
+              <Button sx={{ color: 'primary.main', fontWeight: 600 }}>Para empresas</Button>
             </Box>
           )}
           {isMobile && <Box sx={{ flexGrow: 1 }} />}

@@ -4,6 +4,12 @@ pragma solidity ^0.8.20;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+// Interfaz para interactuar con TenantPassport
+interface ITenantPassport {
+    function incrementPropertiesOwned(uint256 tokenId) external;
+}
+
+
 /**
  * @title PropertyInterestPool
  * @dev Manejamos los pool de liquidez dentro de este contrato, para personas serias dentro de la propiedad.
@@ -30,6 +36,7 @@ contract PropertyInterestPool {
     }
 
     IERC20 public mxnbtToken;
+    ITenantPassport public tenantPassport; // NUEVO: Instancia del contrato TenantPassport
 
     /// @dev Mapeando la infrastructura de propiedades.
     mapping(uint256 => Property) public properties;
@@ -50,29 +57,18 @@ contract PropertyInterestPool {
         _;
     }
 
-    /**
-     * @dev Modifier to ensure a function is called only by the landlord of the property.
-     * @param _propertyId The ID of the property to check.
-     */
     modifier onlyLandlord(uint256 _propertyId) {
         require(properties[_propertyId].landlord == msg.sender, "Only landlord can call this");
         _;
     }
 
-    /**
-     * @dev Sets the address of the MXNBT token.
-     * @param _mxnbtTokenAddress The address of the ERC20 token contract.
-     */
-    constructor(address _mxnbtTokenAddress) {
+    // ACTUALIZADO: El constructor ahora también acepta la dirección del TenantPassport
+    constructor(address _mxnbtTokenAddress, address _tenantPassportAddress) {
         mxnbtToken = IERC20(_mxnbtTokenAddress);
+        tenantPassport = ITenantPassport(_tenantPassportAddress);
     }
 
-    /**
-     * @dev Creates a new property interest pool.
-     * @param _totalRent The total monthly rent for the property.
-     * @param _seriousnessDeposit The deposit required from each interested tenant.
-     * @param _tenantCount The number of tenants required to fund the rent.
-     */
+    // ACTUALIZADO: Ahora llama al contrato TenantPassport para actualizar el historial
     function createPropertyPool(uint256 _totalRent, uint256 _seriousnessDeposit, uint256 _tenantCount) external {
         require(_tenantCount > 0, "Tenant count must be greater than 0");
         require(_totalRent % _tenantCount == 0, "Rent must be divisible by tenant count");
@@ -87,24 +83,22 @@ contract PropertyInterestPool {
         newProperty.requiredTenantCount = _tenantCount;
         newProperty.state = State.OPEN;
 
+        // NUEVO: Incrementar el contador de propiedades en el NFT del landlord
+        uint256 landlordTokenId = uint256(uint160(msg.sender));
+        tenantPassport.incrementPropertiesOwned(landlordTokenId);
+
         emit PropertyCreated(propertyId, msg.sender, _totalRent);
     }
 
-    /**
-     * @dev Allows a user to express interest in a property by paying a seriousness deposit.
-     * @param _propertyId The ID of the property.
-     */
     function expressInterest(uint256 _propertyId) external onlyState(_propertyId, State.OPEN) {
         require(propertyCounter >= _propertyId && _propertyId > 0, "Property does not exist");
         require(!_isInterested(_propertyId, msg.sender), "Already expressed interest");
 
         Property storage property = properties[_propertyId];
         
-        // Effects
         property.tenantDeposits[msg.sender] = property.seriousnessDeposit;
         property.interestedTenants.push(msg.sender);
 
-        // Interaction
         mxnbtToken.safeTransferFrom(msg.sender, address(this), property.seriousnessDeposit);
 
         emit InterestExpressed(_propertyId, msg.sender, property.seriousnessDeposit);
@@ -115,9 +109,6 @@ contract PropertyInterestPool {
         }
     }
 
-    /**
-     * @dev Permite hjacer el fund rate para todos
-     */
     function fundRent(uint256 _propertyId) external onlyState(_propertyId, State.FUNDING) {
         require(_isInterested(_propertyId, msg.sender), "Not an interested tenant");
 
@@ -125,32 +116,24 @@ contract PropertyInterestPool {
         uint256 rentShare = property.totalRentAmount / property.requiredTenantCount;
         uint256 amountToPay = rentShare - property.tenantDeposits[msg.sender];
 
-        // Effects
         property.amountPooledForRent += rentShare;
 
-        // Interaction
         mxnbtToken.safeTransferFrom(msg.sender, address(this), amountToPay);
 
         emit RentFunded(_propertyId, msg.sender, rentShare);
     }
 
-    /**
-     * @dev Permite  poder reclamar el alquiler una vez que se ha financiado completamente.
-     */
     function claimLease(uint256 _propertyId) external onlyLandlord(_propertyId) {
         Property storage property = properties[_propertyId];
         require(property.amountPooledForRent == property.totalRentAmount, "Rent not fully funded");
 
-        // Effects
         property.state = State.LEASED;
 
-        // Interaction
         mxnbtToken.safeTransfer(property.landlord, property.totalRentAmount);
 
         emit LeaseClaimed(_propertyId, property.landlord, property.totalRentAmount);
     }
 
-    //Cancelacion de la poool
     function cancelPool(uint256 _propertyId) external onlyLandlord(_propertyId) {
         State currentState = properties[_propertyId].state;
         require(currentState == State.OPEN || currentState == State.FUNDING, "Pool can only be canceled if OPEN or FUNDING");
@@ -159,26 +142,18 @@ contract PropertyInterestPool {
         emit PoolCanceled(_propertyId);
     }
 
-    /**
-     * @dev Permite retirar el dinero
-     */
     function withdrawInterest(uint256 _propertyId) external onlyState(_propertyId, State.CANCELED) {
         Property storage property = properties[_propertyId];
         uint256 depositAmount = property.tenantDeposits[msg.sender];
         require(depositAmount > 0, "No deposit to withdraw");
 
-        // Effects
         property.tenantDeposits[msg.sender] = 0;
 
-        // Interaction
         mxnbtToken.safeTransfer(msg.sender, depositAmount);
 
         emit InterestWithdrawn(_propertyId, msg.sender, depositAmount);
     }
 
-    /**
-     * @dev IFunction para verificar si el usuario esta interesado
-     */
     function _isInterested(uint256 _propertyId, address _tenant) internal view returns (bool) {
         address[] memory tenants = properties[_propertyId].interestedTenants;
         for (uint i = 0; i < tenants.length; i++) {
@@ -187,5 +162,23 @@ contract PropertyInterestPool {
             }
         }
         return false;
+    }
+
+    // NUEVA FUNCIÓN: Devuelve los detalles de la propiedad sin el mapping, para ser compatible con el ABI.
+    function getPropertyInfo(uint256 _propertyId) 
+        public 
+        view 
+        returns (address, uint256, uint256, uint256, uint256, address[] memory, State)
+    {
+        Property storage p = properties[_propertyId];
+        return (
+            p.landlord,
+            p.totalRentAmount,
+            p.seriousnessDeposit,
+            p.requiredTenantCount,
+            p.amountPooledForRent,
+            p.interestedTenants,
+            p.state
+        );
     }
 }

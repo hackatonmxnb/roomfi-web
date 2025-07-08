@@ -49,6 +49,7 @@ interface TenantPassportData {
   paymentsMade: number;
   paymentsMissed: number;
   outstandingBalance: number;
+  propertiesOwned: number; // Nuevo campo
   tokenId: BigInt;
   mintingWalletAddress?: string; // Nueva propiedad para la dirección de la wallet
 }
@@ -365,9 +366,18 @@ function App() {
       const count = await contract.propertyCounter();
       const properties = [];
       for (let i = 1; i <= count; i++) {
-        const p = await contract.properties(i);
-        if (p.landlord.toLowerCase() === account.toLowerCase()) {
-          properties.push({ id: i, ...p });
+        const p = await contract.getPropertyInfo(i); // Usar la nueva función
+        if (p[0].toLowerCase() === account.toLowerCase()) { // p[0] es el landlord
+          properties.push({
+            id: i,
+            landlord: p[0],
+            totalRentAmount: p[1],
+            seriousnessDeposit: p[2],
+            requiredTenantCount: p[3],
+            amountPooledForRent: p[4],
+            interestedTenants: p[5],
+            state: p[6],
+          });
         }
       }
       setMyProperties(properties);
@@ -480,6 +490,7 @@ function App() {
         paymentsMade: Number(info.paymentsMade),
         paymentsMissed: Number(info.paymentsMissed),
         outstandingBalance: Number(info.outstandingBalance),
+        propertiesOwned: Number(info.propertiesOwned), // Nuevo campo
         tokenId: finalTokenId,
         mintingWalletAddress: userAddress,
       };
@@ -992,6 +1003,9 @@ function App() {
                       <Typography component="span" fontWeight="bold">Pagos no realizados:</Typography> {tenantPassportData.paymentsMissed}
                     </Typography>
                     <Typography variant="body1">
+                      <Typography component="span" fontWeight="bold">Propiedades Poseídas:</Typography> {tenantPassportData.propertiesOwned}
+                    </Typography>
+                    <Typography variant="body1">
                       <Typography component="span" fontWeight="bold">Saldo pendiente:</Typography> ${tenantPassportData.outstandingBalance.toLocaleString()} MXNB
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
@@ -1012,7 +1026,7 @@ function App() {
           </>
         } />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/create-pool" element={<CreatePoolPage />} />
+        <Route path="/create-pool" element={<CreatePoolPage account={account} />} />
       </Routes>
     </>
   );

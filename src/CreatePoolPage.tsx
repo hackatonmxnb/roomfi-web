@@ -9,7 +9,11 @@ import {
     MXNBT_ABI
 } from './web3/config';
 
-export default function CreatePoolPage() {
+interface CreatePoolPageProps {
+  account: string | null;
+}
+
+export default function CreatePoolPage({ account }: CreatePoolPageProps) {
     const [form, setForm] = useState({
         totalRent: '',
         seriousnessDeposit: '',
@@ -19,6 +23,12 @@ export default function CreatePoolPage() {
     const [error, setError] = useState('');
     const [statusMessage, setStatusMessage] = useState('');
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!account) {
+            navigate('/');
+        }
+    }, [account, navigate]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -46,14 +56,18 @@ export default function CreatePoolPage() {
 
             const { totalRent, seriousnessDeposit, tenantCount } = form;
             
+            // Validación de la divisibilidad de la renta
+            if (Number(tenantCount) <= 0) {
+                throw new Error("El número de inquilinos debe ser mayor que 0.");
+            }
+            if (Number(totalRent) % Number(tenantCount) !== 0) {
+                throw new Error("La renta total debe ser divisible por el número de inquilinos.");
+            }
+
             const totalRentWei = ethers.parseUnits(totalRent, 18);
             const seriousnessDepositWei = ethers.parseUnits(seriousnessDeposit, 18);
 
             const tokenContract = new ethers.Contract(MXNBT_ADDRESS, MXNBT_ABI, signer);
-            
-            setStatusMessage('Minteando tokens de prueba para la demostración...');
-            const mintTx = await tokenContract.mint(signer.address, ethers.parseUnits("10000", 18));
-            await mintTx.wait();
             
             setStatusMessage('Aprobando el contrato para gestionar tu depósito...');
             const approveTx = await tokenContract.approve(PROPERTY_INTEREST_POOL_ADDRESS, seriousnessDepositWei);

@@ -15,9 +15,11 @@ contract DeployContracts is Script {
         // --- Deployments ---
         MXNBT mxbntToken = new MXNBT();
         TenantPassport tenantPassport = new TenantPassport();
-        PropertyInterestPool propertyInterestPool = new PropertyInterestPool(address(mxbntToken));
+        PropertyInterestPool propertyInterestPool = new PropertyInterestPool(address(mxbntToken), address(tenantPassport));
 
         // --- Configuration ---
+        // Permitir que el PropertyInterestPool llame a funciones en TenantPassport
+        tenantPassport.setPropertyInterestPoolAddress(address(propertyInterestPool));
         address landlord = 0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf;
         address[] memory tenants = new address[](2);
         tenants[0] = 0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF;

@@ -11,13 +11,20 @@ contract TenantPassport is ERC721Enumerable, Ownable {
         uint256 paymentsMade;
         uint256 paymentsMissed;
         uint256 outstandingBalance;
+        uint256 propertiesOwned; // NUEVO: Contador de propiedades
     }
 
     mapping(uint256 => TenantInfo) public tenantInfo;
     address public rentalAgreementAddress;
+    address public propertyInterestPoolAddress; // NUEVO: Dirección del contrato de pools
 
-    constructor() ERC721("Tenant Passport", "TP") {
-        _transferOwnership(msg.sender);
+    modifier onlyPropertyInterestPool() {
+        require(msg.sender == propertyInterestPoolAddress, "Only the Property Interest Pool can call this");
+        _;
+    }
+
+    constructor() ERC721("Tenant Passport", "TP") Ownable(msg.sender) {
+        // El propietario se establece en el constructor de Ownable
     }
 
     function mint(address to, uint256 tokenId) public onlyOwner {
@@ -26,7 +33,8 @@ contract TenantPassport is ERC721Enumerable, Ownable {
             reputation: 100,
             paymentsMade: 0,
             paymentsMissed: 0,
-            outstandingBalance: 0
+            outstandingBalance: 0,
+            propertiesOwned: 0 // NUEVO
         });
     }
 
@@ -38,8 +46,14 @@ contract TenantPassport is ERC721Enumerable, Ownable {
             reputation: 100,
             paymentsMade: 0,
             paymentsMissed: 0,
-            outstandingBalance: 0
+            outstandingBalance: 0,
+            propertiesOwned: 0 // NUEVO
         });
+    }
+
+    // NUEVA FUNCIÓN: Para incrementar el contador de propiedades
+    function incrementPropertiesOwned(uint256 tokenId) external onlyPropertyInterestPool {
+        tenantInfo[tokenId].propertiesOwned++;
     }
 
     function updateTenantInfo(
@@ -64,6 +78,11 @@ contract TenantPassport is ERC721Enumerable, Ownable {
         rentalAgreementAddress = _rentalAgreementAddress;
     }
 
+    // NUEVA FUNCIÓN: Para establecer la dirección del contrato de pools
+    function setPropertyInterestPoolAddress(address _poolAddress) public onlyOwner {
+        require(_poolAddress != address(0), "Invalid address");
+        propertyInterestPoolAddress = _poolAddress;
+    }
 
     function _update(address to, uint256 tokenId, address auth)
         internal
