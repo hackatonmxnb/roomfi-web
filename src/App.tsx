@@ -343,6 +343,12 @@ function App() {
   });
   const [selectedListing, setSelectedListing] = useState<any>(null);
 
+  // Estados para el popup de interés
+  const [showInterestModal, setShowInterestModal] = useState(false);
+  const [selectedInterestListing, setSelectedInterestListing] = useState<any>(null);
+  // Estado para el popup de SPEI
+  const [showSpeiModal, setShowSpeiModal] = useState(false);
+
   // Handlers UI
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
@@ -627,7 +633,16 @@ function App() {
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data.property_matches)) {
-            setMatches(data.property_matches);
+            // Agregar lat/lng aleatorios cercanos a CDMX
+            const baseLat = 19.4326;
+            const baseLng = -99.1333;
+            const randomNearby = (base: number, delta: number) => base + (Math.random() - 0.5) * delta;
+            const matchesWithCoords = data.property_matches.map((match: any) => ({
+              ...match,
+              lat: randomNearby(baseLat, 0.025), // ~2.5km radio
+              lng: randomNearby(baseLng, 0.025),
+            }));
+            setMatches(matchesWithCoords);
           } else {
             setMatches([]);
           }
@@ -846,19 +861,24 @@ function App() {
                           <Box sx={{ minWidth: 220, maxWidth: 260 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                               <Avatar src={(selectedListing as any).user?.avatar} alt={(selectedListing as any).user?.name} sx={{ mr: 1 }} />
-                              <Typography fontWeight={700}>{(selectedListing as any).user?.name}</Typography>
-                              <Chip label={(selectedListing as any).date} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
+                              <Typography fontWeight={700}>John</Typography>
+                              <Chip label={getDaysAgo(selectedListing.created_at)} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
                               <Chip label={`1 ROOMIE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
                             </Box>
                             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
-                              <img src={(selectedListing as any).image} alt={(selectedListing as any).location} style={{ width: '100%', borderRadius: 8, maxHeight: 100, objectFit: 'cover' }} />
+                              <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d" alt={(selectedListing as any).location} style={{ width: '100%', borderRadius: 8, maxHeight: 100, objectFit: 'cover' }} />
                             </Box>
                             <Typography variant="h6" fontWeight={800} gutterBottom>
-                              ${(selectedListing as any).price?.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">/ mo</Typography>
+                              ${(selectedListing as any).price?.toLocaleString()}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">{(selectedListing as any).type} · {(selectedListing as any).bedrooms} Bedrooms · {(selectedListing as any).propertyType}</Typography>
-                            <Typography variant="body2" color="text.secondary">{(selectedListing as any).available}</Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{(selectedListing as any).location}</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{selectedListing.address}</Typography>
+                            <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                              {selectedListing.amenities.slice(0, 4).map((amenity: any, idx: any) => (
+                                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  {renderAmenityIcon(amenity)}
+                                </Box>
+                              ))}
+                            </Box>
                           </Box>
                         </InfoWindow>
                       )}
@@ -924,12 +944,23 @@ function App() {
                           <Typography variant="body2" color="text.secondary">{listing.available}</Typography>
                           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{listing.address}</Typography>
                           {listing.amenities && listing.amenities.length > 0 && (
-                            <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                              {listing.amenities.slice(0, 4).map((amenity: any, idx: any) => (
-                                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  {renderAmenityIcon(amenity)}
-                                </Box>
-                              ))}
+                            <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                {listing.amenities.slice(0, 4).map((amenity: any, idx: any) => (
+                                  <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    {renderAmenityIcon(amenity)}
+                                  </Box>
+                                ))}
+                              </Box>
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                size="small"
+                                sx={{ width: { xs: '100%', sm: 'auto' }, fontSize: { xs: '0.75rem', sm: '1rem' }, py: 1.1, px: 2.5 }}
+                                onClick={() => { setSelectedInterestListing(listing); setShowInterestModal(true); }}
+                              >
+                                ¡Me interesa!
+                              </Button>
                             </Box>
                           )}
                         </CardContent>
@@ -1021,6 +1052,39 @@ function App() {
                   <Typography variant="body1">No se encontró un Tenant Passport para tu wallet.</Typography>
                 )}
                 <Button variant="contained" fullWidth onClick={() => setShowTenantPassportModal(false)} sx={{ mt: 3 }}>Cerrar</Button>
+              </Paper>
+            </Modal>
+
+            <Modal open={showInterestModal} onClose={() => setShowInterestModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
+                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Reservar propiedad</Typography>
+                <Typography variant="body1" sx={{ mb: 3 }}>
+                  Necesita depositar el 5% del valor de la renta mensual como anticipo para reservar.
+                </Typography>
+                <Stack direction="row" spacing={2} justifyContent="flex-end">
+                  <Button variant="outlined" onClick={() => setShowInterestModal(false)}>Cancelar</Button>
+                  <Button variant="contained" color="primary" onClick={() => { setShowInterestModal(false); setShowSpeiModal(true); }}>De acuerdo</Button>
+                </Stack>
+              </Paper>
+            </Modal>
+
+            <Modal open={showSpeiModal} onClose={() => setShowSpeiModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
+                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Datos para transferencia SPEI</Typography>
+                <Typography variant="body1" sx={{ mb: 2 }}>
+                  Para reservar la propiedad, realiza una transferencia SPEI con los siguientes datos. Una vez realizado el pago, guarda tu comprobante y notifícalo en la plataforma.
+                </Typography>
+                <Stack spacing={1} sx={{ mb: 2 }}>
+                  <Typography variant="body2"><b>Banco:</b> Nvio</Typography>
+                  <Typography variant="body2"><b>Cuenta CLABE:</b> 710969000000401111</Typography>
+                  <Typography variant="body2"><b>Beneficiario:</b> RoomFi</Typography>
+                  <Typography variant="body2"><b>Monto sugerido:</b> $ {selectedInterestListing ? (selectedInterestListing.price * 0.05).toLocaleString() : '--'} MXN</Typography>
+                  <Typography variant="body2"><b>Referencia:</b> {selectedInterestListing ? `RESERVA-${selectedInterestListing.id}` : '--'}</Typography>
+                </Stack>
+                <Typography variant="body2" color="warning.main" sx={{ mb: 2 }}>
+                  * El depósito es un anticipo para reservar la propiedad. Si tienes dudas, contacta a soporte RoomFi.
+                </Typography>
+                <Button variant="contained" fullWidth onClick={() => setShowSpeiModal(false)} sx={{ mt: 2 }}>Cerrar</Button>
               </Paper>
             </Modal>
           </>
