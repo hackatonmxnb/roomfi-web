@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import {
-  AppBar, Toolbar, Typography, Button, Container, Box, Paper, Card, CardContent,
+  Typography, Button, Container, Box, Paper, Card, CardContent,
   CardMedia, Avatar, Chip, Stack, Grid, useTheme, useMediaQuery, IconButton,
   Menu, MenuItem, Modal, Snackbar, Alert, Drawer, List, ListItem, ListItemButton,
   ListItemText, TextField, Slider, FormControl, InputLabel, Select, OutlinedInput,
   createTheme, ThemeProvider, Fab
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import MenuIcon from '@mui/icons-material/Menu';
 import ListIcon from '@mui/icons-material/ViewList';
 import PoolIcon from '@mui/icons-material/Pool';
 import LocalParkingIcon from '@mui/icons-material/LocalParking';
 import PetsIcon from '@mui/icons-material/Pets';
-import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import FemaleIcon from '@mui/icons-material/Female';
 import MaleIcon from '@mui/icons-material/Male';
 import ApartmentIcon from '@mui/icons-material/Apartment';
@@ -35,6 +33,8 @@ import {
 } from './web3/config';
 import Portal from '@portal-hq/web';
 import { renderAmenityIcon, getDaysAgo } from './utils/icons';
+import { useUser, UserProvider } from './UserContext';
+import DashboardPage from './DashboardPage';
 
 
 // CORRECCIÓN: Añadir tipos para window.ethereum para que TypeScript no se queje
@@ -53,147 +53,6 @@ interface TenantPassportData {
   tokenId: BigInt;
   mintingWalletAddress?: string; // Nueva propiedad para la dirección de la wallet
 }
-
-const listings = [
-  {
-    id: 1,
-    lat: 19.4326,
-    lng: -99.1332,
-    user: { name: 'Don', avatar: 'https://randomuser.me/api/portraits/men/1.jpg' },
-    date: 'TODAY',
-    roommates: 1,
-    price: 1900,
-    type: 'Private Room',
-    bedrooms: 3,
-    propertyType: 'Townhouse',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
-    available: 'Jun 28, 2025 - Flexible',
-    location: 'Del Rey, Marina del Rey',
-    amenities: ['piscina', 'estacionamiento', 'pet friendly'],
-  },
-  {
-    id: 2,
-    lat: 19.427,
-    lng: -99.14,
-    user: { name: 'Maeva', avatar: 'https://randomuser.me/api/portraits/women/2.jpg', age: 29 },
-    date: 'TODAY',
-    roommates: 1,
-    price: 1590,
-    type: 'Private Room',
-    bedrooms: 3,
-    propertyType: 'Apartment',
-    image: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=600&q=80',
-    available: 'Jun 28, 2025 - Flexible',
-    location: 'Manhattan Valley, Manhattan',
-    amenities: ['gimnasio', 'baño privado'],
-  },
-  {
-    id: 3,
-    lat: 19.44,
-    lng: -99.12,
-    user: { name: 'Robert', avatar: 'https://randomuser.me/api/portraits/men/3.jpg', age: 53 },
-    date: 'TODAY',
-    roommates: 1,
-    price: 1850,
-    type: 'Private Room',
-    bedrooms: 3,
-    propertyType: 'Apartment',
-    image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=600&q=80',
-    available: 'Jun 28, 2025 - 12 Months',
-    location: "Hell's Kitchen, Manhattan",
-    amenities: ['amueblado', 'estacionamiento'],
-  },
-  {
-    id: 4,
-    user: { name: 'Don', avatar: 'https://randomuser.me/api/portraits/men/1.jpg' },
-    date: 'TODAY',
-    roommates: 1,
-    price: 1900,
-    type: 'Private Room',
-    bedrooms: 3,
-    propertyType: 'Townhouse',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
-    available: 'Jun 28, 2025 - Flexible',
-    location: 'Del Rey, Marina del Rey',
-    amenities: ['piscina', 'pet friendly'],
-  },
-  {
-    id: 5,
-    user: { name: 'Maeva', avatar: 'https://randomuser.me/api/portraits/women/2.jpg', age: 29 },
-    date: 'TODAY',
-    roommates: 1,
-    price: 1590,
-    type: 'Private Room',
-    bedrooms: 3,
-    propertyType: 'Apartment',
-    image: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=600&q=80',
-    available: 'Jun 28, 2025 - Flexible',
-    location: 'Manhattan Valley, Manhattan',
-    amenities: ['gimnasio', 'baño privado', 'amueblado'],
-  },
-  {
-    id: 6,
-    user: { name: 'Robert', avatar: 'https://randomuser.me/api/portraits/men/3.jpg', age: 53 },
-    date: 'TODAY',
-    roommates: 1,
-    price: 1850,
-    type: 'Private Room',
-    bedrooms: 3,
-    propertyType: 'Apartment',
-    image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=600&q=80',
-    available: 'Jun 28, 2025 - 12 Months',
-    location: "Hell's Kitchen, Manhattan",
-    amenities: ['estacionamiento', 'pet friendly'],
-  },
-  {
-    id: 7,
-    lat: 19.435,
-    lng: -99.13,
-    user: { name: 'Sofia', avatar: 'https://randomuser.me/api/portraits/women/4.jpg', age: 25 },
-    date: 'TODAY',
-    roommates: 2,
-    price: 2200,
-    type: 'Private Room',
-    bedrooms: 2,
-    propertyType: 'Condominium',
-    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=80',
-    available: 'Jul 15, 2025 - 6 Months',
-    location: 'Roma Norte, CDMX',
-    amenities: ['piscina', 'gimnasio', 'baño privado', 'amueblado'],
-  },
-  {
-    id: 8,
-    lat: 19.428,
-    lng: -99.135,
-    user: { name: 'Carlos', avatar: 'https://randomuser.me/api/portraits/men/5.jpg', age: 31 },
-    date: 'TODAY',
-    roommates: 1,
-    price: 1800,
-    type: 'Private Room',
-    bedrooms: 4,
-    propertyType: 'House',
-    image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80',
-    available: 'Aug 1, 2025 - Flexible',
-    location: 'Condesa, CDMX',
-    amenities: ['estacionamiento', 'pet friendly', 'amueblado'],
-  },
-  {
-    id: 9,
-    lat: 19.442,
-    lng: -99.125,
-    user: { name: 'Ana', avatar: 'https://randomuser.me/api/portraits/women/6.jpg', age: 28 },
-    date: 'TODAY',
-    roommates: 3,
-    price: 1600,
-    type: 'Private Room',
-    bedrooms: 3,
-    propertyType: 'Apartment',
-    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=600&q=80',
-    available: 'Jul 10, 2025 - 12 Months',
-    location: 'Polanco, CDMX',
-    amenities: ['gimnasio', 'baño privado', 'piscina'],
-  },
-];
 
 const customTheme = createTheme({
   palette: {
@@ -313,7 +172,6 @@ const portal = new Portal({
 });
 
 function App() {
-  const isMobile = useMediaQuery(customTheme.breakpoints.down('md'));
   const isMobileOnly = useMediaQuery(customTheme.breakpoints.down('sm'));
   const location = useLocation();
   const [matches, setMatches] = useState<any[] | null>(null);
@@ -525,6 +383,7 @@ function App() {
   };
 
   const connectWithMetaMask = async () => {
+    console.log('Attempting to connect with MetaMask');
     try {
       const web3Provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl, { chainId: NETWORK_CONFIG.chainId, name: 'anvil', ensAddress: undefined });
       web3Provider.pollingInterval = 4000; // Intervalo de 4 segundos
@@ -536,6 +395,7 @@ function App() {
       } else {
         address = ethers.Wallet.createRandom().address;
       }
+      console.log('Connected account:', address);
       setProvider(web3Provider);
       setAccount(address);
       handleOnboardingClose();
@@ -546,27 +406,19 @@ function App() {
     }
   };
 
-  const createVirtualWallet = async () => {
-    const web3Provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl, { chainId: NETWORK_CONFIG.chainId, name: 'anvil', ensAddress: undefined });
-    web3Provider.pollingInterval = -1;
-    const simulatedWallet = ethers.Wallet.createRandom().connect(web3Provider);
-    setProvider(web3Provider);
-    setAccount(simulatedWallet.address);
-    setNotification({ open: true, message: `Wallet virtual creada: ${simulatedWallet.address.substring(0, 10)}...`, severity: 'success' });
-    handleOnboardingClose();
-    setTokenBalance(0);
-  };
+  const { updateUser } = useUser();
+  const { user } = useUser();
 
   // Función para crear wallet MPC con Portal HQ
   const createPortalWallet = async () => {
-    return new Promise<string>(resolve => {
+    return new Promise<string>(async resolve => {
       portal.onReady(async () => {
         const walletExists = await portal.doesWalletExist();
         if (!walletExists) {
           await portal.createWallet();
-        } else {
         }
         const ethAddress = await portal.getEip155Address();
+        updateUser({ wallet: ethAddress });
         resolve(ethAddress);
       });
     });
@@ -621,7 +473,7 @@ function App() {
 
   // Al montar, si no hay matches en el state, simula sesión y carga matches
   useEffect(() => {
-    if (location.state?.matches) {
+    if (location.state?.matches && location.state.matches.length > 0) {
       setMatches(location.state.matches);
     } else {
       // Simula sesión existente
@@ -651,6 +503,28 @@ function App() {
     }
   }, [location.state]);
 
+  useEffect(() => {
+    if (!provider) {
+        const newProvider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl, { chainId: NETWORK_CONFIG.chainId, name: 'anvil', ensAddress: undefined });
+        setProvider(newProvider);
+    }
+    console.log('Checking provider and account for polling:', { provider, account });
+    if (provider && account) {
+      console.log('Starting polling for token balance');
+      // Configurar el polling para actualizar el saldo cada 10 segundos
+      const intervalId = setInterval(() => {
+        console.log('Fetching token balance');
+        fetchTokenBalance(provider, account);
+      }, 10000); // 10000 ms = 10 segundos
+
+      // Limpiar el intervalo al desmontar el componente
+      return () => {
+        console.log('Clearing polling interval');
+        clearInterval(intervalId);
+      };
+    }
+  }, [provider, account]);
+
   return (
     <>
       <Header
@@ -664,6 +538,8 @@ function App() {
         onViewMyPropertiesClick={handleViewMyProperties}
         tenantPassportData={tenantPassportData}
         isCreatingWallet={isCreatingWallet}
+        setShowOnboarding={setShowOnboarding} // Pass the function as a prop
+        showOnboarding={showOnboarding} // Pass the state as a prop
       />
       <Routes>
         <Route path="/" element={
@@ -714,7 +590,7 @@ function App() {
                         px: 2.5
                       }}
                     >
-                      Buscar habitaciones
+                      Buscar Roomies
                     </Button>
                     <Button
                       variant="outlined"
@@ -727,7 +603,7 @@ function App() {
                         px: 2.5
                       }}
                     >
-                      Buscar roomies
+                      Publicar propiedads
                     </Button>
                   </Box>
                 </Grid>
@@ -1076,7 +952,7 @@ function App() {
                 </Typography>
                 <Stack spacing={1} sx={{ mb: 2 }}>
                   <Typography variant="body2"><b>Banco:</b> Nvio</Typography>
-                  <Typography variant="body2"><b>Cuenta CLABE:</b> 710969000000401111</Typography>
+                  <Typography variant="body2"><b>Cuenta CLABE:</b> {user?.clabe || "Registrate primero"}</Typography>
                   <Typography variant="body2"><b>Beneficiario:</b> RoomFi</Typography>
                   <Typography variant="body2"><b>Monto sugerido:</b> $ {selectedInterestListing ? (selectedInterestListing.price * 0.05).toLocaleString() : '--'} MXN</Typography>
                   <Typography variant="body2"><b>Referencia:</b> {selectedInterestListing ? `RESERVA-${selectedInterestListing.id}` : '--'}</Typography>
@@ -1084,13 +960,26 @@ function App() {
                 <Typography variant="body2" color="warning.main" sx={{ mb: 2 }}>
                   * El depósito es un anticipo para reservar la propiedad. Si tienes dudas, contacta a soporte RoomFi.
                 </Typography>
-                <Button variant="contained" fullWidth onClick={() => setShowSpeiModal(false)} sx={{ mt: 2 }}>Cerrar</Button>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={() => {
+                    setShowSpeiModal(false);
+                    if (!user?.clabe) {
+                      handleOnboardingOpen();
+                    }
+                  }}
+                  sx={{ mt: 2 }}
+                >
+                  {user?.clabe ? 'Cerrar' : 'Registrar'}
+                </Button>
               </Paper>
             </Modal>
           </>
         } />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/create-pool" element={<CreatePoolPage account={account} />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
       </Routes>
     </>
   );
@@ -1099,7 +988,9 @@ function App() {
 // Componente wrapper para proveer el tema
 const AppWrapper = () => (
   <ThemeProvider theme={customTheme}>
-    <App />
+    <UserProvider>
+      <App />
+    </UserProvider>
   </ThemeProvider>
 );
 

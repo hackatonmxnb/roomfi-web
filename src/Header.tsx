@@ -16,11 +16,12 @@ interface HeaderProps {
   onViewMyPropertiesClick: () => void; // Nueva propiedad
   tenantPassportData: any;
   isCreatingWallet?: boolean;
+  setShowOnboarding: React.Dispatch<React.SetStateAction<boolean>>;
+  showOnboarding: boolean; // Add this line
 }
 
-export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onViewNFTClick, onMintNFTClick, onViewMyPropertiesClick, tenantPassportData, isCreatingWallet }: HeaderProps) {
+export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onViewNFTClick, onMintNFTClick, onViewMyPropertiesClick, tenantPassportData, isCreatingWallet, setShowOnboarding, showOnboarding }: HeaderProps) {
   const [drawerMenuOpen, setDrawerMenuOpen] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const isMobile = window.innerWidth < 900;
 
   const handleOpenOnboarding = () => setShowOnboarding(true);
@@ -116,7 +117,7 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
           )}
         </Toolbar>
       </AppBar>
-      <Modal open={showOnboarding} onClose={handleCloseOnboarding}>
+      <Modal open={showOnboarding} onClose={() => setShowOnboarding(false)}>
         <Box sx={{
           position: 'absolute',
           top: '50%',
@@ -133,7 +134,7 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
           gap: 2
         }}>
           <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Conecta tu Wallet</Typography>
-          <Button variant="contained" fullWidth onClick={() => { onConnectMetaMask(); handleCloseOnboarding(); }}>Conectar con MetaMask</Button>
+          <Button variant="contained" fullWidth onClick={() => { onConnectMetaMask(); setShowOnboarding(false); }}>Conectar con MetaMask</Button>
           <Button
             variant="outlined"
             fullWidth
@@ -144,7 +145,7 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
                 style={{ width: 20, height: 20 }}
               />
             }
-            onClick={() => { onConnectGoogle(); handleCloseOnboarding(); }}
+            onClick={() => { onConnectGoogle(); setShowOnboarding(false); }}
             disabled={isCreatingWallet}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >

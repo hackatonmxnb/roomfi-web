@@ -4,10 +4,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Header from './Header';
 import { renderGenderIcon } from './utils/icons';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import { useUser } from './UserContext';
 
 export default function RegisterPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, updateUser } = useUser();
   // Recibe datos de Google: email, name, picture, given_name, family_name
   const { email = '', name = '', picture = '', given_name = '', family_name = '' } = location.state || {};
   const [tab, setTab] = useState(0);
@@ -65,6 +67,39 @@ export default function RegisterPage() {
     }
   }, [success, lastMatches, navigate]);
 
+  // Cuando el usuario envía el registro
+  const handleRegister = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess(false);
+    try {
+      // Combina datos del contexto (wallet, clabe, etc) + formulario + Google
+      const fullUserData = {
+        ...user, // wallet, clabe, etc
+        ...form,
+        email,
+        name,
+        picture,
+        user_id: userId,
+      };
+      // Actualiza el contexto global
+      updateUser(fullUserData);
+      // Envía al endpoint de registro
+      const res = await fetch(process.env.REACT_APP_API + '/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fullUserData),
+      });
+      if (!res.ok) throw new Error('Error al registrar usuario');
+      setSuccess(true);
+      // ...cualquier lógica post-registro
+    } catch (err: any) {
+      setError(err.message || 'Ocurrió un error desconocido.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setLoading(true);
@@ -76,11 +111,19 @@ export default function RegisterPage() {
         body: JSON.stringify({ user_id: userId, "profile_image_url": picture, ...form }),
       });
       if (!res.ok) throw new Error('Error al registrar usuario');
+
+      const data = await res.json();
+      updateUser({ clabe: data.clabe, user_id: data.user_id });
+
       setSuccess(true);
       localStorage.removeItem('roomfi_user_id');
       // Llamar al endpoint de matchmaking
       const user_id = userId;
-      const matchRes = await fetch(process.env.REACT_APP_API + `/matchmaking/match/top?user_id=${user_id}`);
+      const matchRes = await fetch(process.env.REACT_APP_API + `/matchmaking/match/top`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id }),
+      });
       const matchData = await matchRes.json();
       setLastMatches(matchData);
       return;
