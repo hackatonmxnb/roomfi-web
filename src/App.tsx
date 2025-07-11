@@ -602,8 +602,9 @@ function App() {
                         py: 1.1,
                         px: 2.5
                       }}
+                      onClick={() => navigate('/dashboard')}
                     >
-                      Publicar propiedads
+                      Publicar propiedades
                     </Button>
                   </Box>
                 </Grid>
