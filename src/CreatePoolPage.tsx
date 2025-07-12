@@ -6,7 +6,7 @@ import {
     PROPERTY_INTEREST_POOL_ADDRESS,
     PROPERTY_INTEREST_POOL_ABI,
     MXNBT_ADDRESS,
-    MXNBT_ABI
+    MXNB_ABI
 } from './web3/config';
 
 interface CreatePoolPageProps {
@@ -15,9 +15,12 @@ interface CreatePoolPageProps {
 
 export default function CreatePoolPage({ account }: CreatePoolPageProps) {
     const [form, setForm] = useState({
+        propertyName: '',
         totalRent: '',
         seriousnessDeposit: '',
         tenantCount: '',
+        paymentDayStart: '',
+        paymentDayEnd: '',
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -54,7 +57,7 @@ export default function CreatePoolPage({ account }: CreatePoolPageProps) {
                 signer
             );
 
-            const { totalRent, seriousnessDeposit, tenantCount } = form;
+            const { totalRent, seriousnessDeposit, tenantCount, paymentDayStart, paymentDayEnd, propertyName } = form;
             
             // Validación de la divisibilidad de la renta
             if (Number(tenantCount) <= 0) {
@@ -67,7 +70,7 @@ export default function CreatePoolPage({ account }: CreatePoolPageProps) {
             const totalRentWei = ethers.parseUnits(totalRent, 18);
             const seriousnessDepositWei = ethers.parseUnits(seriousnessDeposit, 18);
 
-            const tokenContract = new ethers.Contract(MXNBT_ADDRESS, MXNBT_ABI, signer);
+            const tokenContract = new ethers.Contract(MXNBT_ADDRESS, MXNB_ABI, signer);
             
             setStatusMessage('Aprobando el contrato para gestionar tu depósito...');
             const approveTx = await tokenContract.approve(PROPERTY_INTEREST_POOL_ADDRESS, seriousnessDepositWei);
@@ -77,10 +80,20 @@ export default function CreatePoolPage({ account }: CreatePoolPageProps) {
             const tx = await poolContract.createPropertyPool(
                 totalRentWei,
                 seriousnessDepositWei,
-                tenantCount
+                tenantCount,
+                paymentDayStart,
+                paymentDayEnd
             );
 
-            await tx.wait();
+            const receipt = await tx.wait();
+            
+            // Obtener el ID de la propiedad del evento
+            const event = receipt.logs.find((log: any) => log.eventName === 'PropertyCreated');
+            if (event) {
+                const propertyId = event.args.propertyId.toString();
+                localStorage.setItem(`property_name_${propertyId}`, propertyName);
+            }
+
             setStatusMessage('¡Pool de interés creado exitosamente! Serás redirigido en 3 segundos.');
 
             setTimeout(() => {
@@ -104,7 +117,15 @@ export default function CreatePoolPage({ account }: CreatePoolPageProps) {
                     </Typography>
                     <Stack spacing={2}>
                         <TextField
-                            label="Renta Total Mensual (MXNBT)"
+                            label="Nombre de la Propiedad"
+                            name="propertyName"
+                            value={form.propertyName}
+                            onChange={handleChange}
+                            fullWidth
+                            required
+                        />
+                        <TextField
+                            label="Renta Total Mensual (MXNB)"
                             name="totalRent"
                             value={form.totalRent}
                             onChange={handleChange}
@@ -113,7 +134,7 @@ export default function CreatePoolPage({ account }: CreatePoolPageProps) {
                             required
                         />
                         <TextField
-                            label="Depósito de Seriedad (MXNBT)"
+                            label="Depósito de Seriedad (MXNB)"
                             name="seriousnessDeposit"
                             value={form.seriousnessDeposit}
                             onChange={handleChange}
@@ -125,6 +146,24 @@ export default function CreatePoolPage({ account }: CreatePoolPageProps) {
                             label="Número de Inquilinos Requeridos"
                             name="tenantCount"
                             value={form.tenantCount}
+                            onChange={handleChange}
+                            type="number"
+                            fullWidth
+                            required
+                        />
+                        <TextField
+                            label="Día de Inicio de Pago (1-31)"
+                            name="paymentDayStart"
+                            value={form.paymentDayStart}
+                            onChange={handleChange}
+                            type="number"
+                            fullWidth
+                            required
+                        />
+                        <TextField
+                            label="Día Límite de Pago (1-31)"
+                            name="paymentDayEnd"
+                            value={form.paymentDayEnd}
                             onChange={handleChange}
                             type="number"
                             fullWidth

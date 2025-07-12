@@ -14,13 +14,14 @@ interface HeaderProps {
   onViewNFTClick: () => void;
   onMintNFTClick: () => void;
   onViewMyPropertiesClick: () => void; // Nueva propiedad
+  onSavingsClick: () => void; // <-- AÑADIDO
   tenantPassportData: any;
   isCreatingWallet?: boolean;
   setShowOnboarding: React.Dispatch<React.SetStateAction<boolean>>;
   showOnboarding: boolean; // Add this line
 }
 
-export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onViewNFTClick, onMintNFTClick, onViewMyPropertiesClick, tenantPassportData, isCreatingWallet, setShowOnboarding, showOnboarding }: HeaderProps) {
+export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onViewNFTClick, onMintNFTClick, onViewMyPropertiesClick, onSavingsClick, tenantPassportData, isCreatingWallet, setShowOnboarding, showOnboarding }: HeaderProps) {
   const [drawerMenuOpen, setDrawerMenuOpen] = useState(false);
   const isMobile = window.innerWidth < 900;
 
@@ -47,6 +48,7 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
                 <>
                   <Button component={RouterLink} to="/create-pool" sx={{ color: 'primary.main', fontWeight: 600 }}>Crear Pool</Button>
                   <Button onClick={onViewMyPropertiesClick} sx={{ color: 'primary.main', fontWeight: 600 }}>Mis Propiedades</Button>
+                  <Button onClick={onSavingsClick} sx={{ color: 'primary.main', fontWeight: 600 }}>Bóveda</Button>
                 </>
               )}
               {/* Botones que siempre son visibles en desktop */}

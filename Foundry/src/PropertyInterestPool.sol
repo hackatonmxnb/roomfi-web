@@ -7,6 +7,8 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 // Interfaz para interactuar con TenantPassport
 interface ITenantPassport {
     function incrementPropertiesOwned(uint256 tokenId) external;
+    function balanceOf(address owner) external view returns (uint256);
+    function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256);
 }
 
 
@@ -33,9 +35,11 @@ contract PropertyInterestPool {
         address[] interestedTenants;
         mapping(address => uint256) tenantDeposits;
         State state;
+        uint256 paymentDayStart; // Día de inicio para pagar la renta
+        uint256 paymentDayEnd;   // Día límite para pagar la renta
     }
 
-    IERC20 public mxnbtToken;
+    IERC20 public mxnbToken;
     ITenantPassport public tenantPassport; // NUEVO: Instancia del contrato TenantPassport
 
     /// @dev Mapeando la infrastructura de propiedades.
@@ -63,15 +67,24 @@ contract PropertyInterestPool {
     }
 
     // ACTUALIZADO: El constructor ahora también acepta la dirección del TenantPassport
-    constructor(address _mxnbtTokenAddress, address _tenantPassportAddress) {
-        mxnbtToken = IERC20(_mxnbtTokenAddress);
+    constructor(address _mxnbTokenAddress, address _tenantPassportAddress) {
+        mxnbToken = IERC20(_mxnbTokenAddress);
         tenantPassport = ITenantPassport(_tenantPassportAddress);
     }
 
     // ACTUALIZADO: Ahora llama al contrato TenantPassport para actualizar el historial
-    function createPropertyPool(uint256 _totalRent, uint256 _seriousnessDeposit, uint256 _tenantCount) external {
+    function createPropertyPool(
+        uint256 _totalRent,
+        uint256 _seriousnessDeposit,
+        uint256 _tenantCount,
+        uint256 _paymentDayStart,
+        uint256 _paymentDayEnd
+    ) external {
         require(_tenantCount > 0, "Tenant count must be greater than 0");
         require(_totalRent % _tenantCount == 0, "Rent must be divisible by tenant count");
+        require(_paymentDayStart >= 1 && _paymentDayStart <= 31, "Payment start day must be between 1 and 31");
+        require(_paymentDayEnd >= 1 && _paymentDayEnd <= 31, "Payment end day must be between 1 and 31");
+        require(_paymentDayEnd >= _paymentDayStart, "Payment end day must be greater than or equal to start day");
 
         propertyCounter++;
         uint256 propertyId = propertyCounter;
@@ -82,9 +95,13 @@ contract PropertyInterestPool {
         newProperty.seriousnessDeposit = _seriousnessDeposit;
         newProperty.requiredTenantCount = _tenantCount;
         newProperty.state = State.OPEN;
+        newProperty.paymentDayStart = _paymentDayStart;
+        newProperty.paymentDayEnd = _paymentDayEnd;
 
-        // NUEVO: Incrementar el contador de propiedades en el NFT del landlord
-        uint256 landlordTokenId = uint256(uint160(msg.sender));
+        // Verificar que el landlord tiene un Tenant Passport
+        uint256 landlordPassportBalance = tenantPassport.balanceOf(msg.sender);
+        require(landlordPassportBalance > 0, "Landlord must have a Tenant Passport NFT");
+        uint256 landlordTokenId = tenantPassport.tokenOfOwnerByIndex(msg.sender, 0);
         tenantPassport.incrementPropertiesOwned(landlordTokenId);
 
         emit PropertyCreated(propertyId, msg.sender, _totalRent);
@@ -99,7 +116,7 @@ contract PropertyInterestPool {
         property.tenantDeposits[msg.sender] = property.seriousnessDeposit;
         property.interestedTenants.push(msg.sender);
 
-        mxnbtToken.safeTransferFrom(msg.sender, address(this), property.seriousnessDeposit);
+        mxnbToken.safeTransferFrom(msg.sender, address(this), property.seriousnessDeposit);
 
         emit InterestExpressed(_propertyId, msg.sender, property.seriousnessDeposit);
 
@@ -118,7 +135,7 @@ contract PropertyInterestPool {
 
         property.amountPooledForRent += rentShare;
 
-        mxnbtToken.safeTransferFrom(msg.sender, address(this), amountToPay);
+        mxnbToken.safeTransferFrom(msg.sender, address(this), amountToPay);
 
         emit RentFunded(_propertyId, msg.sender, rentShare);
     }
@@ -129,7 +146,7 @@ contract PropertyInterestPool {
 
         property.state = State.LEASED;
 
-        mxnbtToken.safeTransfer(property.landlord, property.totalRentAmount);
+        mxnbToken.safeTransfer(property.landlord, property.totalRentAmount);
 
         emit LeaseClaimed(_propertyId, property.landlord, property.totalRentAmount);
     }
@@ -149,7 +166,7 @@ contract PropertyInterestPool {
 
         property.tenantDeposits[msg.sender] = 0;
 
-        mxnbtToken.safeTransfer(msg.sender, depositAmount);
+        mxnbToken.safeTransfer(msg.sender, depositAmount);
 
         emit InterestWithdrawn(_propertyId, msg.sender, depositAmount);
     }
@@ -168,7 +185,7 @@ contract PropertyInterestPool {
     function getPropertyInfo(uint256 _propertyId) 
         public 
         view 
-        returns (address, uint256, uint256, uint256, uint256, address[] memory, State)
+        returns (address, uint256, uint256, uint256, uint256, address[] memory, State, uint256, uint256)
     {
         Property storage p = properties[_propertyId];
         return (
@@ -178,7 +195,9 @@ contract PropertyInterestPool {
             p.requiredTenantCount,
             p.amountPooledForRent,
             p.interestedTenants,
-            p.state
+            p.state,
+            p.paymentDayStart,
+            p.paymentDayEnd
         );
     }
 }

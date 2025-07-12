@@ -58,7 +58,7 @@ const DashboardPage = () => {
         </Paper>
       </Box>
       <Box sx={{ flexGrow: 1, p: 3 }}>
-        <Typography variant="h4" sx={{ mb: 3 }}>Buenas tardes Jazmine</Typography>
+        <Typography variant="h4" sx={{ mb: 3 }}>Buenas tardes 0x648A0...2dD6F</Typography>
         <Grid container spacing={3}>
           <Grid item xs={12} md={3}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
@@ -162,4 +162,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage; 
+export default DashboardPage;

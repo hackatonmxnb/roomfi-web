@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import {
   Typography, Button, Container, Box, Paper, Card, CardContent,
@@ -29,7 +29,9 @@ import {
   TENANT_PASSPORT_ADDRESS,
   PROPERTY_INTEREST_POOL_ADDRESS,
   PROPERTY_INTEREST_POOL_ABI,
-  NETWORK_CONFIG
+  NETWORK_CONFIG,
+  MXNBT_ADDRESS,
+  MXNB_ABI
 } from './web3/config';
 import Portal from '@portal-hq/web';
 import { renderAmenityIcon, getDaysAgo } from './utils/icons';
@@ -37,7 +39,6 @@ import { useUser, UserProvider } from './UserContext';
 import DashboardPage from './DashboardPage';
 
 
-// CORRECCIÓN: Añadir tipos para window.ethereum para que TypeScript no se queje
 declare global {
   interface Window {
     ethereum?: any;
@@ -49,9 +50,9 @@ interface TenantPassportData {
   paymentsMade: number;
   paymentsMissed: number;
   outstandingBalance: number;
-  propertiesOwned: number; // Nuevo campo
+  propertiesOwned: number;
   tokenId: BigInt;
-  mintingWalletAddress?: string; // Nueva propiedad para la dirección de la wallet
+  mintingWalletAddress?: string;
 }
 
 const customTheme = createTheme({
@@ -62,7 +63,7 @@ const customTheme = createTheme({
       dark: '#1565c0',
     },
     secondary: {
-      main: '#81c784', // Verde mint suave
+      main: '#81c784',
       light: '#a5d6a7',
       dark: '#66bb6a',
     },
@@ -157,12 +158,6 @@ const customTheme = createTheme({
   },
 });
 
-const ERC20_ABI = [
-  "function balanceOf(address owner) view returns (uint256)",
-  "function decimals() view returns (uint8)"
-];
-const TOKEN_ADDRESS = "0x82B9e52b26A2954E113F94Ff26647754d5a4247D"; // Proxy address
-
 const portal = new Portal({
   apiKey: process.env.REACT_APP_PORTAL_API_KEY,
   rpcConfig: {
@@ -186,13 +181,14 @@ function App() {
   // Estados de Web3
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [account, setAccount] = useState<string | null>(null);
-  const [provider, setProvider] = useState<ethers.JsonRpcProvider | ethers.BrowserProvider | null>(null);
+  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [showFundingModal, setShowFundingModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [notification, setNotification] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ open: false, message: '', severity: 'success' });
   const [tenantPassportData, setTenantPassportData] = useState<TenantPassportData | null>(null);
   const [showTenantPassportModal, setShowTenantPassportModal] = useState(false);
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
+  const [tokenBalance, setTokenBalance] = useState<number>(0);
 
   // Estados del Mapa
   const mapCenter = { lat: 19.4326, lng: -99.1333 };
@@ -219,19 +215,82 @@ function App() {
   const [showMyPropertiesModal, setShowMyPropertiesModal] = useState(false);
   const [myProperties, setMyProperties] = useState<any[]>([]);
 
+  // Handlers Web3
+  const handleOnboardingOpen = () => setShowOnboarding(true);
+  const handleOnboardingClose = () => setShowOnboarding(false);
+  const handleFundingModalOpen = () => setShowFundingModal(true);
+  const handleFundingModalClose = () => {
+    setShowFundingModal(false);
+    setDepositAmount('');
+  };
+  const handleNotificationClose = () => setNotification({ ...notification, open: false });
+
+  const checkNetwork = async (prov: ethers.BrowserProvider): Promise<boolean> => {
+    const network = await prov.getNetwork();
+    if (network.chainId !== BigInt(NETWORK_CONFIG.chainId)) {
+      setNotification({
+        open: true,
+        message: `Por favor, cambia tu wallet a la red ${NETWORK_CONFIG.chainName}.`,
+        severity: 'warning',
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const connectWithMetaMask = async () => {
+    if (typeof window.ethereum === 'undefined') {
+      setNotification({ open: true, message: 'MetaMask no está instalado.', severity: 'warning' });
+      return;
+    }
+
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const userAccount = accounts[0];
+      
+      const browserProvider = new ethers.BrowserProvider(window.ethereum);
+      
+      if (await checkNetwork(browserProvider)) {
+        setProvider(browserProvider);
+        setAccount(userAccount);
+        setNotification({ open: true, message: 'Wallet conectada exitosamente.', severity: 'success' });
+      } else {
+        setAccount(null);
+        setProvider(null);
+      }
+      
+      handleOnboardingClose();
+
+    } catch (error) {
+      console.error("Error connecting with MetaMask:", error);
+      setNotification({ open: true, message: 'Error al conectar con MetaMask.', severity: 'error' });
+    }
+  };
+
+  const fetchTokenBalance = useCallback(async (prov: ethers.Provider, acc: string) => {
+    try {
+        const contract = new ethers.Contract(MXNBT_ADDRESS, MXNB_ABI, prov);
+        const rawBalance = await contract.balanceOf(acc);
+        setTokenBalance(Number(ethers.formatUnits(rawBalance, 18))); // Assuming 18 decimals for MXNBT
+    } catch (error) {
+        console.error("Error fetching token balance:", error);
+    }
+  }, []);
+
   const handleViewMyProperties = async () => {
-    if (!account) {
+    if (!account || !provider) {
       setNotification({ open: true, message: 'Por favor, conecta tu wallet primero.', severity: 'error' });
       return;
     }
+    if (!(await checkNetwork(provider))) return;
+
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
       const contract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, provider);
       const count = await contract.propertyCounter();
       const properties = [];
       for (let i = 1; i <= count; i++) {
-        const p = await contract.getPropertyInfo(i); // Usar la nueva función
-        if (p[0].toLowerCase() === account.toLowerCase()) { // p[0] es el landlord
+        const p = await contract.getPropertyInfo(i);
+        if (p[0].toLowerCase() === account.toLowerCase()) {
           properties.push({
             id: i,
             landlord: p[0],
@@ -246,105 +305,37 @@ function App() {
       }
       setMyProperties(properties);
       setShowMyPropertiesModal(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching properties:", error);
-      setNotification({ open: true, message: 'Error al obtener tus propiedades.', severity: 'error' });
+      const errorMessage = error.code === 'BAD_DATA' 
+        ? 'No se pudo leer la información del contrato. ¿Estás en la red correcta?' 
+        : 'Error al obtener tus propiedades.';
+      setNotification({ open: true, message: errorMessage, severity: 'error' });
     }
   };
 
-  // Handlers Web3
-  const handleOnboardingOpen = () => setShowOnboarding(true);
-  const handleOnboardingClose = () => setShowOnboarding(false);
-  const handleFundingModalOpen = () => setShowFundingModal(true);
-  const handleFundingModalClose = () => {
-    setShowFundingModal(false);
-    setDepositAmount('');
-  };
-  const handleNotificationClose = () => setNotification({ ...notification, open: false });
-
-  const mintNewTenantPassport = async () => {
-    if (!account) {
-      setNotification({ open: true, message: 'Por favor, conecta tu wallet primero para mintear.', severity: 'error' });
-      return;
+  const getOrCreateTenantPassport = useCallback(async (userAddress: string) => {
+    if (!provider) {
+        setNotification({ open: true, message: 'Provider no inicializado. Conecta tu wallet.', severity: 'error' });
+        return null;
     }
+    if (!(await checkNetwork(provider))) return null;
+
     try {
-      const provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl);
-      const signer = new ethers.Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", provider);
-      const contract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, signer);
-
-      console.log("Minting a new Tenant Passport...");
-      const tx = await contract.mintForSelf();
-      await tx.wait();
-      console.log("Tenant Passport minted successfully!");
-      setNotification({ open: true, message: '¡Tu Tenant Passport se ha minteado exitosamente!', severity: 'success' });
-
-      // Después de mintear, actualizamos la vista del NFT principal
-      await getOrCreateTenantPassport(account);
-
-    } catch (error) {
-      console.error("Error minting new Tenant Passport:", error);
-      setNotification({ open: true, message: 'Error al mintear un nuevo Tenant Passport.', severity: 'error' });
-    }
-  };
-
-  const handleViewNFTClick = async () => {
-    if (account) {
-      await getOrCreateTenantPassport(account);
-      setShowTenantPassportModal(true);
-    } else {
-      setNotification({ open: true, message: 'Por favor, conecta tu wallet primero.', severity: 'error' });
-    }
-  };
-
-  const [tokenBalance, setTokenBalance] = useState<number>(0);
-
-  const fetchTokenBalance = async (
-    prov: ethers.JsonRpcProvider | ethers.BrowserProvider,
-    acc: string
-  ) => {
-    if (prov && acc) {
-      const contract = new ethers.Contract(TOKEN_ADDRESS, ERC20_ABI, prov);
-      const rawBalance = await contract.balanceOf(acc);
-      setTokenBalance(Number(ethers.formatUnits(rawBalance, 6)));
-    }
-  };
-
-  const getOrCreateTenantPassport = async (userAddress: string) => {
-    try {
-      // Usamos un proveedor general para leer datos
-      const provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl);
       const readOnlyContract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, provider);
-
       const balance = await readOnlyContract.balanceOf(userAddress);
-
       let finalTokenId: BigInt;
 
       if (balance.toString() === '0') {
-        console.log("No Tenant Passport found. Minting a new one for the connected user...");
-        
-        // Para escribir (mintear), necesitamos el signer del usuario
-        if (!window.ethereum) {
-          throw new Error("MetaMask is not installed.");
-        }
-        const userProvider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await userProvider.getSigner();
+        console.log("No Tenant Passport found. Minting a new one...");
+        const signer = await provider.getSigner();
         const contractWithSigner = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, signer);
-
         const tx = await contractWithSigner.mintForSelf();
         await tx.wait();
-        
-        console.log("Tenant Passport minted successfully!");
         setNotification({ open: true, message: '¡Tu Tenant Passport se ha creado!', severity: 'success' });
-        
-        // El tokenId se puede derivar o necesitarías obtenerlo del evento de minteo.
-        // Por ahora, asumimos que el contrato lo asigna de una manera predecible si es el caso,
-        // o lo ideal sería capturar el evento 'Transfer' para obtener el ID.
-        // Para este ejemplo, si el contrato usa el balance para asignar IDs, esto podría funcionar:
         const newBalance = await readOnlyContract.balanceOf(userAddress);
         finalTokenId = await readOnlyContract.tokenOfOwnerByIndex(userAddress, newBalance - 1);
-
       } else {
-        console.log("Tenant Passport already exists.");
         finalTokenId = await readOnlyContract.tokenOfOwnerByIndex(userAddress, 0);
       }
 
@@ -354,7 +345,7 @@ function App() {
         paymentsMade: Number(info.paymentsMade),
         paymentsMissed: Number(info.paymentsMissed),
         outstandingBalance: Number(info.outstandingBalance),
-        propertiesOwned: Number(info.propertiesOwned), // Nuevo campo
+        propertiesOwned: Number(info.propertiesOwned),
         tokenId: finalTokenId,
         mintingWalletAddress: userAddress,
       };
@@ -366,64 +357,38 @@ function App() {
       setNotification({ open: true, message: 'Error al gestionar el Tenant Passport.', severity: 'error' });
       return null;
     }
-  };
+  }, [provider]);
 
-  const handleDeposit = async () => {
-    const amount = parseFloat(depositAmount);
-    if (isNaN(amount) || amount <= 0) {
-      setNotification({ open: true, message: 'Por favor, introduce un monto válido.', severity: 'error' });
-      return;
+  const handleViewNFTClick = async () => {
+    if (account) {
+      await getOrCreateTenantPassport(account);
+      setShowTenantPassportModal(true);
+    } else {
+      setNotification({ open: true, message: 'Por favor, conecta tu wallet primero.', severity: 'error' });
     }
-    console.log(`Simulando depósito de ${amount} MXN...`);
-    if (provider && account) {
-      await fetchTokenBalance(provider, account); // Actualiza el balance real después del depósito
-    }
-    setNotification({ open: true, message: `¡${amount} MXNB añadidos a tu wallet!`, severity: 'success' });
-    handleFundingModalClose();
   };
-
-  const connectWithMetaMask = async () => {
-    console.log('Attempting to connect with MetaMask');
-    try {
-      const web3Provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl, { chainId: NETWORK_CONFIG.chainId, name: 'anvil', ensAddress: undefined });
-      web3Provider.pollingInterval = 4000; // Intervalo de 4 segundos
-
-      let address = null;
-      if (typeof window.ethereum !== 'undefined') {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        address = accounts[0];
-      } else {
-        address = ethers.Wallet.createRandom().address;
+  
+  const mintNewTenantPassport = async () => {
+      if (!account || !provider) {
+          setNotification({ open: true, message: 'Por favor, conecta tu wallet primero para mintear.', severity: 'error' });
+          return;
       }
-      console.log('Connected account:', address);
-      setProvider(web3Provider);
-      setAccount(address);
-      handleOnboardingClose();
-      await fetchTokenBalance(web3Provider, address);
-    } catch (error) {
-      console.error("Error connecting with MetaMask:", error);
-      setNotification({ open: true, message: 'Error al conectar con MetaMask.', severity: 'error' });
-    }
+      if (!(await checkNetwork(provider))) return;
+
+      try {
+          const signer = await provider.getSigner();
+          const contract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, signer);
+          const tx = await contract.mintForSelf();
+          await tx.wait();
+          setNotification({ open: true, message: '¡Tu Tenant Passport se ha minteado exitosamente!', severity: 'success' });
+          await getOrCreateTenantPassport(account);
+      } catch (error) {
+          console.error("Error minting new Tenant Passport:", error);
+          setNotification({ open: true, message: 'Error al mintear un nuevo Tenant Passport.', severity: 'error' });
+      }
   };
 
-  const { updateUser } = useUser();
-  const { user } = useUser();
-
-  // Función para crear wallet MPC con Portal HQ
-  const createPortalWallet = async () => {
-    return new Promise<string>(async resolve => {
-      portal.onReady(async () => {
-        const walletExists = await portal.doesWalletExist();
-        if (!walletExists) {
-          await portal.createWallet();
-        }
-        const ethAddress = await portal.getEip155Address();
-        updateUser({ wallet: ethAddress });
-        resolve(ethAddress);
-      });
-    });
-  };
-
+  const { updateUser, user } = useUser();
   const navigate = useNavigate();
 
   const login = useGoogleLogin({
@@ -431,16 +396,14 @@ function App() {
       if (tokenResponse.access_token) {
         try {
           const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: {
-              Authorization: `Bearer ${tokenResponse.access_token}`,
-            },
+            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
           });
           const profile = await res.json();
           setIsCreatingWallet(true);
-
-          // Crear wallet MPC con Portal HQ
-          const ethAddress = await createPortalWallet();
+          
+          const ethAddress = await portal.createWallet();
           setAccount(ethAddress);
+          updateUser({ wallet: ethAddress });
 
           setIsCreatingWallet(false);
           handleOnboardingClose();
@@ -456,11 +419,7 @@ function App() {
           });
         } catch (error) {
           setIsCreatingWallet(false);
-          setNotification({
-            open: true,
-            message: 'Error al procesar el login de Google',
-            severity: 'error'
-          });
+          setNotification({ open: true, message: 'Error al procesar el login de Google', severity: 'error' });
         }
       }
     },
@@ -471,12 +430,10 @@ function App() {
     scope: 'openid email profile',
   });
 
-  // Al montar, si no hay matches en el state, simula sesión y carga matches
   useEffect(() => {
     if (location.state?.matches && location.state.matches.length > 0) {
       setMatches(location.state.matches);
     } else {
-      // Simula sesión existente
       const user_id = '7c74d216-7c65-47e6-b02d-1e6954f39ba7';
       fetch(process.env.REACT_APP_API + "/matchmaking/match/top?user_id=" + user_id, {
         method: 'POST',
@@ -485,13 +442,12 @@ function App() {
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data.property_matches)) {
-            // Agregar lat/lng aleatorios cercanos a CDMX
             const baseLat = 19.4326;
             const baseLng = -99.1333;
             const randomNearby = (base: number, delta: number) => base + (Math.random() - 0.5) * delta;
             const matchesWithCoords = data.property_matches.map((match: any) => ({
               ...match,
-              lat: randomNearby(baseLat, 0.025), // ~2.5km radio
+              lat: randomNearby(baseLat, 0.025),
               lng: randomNearby(baseLng, 0.025),
             }));
             setMatches(matchesWithCoords);
@@ -504,26 +460,39 @@ function App() {
   }, [location.state]);
 
   useEffect(() => {
-    if (!provider) {
-        const newProvider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl, { chainId: NETWORK_CONFIG.chainId, name: 'anvil', ensAddress: undefined });
-        setProvider(newProvider);
-    }
-    console.log('Checking provider and account for polling:', { provider, account });
     if (provider && account) {
-      console.log('Starting polling for token balance');
-      // Configurar el polling para actualizar el saldo cada 10 segundos
-      const intervalId = setInterval(() => {
-        console.log('Fetching token balance');
-        fetchTokenBalance(provider, account);
-      }, 10000); // 10000 ms = 10 segundos
+      fetchTokenBalance(provider, account);
+      const intervalId = setInterval(() => fetchTokenBalance(provider, account), 10000);
+      return () => clearInterval(intervalId);
+    }
+  }, [provider, account, fetchTokenBalance]);
 
-      // Limpiar el intervalo al desmontar el componente
+  // Listener for account and network changes
+  useEffect(() => {
+    if (window.ethereum) {
+      const handleAccountsChanged = (accounts: string[]) => {
+        if (accounts.length > 0) {
+          setAccount(accounts[0]);
+        } else {
+          setAccount(null);
+          setProvider(null);
+        }
+      };
+
+      const handleChainChanged = () => {
+        // Reload the app to re-initialize the provider and check the network
+        window.location.reload();
+      };
+
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      window.ethereum.on('chainChanged', handleChainChanged);
+
       return () => {
-        console.log('Clearing polling interval');
-        clearInterval(intervalId);
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        window.ethereum.removeListener('chainChanged', handleChainChanged);
       };
     }
-  }, [provider, account]);
+  }, []);
 
   return (
     <>
@@ -534,12 +503,13 @@ function App() {
         onConnectGoogle={login}
         onConnectMetaMask={connectWithMetaMask}
         onViewNFTClick={handleViewNFTClick}
-        onMintNFTClick={mintNewTenantPassport} // Pasar la nueva función
+        onMintNFTClick={mintNewTenantPassport}
         onViewMyPropertiesClick={handleViewMyProperties}
+        onSavingsClick={() => { /* Placeholder for future savings modal */ }}
         tenantPassportData={tenantPassportData}
         isCreatingWallet={isCreatingWallet}
-        setShowOnboarding={setShowOnboarding} // Pass the function as a prop
-        showOnboarding={showOnboarding} // Pass the state as a prop
+        setShowOnboarding={setShowOnboarding}
+        showOnboarding={showOnboarding}
       />
       <Routes>
         <Route path="/" element={
@@ -956,7 +926,7 @@ function App() {
                   <Typography variant="body2"><b>Cuenta CLABE:</b> {user?.clabe || "Registrate primero"}</Typography>
                   <Typography variant="body2"><b>Beneficiario:</b> RoomFi</Typography>
                   <Typography variant="body2"><b>Monto sugerido:</b> $ {selectedInterestListing ? (selectedInterestListing.price * 0.05).toLocaleString() : '--'} MXN</Typography>
-                  <Typography variant="body2"><b>Referencia:</b> {selectedInterestListing ? `RESERVA-${selectedInterestListing.id}` : '--'}</Typography>
+                  <Typography variant="body2"><b>Referencia:</b> {selectedInterestListing ? `RESERVA-${selectedInterestListing.id}` : '--'} </Typography>
                 </Stack>
                 <Typography variant="body2" color="warning.main" sx={{ mb: 2 }}>
                   * El depósito es un anticipo para reservar la propiedad. Si tienes dudas, contacta a soporte RoomFi.
