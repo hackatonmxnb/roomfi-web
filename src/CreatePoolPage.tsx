@@ -11,11 +11,13 @@ import {
 
 interface CreatePoolPageProps {
   account: string | null;
+  tokenDecimals: number;
 }
 
-export default function CreatePoolPage({ account }: CreatePoolPageProps) {
+export default function CreatePoolPage({ account, tokenDecimals }: CreatePoolPageProps) {
     const [form, setForm] = useState({
         propertyName: '',
+        description: '', // Añadido para futura referencia
         totalRent: '',
         seriousnessDeposit: '',
         tenantCount: '',
@@ -44,10 +46,9 @@ export default function CreatePoolPage({ account }: CreatePoolPageProps) {
 
         try {
             if (!window.ethereum) {
-                throw new Error("MetaMask no está instalado. Por favor, instálalo para continuar.");
+                throw new Error("MetaMask no está instalado.");
             }
 
-            await window.ethereum.request({ method: 'eth_requestAccounts' });
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner();
 
@@ -57,9 +58,8 @@ export default function CreatePoolPage({ account }: CreatePoolPageProps) {
                 signer
             );
 
-            const { totalRent, seriousnessDeposit, tenantCount, paymentDayStart, paymentDayEnd, propertyName } = form;
+            const { propertyName, description, totalRent, seriousnessDeposit, tenantCount, paymentDayStart, paymentDayEnd } = form;
             
-            // Validación de la divisibilidad de la renta
             if (Number(tenantCount) <= 0) {
                 throw new Error("El número de inquilinos debe ser mayor que 0.");
             }
@@ -67,17 +67,13 @@ export default function CreatePoolPage({ account }: CreatePoolPageProps) {
                 throw new Error("La renta total debe ser divisible por el número de inquilinos.");
             }
 
-            const totalRentWei = ethers.parseUnits(totalRent, 18);
-            const seriousnessDepositWei = ethers.parseUnits(seriousnessDeposit, 18);
+            const totalRentWei = ethers.parseUnits(totalRent, tokenDecimals);
+            const seriousnessDepositWei = ethers.parseUnits(seriousnessDeposit, tokenDecimals);
 
-            const tokenContract = new ethers.Contract(MXNBT_ADDRESS, MXNB_ABI, signer);
-            
-            setStatusMessage('Aprobando el contrato para gestionar tu depósito...');
-            const approveTx = await tokenContract.approve(PROPERTY_INTEREST_POOL_ADDRESS, seriousnessDepositWei);
-            await approveTx.wait();
-            
             setStatusMessage('Creando el pool de interés en la blockchain...');
             const tx = await poolContract.createPropertyPool(
+                propertyName,
+                description || " ", // Enviar descripción o un espacio si está vacía
                 totalRentWei,
                 seriousnessDepositWei,
                 tenantCount,
@@ -85,15 +81,8 @@ export default function CreatePoolPage({ account }: CreatePoolPageProps) {
                 paymentDayEnd
             );
 
-            const receipt = await tx.wait();
+            await tx.wait();
             
-            // Obtener el ID de la propiedad del evento
-            const event = receipt.logs.find((log: any) => log.eventName === 'PropertyCreated');
-            if (event) {
-                const propertyId = event.args.propertyId.toString();
-                localStorage.setItem(`property_name_${propertyId}`, propertyName);
-            }
-
             setStatusMessage('¡Pool de interés creado exitosamente! Serás redirigido en 3 segundos.');
 
             setTimeout(() => {
@@ -101,7 +90,8 @@ export default function CreatePoolPage({ account }: CreatePoolPageProps) {
             }, 3000);
 
         } catch (err: any) {
-            setError(err.message || 'Ocurrió un error desconocido.');
+            const reason = err.reason || 'Ocurrió un error desconocido.';
+            setError(reason);
             setStatusMessage('');
         } finally {
             setLoading(false);

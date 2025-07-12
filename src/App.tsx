@@ -31,7 +31,9 @@ import {
   PROPERTY_INTEREST_POOL_ABI,
   NETWORK_CONFIG,
   MXNBT_ADDRESS,
-  MXNB_ABI
+  MXNB_ABI,
+  INTEREST_GENERATOR_ADDRESS,
+  INTEREST_GENERATOR_ABI,
 } from './web3/config';
 import Portal from '@portal-hq/web';
 import { renderAmenityIcon, getDaysAgo } from './utils/icons';
@@ -189,6 +191,15 @@ function App() {
   const [showTenantPassportModal, setShowTenantPassportModal] = useState(false);
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
   const [tokenBalance, setTokenBalance] = useState<number>(0);
+  const [tokenDecimals, setTokenDecimals] = useState<number>(18); // Default to 18, will be updated
+
+  // --- NUEVOS ESTADOS PARA LA BÓVEDA ---
+  const [showVaultModal, setShowVaultModal] = useState(false);
+  const [vaultBalance, setVaultBalance] = useState<number>(0);
+  const [interestEarned, setInterestEarned] = useState<number>(0);
+  const [vaultAmount, setVaultAmount] = useState('');
+  const [allowance, setAllowance] = useState<number>(0);
+  // --- FIN DE NUEVOS ESTADOS ---
 
   // Estados del Mapa
   const mapCenter = { lat: 19.4326, lng: -99.1333 };
@@ -214,6 +225,7 @@ function App() {
 
   const [showMyPropertiesModal, setShowMyPropertiesModal] = useState(false);
   const [myProperties, setMyProperties] = useState<any[]>([]);
+  const [landlordFundAmount, setLandlordFundAmount] = useState(''); // --- NUEVO ---
 
   // Handlers Web3
   const handleOnboardingOpen = () => setShowOnboarding(true);
@@ -224,6 +236,195 @@ function App() {
     setDepositAmount('');
   };
   const handleNotificationClose = () => setNotification({ ...notification, open: false });
+
+  // --- LÓGICA DE LA BÓVEDA (CORREGIDA CON DECIMALES DINÁMICOS) ---
+  const handleVaultModalOpen = () => setShowVaultModal(true);
+  const handleVaultModalClose = () => {
+    setShowVaultModal(false);
+    setVaultAmount('');
+    setAllowance(0); // Resetear al cerrar
+  };
+
+  const checkAllowance = useCallback(async () => {
+    if (!account || !provider || !vaultAmount) return;
+    try {
+      const tokenContract = new ethers.Contract(MXNBT_ADDRESS, MXNB_ABI, provider);
+      const currentAllowance = await tokenContract.allowance(account, INTEREST_GENERATOR_ADDRESS);
+      setAllowance(Number(ethers.formatUnits(currentAllowance, tokenDecimals)));
+    } catch (error) {
+      console.error("Error checking allowance:", error);
+    }
+  }, [account, provider, vaultAmount, tokenDecimals]);
+
+  const fetchVaultData = useCallback(async () => {
+    if (!account || !provider) return;
+    try {
+      const interestContract = new ethers.Contract(INTEREST_GENERATOR_ADDRESS, INTEREST_GENERATOR_ABI, provider);
+      const [rawBalance, rawInterest] = await Promise.all([
+        interestContract.balanceOf(account),
+        interestContract.calculateInterest(account)
+      ]);
+      setVaultBalance(Number(ethers.formatUnits(rawBalance, tokenDecimals)));
+      setInterestEarned(Number(ethers.formatUnits(rawInterest, tokenDecimals)));
+    } catch (error) {
+      console.error("Error fetching vault data:", error);
+    }
+  }, [account, provider, tokenDecimals]);
+
+  const handleApprove = async () => {
+    if (!account || !provider || !vaultAmount) return;
+    if (!(await checkNetwork(provider))) return;
+
+    try {
+      const signer = await provider.getSigner();
+      const amountToApprove = ethers.parseUnits(vaultAmount, tokenDecimals);
+      const tokenContract = new ethers.Contract(MXNBT_ADDRESS, MXNB_ABI, signer);
+      
+      setNotification({ open: true, message: 'Enviando transacción de aprobación...', severity: 'info' });
+      const tx = await tokenContract.approve(INTEREST_GENERATOR_ADDRESS, amountToApprove);
+      await tx.wait();
+      
+      setNotification({ open: true, message: '¡Aprobación exitosa!', severity: 'success' });
+      await checkAllowance();
+    } catch (error) {
+      console.error("Error approving:", error);
+      setNotification({ open: true, message: 'Error al aprobar la transacción.', severity: 'error' });
+    }
+  };
+
+  const handleDeposit = async () => {
+    if (!account || !provider || !vaultAmount) return;
+    if (!(await checkNetwork(provider))) return;
+
+    try {
+      const signer = await provider.getSigner();
+      const amountToDeposit = ethers.parseUnits(vaultAmount, tokenDecimals);
+      const interestContract = new ethers.Contract(INTEREST_GENERATOR_ADDRESS, INTEREST_GENERATOR_ABI, signer);
+
+      setNotification({ open: true, message: 'Enviando transacción de depósito...', severity: 'info' });
+      const tx = await interestContract.deposit(amountToDeposit);
+      await tx.wait();
+
+      setNotification({ open: true, message: '¡Depósito realizado con éxito!', severity: 'success' });
+      await fetchVaultData();
+      await fetchTokenBalance(provider, account);
+      handleVaultModalClose();
+    } catch (error) {
+      console.error("Error depositing to vault:", error);
+      setNotification({ open: true, message: 'Error al realizar el depósito.', severity: 'error' });
+    }
+  };
+
+  const handleWithdrawFromVault = async () => {
+    if (!account || !provider || !vaultAmount) return;
+    if (!(await checkNetwork(provider))) return;
+
+    try {
+      const signer = await provider.getSigner();
+      const amount = ethers.parseUnits(vaultAmount, tokenDecimals);
+      
+      const interestContract = new ethers.Contract(INTEREST_GENERATOR_ADDRESS, INTEREST_GENERATOR_ABI, signer);
+      setNotification({ open: true, message: 'Retirando fondos...', severity: 'info' });
+      const withdrawTx = await interestContract.withdraw(amount);
+      await withdrawTx.wait();
+
+      setNotification({ open: true, message: '¡Retiro realizado con éxito!', severity: 'success' });
+      await fetchVaultData();
+      await fetchTokenBalance(provider, account);
+      handleVaultModalClose();
+
+    } catch (error) {
+      console.error("Error withdrawing from vault:", error);
+      setNotification({ open: true, message: 'Error al realizar el retiro.', severity: 'error' });
+    }
+  };
+  // --- FIN DE LÓGICA DE BÓVEDA ---
+
+  // --- NUEVA LÓGICA PARA GESTIÓN DE FONDOS DEL POOL ---
+  const handleApproveLandlordFunds = async (propertyId: number) => {
+    if (!account || !provider || !landlordFundAmount) return;
+    if (!(await checkNetwork(provider))) return;
+
+    try {
+      const signer = await provider.getSigner();
+      const amountToApprove = ethers.parseUnits(landlordFundAmount, tokenDecimals);
+      const tokenContract = new ethers.Contract(MXNBT_ADDRESS, MXNB_ABI, signer);
+      
+      setNotification({ open: true, message: 'Aprobando fondos...', severity: 'info' });
+      const tx = await tokenContract.approve(PROPERTY_INTEREST_POOL_ADDRESS, amountToApprove);
+      await tx.wait();
+      
+      setNotification({ open: true, message: '¡Aprobación exitosa! Ahora puedes añadir los fondos.', severity: 'success' });
+      // Aquí podríamos forzar una re-renderización o simplemente confiar en que el usuario hará clic en "Añadir Fondos"
+    } catch (error) {
+      console.error("Error approving landlord funds:", error);
+      setNotification({ open: true, message: 'Error al aprobar los fondos.', severity: 'error' });
+    }
+  };
+
+  const handleAddLandlordFunds = async (propertyId: number) => {
+    if (!account || !provider || !landlordFundAmount) return;
+    if (!(await checkNetwork(provider))) return;
+
+    try {
+      const signer = await provider.getSigner();
+      const amountToAdd = ethers.parseUnits(landlordFundAmount, tokenDecimals);
+      const poolContract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, signer);
+
+      setNotification({ open: true, message: 'Añadiendo fondos al pool...', severity: 'info' });
+      const tx = await poolContract.addLandlordFunds(propertyId, amountToAdd);
+      await tx.wait();
+
+      setNotification({ open: true, message: '¡Fondos añadidos exitosamente!', severity: 'success' });
+      await handleViewMyProperties(); // Recargar datos de propiedades
+      setLandlordFundAmount('');
+    } catch (error) {
+      console.error("Error adding landlord funds:", error);
+      setNotification({ open: true, message: 'Error al añadir los fondos.', severity: 'error' });
+    }
+  };
+
+  const handleDepositPoolToVault = async (propertyId: number) => {
+    if (!account || !provider) return;
+    if (!(await checkNetwork(provider))) return;
+
+    try {
+      const signer = await provider.getSigner();
+      const poolContract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, signer);
+
+      setNotification({ open: true, message: 'Moviendo fondos del pool a la bóveda...', severity: 'info' });
+      const tx = await poolContract.depositToVault(propertyId);
+      await tx.wait();
+
+      setNotification({ open: true, message: '¡Fondos movidos a la bóveda exitosamente!', severity: 'success' });
+      await handleViewMyProperties();
+    } catch (error) {
+      console.error("Error depositing pool funds to vault:", error);
+      setNotification({ open: true, message: 'Error al mover los fondos a la bóveda.', severity: 'error' });
+    }
+  };
+
+  const handleWithdrawPoolFromVault = async (propertyId: number, amount: string) => {
+    if (!account || !provider) return;
+    if (!(await checkNetwork(provider))) return;
+
+    try {
+      const signer = await provider.getSigner();
+      const amountToWithdraw = ethers.parseUnits(amount, tokenDecimals);
+      const poolContract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, signer);
+
+      setNotification({ open: true, message: 'Retirando fondos de la bóveda al pool...', severity: 'info' });
+      const tx = await poolContract.withdrawFromVault(propertyId, amountToWithdraw);
+      await tx.wait();
+
+      setNotification({ open: true, message: '¡Fondos retirados exitosamente!', severity: 'success' });
+      await handleViewMyProperties();
+    } catch (error) {
+      console.error("Error withdrawing pool funds from vault:", error);
+      setNotification({ open: true, message: 'Error al retirar los fondos de la bóveda.', severity: 'error' });
+    }
+  };
+  // --- FIN DE NUEVA LÓGICA ---
 
   const checkNetwork = async (prov: ethers.BrowserProvider): Promise<boolean> => {
     const network = await prov.getNetwork();
@@ -270,10 +471,25 @@ function App() {
   const fetchTokenBalance = useCallback(async (prov: ethers.Provider, acc: string) => {
     try {
         const contract = new ethers.Contract(MXNBT_ADDRESS, MXNB_ABI, prov);
-        const rawBalance = await contract.balanceOf(acc);
-        setTokenBalance(Number(ethers.formatUnits(rawBalance, 18))); // Assuming 18 decimals for MXNBT
+        
+        const [rawBalance, decimals] = await Promise.all([
+            contract.balanceOf(acc),
+            contract.decimals()
+        ]);
+
+        console.log("--- [DIAGNÓSTICO DE BALANCE] ---");
+        console.log("Billetera (Account):", acc);
+        console.log("Contrato del Token (Address):", MXNBT_ADDRESS);
+        console.log("Decimales del Contrato:", decimals.toString());
+        console.log("Balance Crudo (Raw):", rawBalance.toString());
+        console.log("---------------------------------");
+        
+        const numDecimals = Number(decimals);
+        setTokenDecimals(numDecimals);
+        setTokenBalance(Number(ethers.formatUnits(rawBalance, numDecimals)));
     } catch (error) {
         console.error("Error fetching token balance:", error);
+        setNotification({ open: true, message: 'Error al obtener el balance del token.', severity: 'error' });
     }
   }, []);
 
@@ -285,6 +501,20 @@ function App() {
     if (!(await checkNetwork(provider))) return;
 
     try {
+      // --- DEBUGGING STEP ---
+      const network = await provider.getNetwork();
+      const contractAddress = PROPERTY_INTEREST_POOL_ADDRESS;
+      console.log(`[DEBUG] Intentando llamar a 'propertyCounter' en:`);
+      console.log(`[DEBUG] Contrato: ${contractAddress}`);
+      console.log(`[DEBUG] Chain ID: ${network.chainId}`);
+      const code = await provider.getCode(contractAddress);
+      console.log(`[DEBUG] Bytecode en la dirección: ${code.substring(0, 40)}...`);
+      if (code === '0x') {
+        setNotification({ open: true, message: '[DEBUG] ¡Error Crítico! No se encontró código de contrato en la dirección proporcionada. Verifica que el contrato esté desplegado y la dirección sea correcta.', severity: 'error' });
+        return;
+      }
+      // --- END DEBUGGING ---
+
       const contract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, provider);
       const count = await contract.propertyCounter();
       const properties = [];
@@ -298,8 +528,11 @@ function App() {
             seriousnessDeposit: p[2],
             requiredTenantCount: p[3],
             amountPooledForRent: p[4],
-            interestedTenants: p[5],
-            state: p[6],
+            amountInVault: p[5], // --- NUEVO ---
+            interestedTenants: p[6],
+            state: p[7],
+            paymentDayStart: p[8],
+            paymentDayEnd: p[9],
           });
         }
       }
@@ -386,6 +619,27 @@ function App() {
           console.error("Error minting new Tenant Passport:", error);
           setNotification({ open: true, message: 'Error al mintear un nuevo Tenant Passport.', severity: 'error' });
       }
+  };
+
+  const handleCreatePoolClick = async () => {
+    if (!account || !provider) {
+      setNotification({ open: true, message: 'Por favor, conecta tu wallet primero.', severity: 'warning' });
+      return;
+    }
+    
+    // Verificar si el usuario tiene un Tenant Passport
+    const passportContract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, provider);
+    const balance = await passportContract.balanceOf(account);
+
+    if (balance.toString() === '0') {
+      setNotification({ 
+        open: true, 
+        message: 'Necesitas un Tenant Passport para crear un pool. Obtenlo en la sección "Ver mi NFT".', 
+        severity: 'info' 
+      });
+    } else {
+      navigate('/create-pool');
+    }
   };
 
   const { updateUser, user } = useUser();
@@ -494,6 +748,25 @@ function App() {
     }
   }, []);
 
+  // --- USE EFFECT PARA LA BÓVEDA ---
+  useEffect(() => {
+    if (showVaultModal && account && provider) {
+      fetchVaultData(); // Carga inicial de datos de la bóveda
+      checkAllowance(); // Carga inicial del allowance
+
+      const intervalId = setInterval(fetchVaultData, 5000);
+      return () => clearInterval(intervalId);
+    }
+  }, [showVaultModal, account, provider, fetchVaultData, checkAllowance]);
+
+  // Comprobar el allowance cada vez que el monto a depositar cambia
+  useEffect(() => {
+    if (showVaultModal) {
+      checkAllowance();
+    }
+  }, [vaultAmount, showVaultModal, checkAllowance]);
+  // --- FIN DE USE EFFECT ---
+
   return (
     <>
       <Header
@@ -505,7 +778,7 @@ function App() {
         onViewNFTClick={handleViewNFTClick}
         onMintNFTClick={mintNewTenantPassport}
         onViewMyPropertiesClick={handleViewMyProperties}
-        onSavingsClick={() => { /* Placeholder for future savings modal */ }}
+        onSavingsClick={handleVaultModalOpen}
         tenantPassportData={tenantPassportData}
         isCreatingWallet={isCreatingWallet}
         setShowOnboarding={setShowOnboarding}
@@ -835,29 +1108,90 @@ function App() {
             </Snackbar>
 
             <Modal open={showMyPropertiesModal} onClose={() => setShowMyPropertiesModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 600, width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
-                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Mis Propiedades Creadas</Typography>
+              <Paper sx={{ p: 4, borderRadius: 4, maxWidth: 700, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+                <Typography variant="h5" component="h2" sx={{ mb: 3, fontWeight: 700 }}>
+                  Panel de Mis Propiedades
+                </Typography>
                 {myProperties.length > 0 ? (
-                  <Stack spacing={2}>
-                    {myProperties.map(prop => (
-                      <Paper key={prop.id} variant="outlined" sx={{ p: 2 }}>
-                        <Typography variant="body1">
-                          <Typography component="span" fontWeight="bold">ID de Propiedad:</Typography> {prop.id.toString()}
-                        </Typography>
-                        <Typography variant="body1">
-                          <Typography component="span" fontWeight="bold">Renta Total:</Typography> {ethers.formatUnits(prop.totalRentAmount, 18)} MXNBT
-                        </Typography>
-                        <Typography variant="body1">
-                          <Typography component="span" fontWeight="bold">Estado:</Typography> {prop.state === 0 ? 'Abierto' : prop.state === 1 ? 'Fondeando' : prop.state === 2 ? 'Rentado' : 'Cancelado'}
-                        </Typography>
-                         <Typography variant="body1">
-                          <Typography component="span" fontWeight="bold">Inquilinos interesados:</Typography> {prop.interestedTenants ? prop.interestedTenants.length : 0} / {prop.requiredTenantCount.toString()}
-                        </Typography>
-                        <Typography variant="body1">
-                          <Typography component="span" fontWeight="bold">Monto fondeado:</Typography> {ethers.formatUnits(prop.amountPooledForRent, 18)} / {ethers.formatUnits(prop.totalRentAmount, 18)} MXNBT
-                        </Typography>
-                      </Paper>
-                    ))}
+                  <Stack spacing={3}>
+                    {myProperties.map(prop => {
+                      const amountInVault = parseFloat(ethers.formatUnits(prop.amountInVault, tokenDecimals));
+                      const amountInPool = parseFloat(ethers.formatUnits(prop.amountPooledForRent, tokenDecimals));
+                      const isInVault = amountInVault > 0;
+
+                      return (
+                        <Paper key={prop.id} variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
+                          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                            <Typography variant="h6" fontWeight="600">
+                              Propiedad ID: {prop.id.toString()}
+                            </Typography>
+                            <Chip 
+                              label={isInVault ? "En Bóveda" : (prop.state === 0 ? 'Abierto' : prop.state === 1 ? 'Fondeando' : prop.state === 2 ? 'Rentado' : 'Cancelado')}
+                              color={isInVault ? "success" : "primary"}
+                              variant="filled"
+                            />
+                          </Stack>
+                          
+                          <Grid container spacing={2} sx={{ mb: 2 }}>
+                            <Grid item xs={6}>
+                              <Typography variant="body1">
+                                <Typography component="span" fontWeight="bold">Fondos en Pool:</Typography> {amountInPool.toFixed(4)} MXNBT
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={6}>
+                              <Typography variant="body1">
+                                <Typography component="span" fontWeight="bold">Fondos en B��veda:</Typography> {amountInVault.toFixed(4)} MXNBT
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={12}>
+                               <Typography variant="body1" color="secondary.main">
+                                <Typography component="span" fontWeight="bold" color="text.primary">Intereses Ganados:</Typography> {/* Placeholder, la lógica real es más compleja */}
+                                + 0.0000 MXNBT
+                              </Typography>
+                            </Grid>
+                          </Grid>
+
+                          <Stack spacing={2}>
+                            {/* Sección para mover fondos a la bóveda */}
+                            <Button 
+                              variant="contained" 
+                              onClick={() => handleDepositPoolToVault(prop.id)}
+                              disabled={amountInPool <= 0}
+                            >
+                              Mover Fondos del Pool a la Bóveda
+                            </Button>
+                            
+                            {/* Sección para retirar fondos de la bóveda */}
+                            {isInVault && (
+                              <Button 
+                                variant="outlined" 
+                                color="secondary"
+                                onClick={() => handleWithdrawPoolFromVault(prop.id, prop.amountInVault.toString())}
+                              >
+                                Retirar Todo de la Bóveda
+                              </Button>
+                            )}
+
+                            {/* Sección para añadir fondos del landlord */}
+                            <Box sx={{ pt: 2, borderTop: '1px solid #e0e0e0' }}>
+                               <Typography variant="body2" sx={{mb: 1}}>¿Deseas añadir tus propios fondos a este pool?</Typography>
+                               <Stack direction="row" spacing={1}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  type="number"
+                                  label="Monto a añadir"
+                                  variant="outlined"
+                                  onChange={(e) => setLandlordFundAmount(e.target.value)}
+                                />
+                                <Button onClick={() => handleApproveLandlordFunds(prop.id)}>Aprobar</Button>
+                                <Button onClick={() => handleAddLandlordFunds(prop.id)}>Añadir</Button>
+                              </Stack>
+                            </Box>
+                          </Stack>
+                        </Paper>
+                      );
+                    })}
                   </Stack>
                 ) : (
                   <Typography variant="body1">No has creado ninguna propiedad aún.</Typography>
@@ -949,9 +1283,73 @@ function App() {
           </>
         } />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/create-pool" element={<CreatePoolPage account={account} />} />
+        <Route path="/create-pool" element={<CreatePoolPage account={account} tokenDecimals={tokenDecimals} />} />
         <Route path="/dashboard" element={<DashboardPage />} />
       </Routes>
+
+      {/* --- MODAL DE LA BÓVEDA (CORREGIDO) --- */}
+      <Modal open={showVaultModal} onClose={handleVaultModalClose} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Paper sx={{ p: 4, borderRadius: 4, maxWidth: 480, width: '100%', textAlign: 'center' }}>
+          <Typography variant="h5" component="h2" sx={{ mb: 3, fontWeight: 700 }}>
+            Mi Bóveda de Ahorros
+          </Typography>
+          
+          <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3 }}>
+            <Typography variant="h6" color="text.secondary">Saldo en Bóveda</Typography>
+            <Typography variant="h4" fontWeight="bold" color="primary.main" sx={{ mb: 1 }}>
+              {vaultBalance.toFixed(4)} MXNBT
+            </Typography>
+            <Typography variant="body1" color="secondary.main" sx={{ fontWeight: 600 }}>
+              + {interestEarned.toFixed(6)} Intereses Ganados
+            </Typography>
+          </Paper>
+
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Tu balance disponible: {tokenBalance.toFixed(4)} MXNBT
+          </Typography>
+
+          <TextField
+            fullWidth
+            type="number"
+            label="Monto a depositar / retirar"
+            variant="outlined"
+            value={vaultAmount}
+            onChange={(e) => setVaultAmount(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          
+          <Stack direction="row" spacing={2} justifyContent="center">
+            {allowance < parseFloat(vaultAmount || '0') ? (
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={handleApprove}
+                disabled={!vaultAmount || parseFloat(vaultAmount) <= 0}
+              >
+                Aprobar
+              </Button>
+            ) : (
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={handleDeposit}
+                disabled={!vaultAmount || parseFloat(vaultAmount) <= 0}
+              >
+                Depositar
+              </Button>
+            )}
+            <Button 
+              variant="outlined" 
+              color="secondary"
+              onClick={handleWithdrawFromVault}
+              disabled={!vaultAmount || parseFloat(vaultAmount) <= 0}
+            >
+              Retirar
+            </Button>
+          </Stack>
+        </Paper>
+      </Modal>
+      {/* --- FIN DE MODAL --- */}
     </>
   );
 }

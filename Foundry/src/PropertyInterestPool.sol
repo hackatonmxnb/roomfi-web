@@ -11,6 +11,12 @@ interface ITenantPassport {
     function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256);
 }
 
+// --- NUEVO: Interfaz para interactuar con la Bóveda de Intereses ---
+interface IMXNBInterestGenerator {
+    function deposit(uint256 amount) external;
+    function withdraw(uint256 amount) external;
+    function balanceOf(address user) external view returns (uint256);
+}
 
 /**
  * @title PropertyInterestPool
@@ -27,27 +33,29 @@ contract PropertyInterestPool {
     }
 
     struct Property {
+        string name; // --- NUEVO ---
+        string description; // --- NUEVO ---
         address landlord;
         uint256 totalRentAmount;
         uint256 seriousnessDeposit;
         uint256 requiredTenantCount;
         uint256 amountPooledForRent;
+        uint256 amountInVault; 
         address[] interestedTenants;
         mapping(address => uint256) tenantDeposits;
         State state;
-        uint256 paymentDayStart; // Día de inicio para pagar la renta
-        uint256 paymentDayEnd;   // Día límite para pagar la renta
+        uint256 paymentDayStart;
+        uint256 paymentDayEnd;
     }
 
     IERC20 public mxnbToken;
-    ITenantPassport public tenantPassport; // NUEVO: Instancia del contrato TenantPassport
+    ITenantPassport public tenantPassport;
+    IMXNBInterestGenerator public interestGenerator; // --- NUEVO: Instancia del contrato de la Bóveda
 
-    /// @dev Mapeando la infrastructura de propiedades.
     mapping(uint256 => Property) public properties;
-
-    /// @dev LA canditdad de propiedasdes que tiene el contrato.
     uint256 public propertyCounter;
 
+    // --- Eventos ---
     event PropertyCreated(uint256 indexed propertyId, address indexed landlord, uint256 totalRent);
     event InterestExpressed(uint256 indexed propertyId, address indexed tenant, uint256 depositAmount);
     event GroupFinalized(uint256 indexed propertyId);
@@ -55,6 +63,11 @@ contract PropertyInterestPool {
     event LeaseClaimed(uint256 indexed propertyId, address landlord, uint256 rentAmount);
     event InterestWithdrawn(uint256 indexed propertyId, address indexed tenant, uint256 depositAmount);
     event PoolCanceled(uint256 indexed propertyId);
+    // --- NUEVOS EVENTOS ---
+    event LandlordFundsAdded(uint256 indexed propertyId, uint256 amount);
+    event FundsDepositedToVault(uint256 indexed propertyId, uint256 amount);
+    event FundsWithdrawnFromVault(uint256 indexed propertyId, uint256 amount);
+
 
     modifier onlyState(uint256 _propertyId, State _state) {
         require(properties[_propertyId].state == _state, "Property not in correct state");
@@ -66,14 +79,16 @@ contract PropertyInterestPool {
         _;
     }
 
-    // ACTUALIZADO: El constructor ahora también acepta la dirección del TenantPassport
-    constructor(address _mxnbTokenAddress, address _tenantPassportAddress) {
+    // --- ACTUALIZADO: El constructor ahora acepta la dirección de la Bóveda ---
+    constructor(address _mxnbTokenAddress, address _tenantPassportAddress, address _interestGeneratorAddress) {
         mxnbToken = IERC20(_mxnbTokenAddress);
         tenantPassport = ITenantPassport(_tenantPassportAddress);
+        interestGenerator = IMXNBInterestGenerator(_interestGeneratorAddress);
     }
 
-    // ACTUALIZADO: Ahora llama al contrato TenantPassport para actualizar el historial
     function createPropertyPool(
+        string memory _name,
+        string memory _description,
         uint256 _totalRent,
         uint256 _seriousnessDeposit,
         uint256 _tenantCount,
@@ -90,6 +105,8 @@ contract PropertyInterestPool {
         uint256 propertyId = propertyCounter;
 
         Property storage newProperty = properties[propertyId];
+        newProperty.name = _name;
+        newProperty.description = _description;
         newProperty.landlord = msg.sender;
         newProperty.totalRentAmount = _totalRent;
         newProperty.seriousnessDeposit = _seriousnessDeposit;
@@ -98,7 +115,6 @@ contract PropertyInterestPool {
         newProperty.paymentDayStart = _paymentDayStart;
         newProperty.paymentDayEnd = _paymentDayEnd;
 
-        // Verificar que el landlord tiene un Tenant Passport
         uint256 landlordPassportBalance = tenantPassport.balanceOf(msg.sender);
         require(landlordPassportBalance > 0, "Landlord must have a Tenant Passport NFT");
         uint256 landlordTokenId = tenantPassport.tokenOfOwnerByIndex(msg.sender, 0);
@@ -107,19 +123,15 @@ contract PropertyInterestPool {
         emit PropertyCreated(propertyId, msg.sender, _totalRent);
     }
 
+    // --- Lógica existente (sin cambios) ---
     function expressInterest(uint256 _propertyId) external onlyState(_propertyId, State.OPEN) {
         require(propertyCounter >= _propertyId && _propertyId > 0, "Property does not exist");
         require(!_isInterested(_propertyId, msg.sender), "Already expressed interest");
-
         Property storage property = properties[_propertyId];
-        
         property.tenantDeposits[msg.sender] = property.seriousnessDeposit;
         property.interestedTenants.push(msg.sender);
-
         mxnbToken.safeTransferFrom(msg.sender, address(this), property.seriousnessDeposit);
-
         emit InterestExpressed(_propertyId, msg.sender, property.seriousnessDeposit);
-
         if (property.interestedTenants.length == property.requiredTenantCount) {
             property.state = State.FUNDING;
             emit GroupFinalized(_propertyId);
@@ -128,33 +140,25 @@ contract PropertyInterestPool {
 
     function fundRent(uint256 _propertyId) external onlyState(_propertyId, State.FUNDING) {
         require(_isInterested(_propertyId, msg.sender), "Not an interested tenant");
-
         Property storage property = properties[_propertyId];
         uint256 rentShare = property.totalRentAmount / property.requiredTenantCount;
         uint256 amountToPay = rentShare - property.tenantDeposits[msg.sender];
-
         property.amountPooledForRent += rentShare;
-
         mxnbToken.safeTransferFrom(msg.sender, address(this), amountToPay);
-
         emit RentFunded(_propertyId, msg.sender, rentShare);
     }
 
     function claimLease(uint256 _propertyId) external onlyLandlord(_propertyId) {
         Property storage property = properties[_propertyId];
         require(property.amountPooledForRent == property.totalRentAmount, "Rent not fully funded");
-
         property.state = State.LEASED;
-
         mxnbToken.safeTransfer(property.landlord, property.totalRentAmount);
-
         emit LeaseClaimed(_propertyId, property.landlord, property.totalRentAmount);
     }
 
     function cancelPool(uint256 _propertyId) external onlyLandlord(_propertyId) {
         State currentState = properties[_propertyId].state;
         require(currentState == State.OPEN || currentState == State.FUNDING, "Pool can only be canceled if OPEN or FUNDING");
-        
         properties[_propertyId].state = State.CANCELED;
         emit PoolCanceled(_propertyId);
     }
@@ -163,13 +167,48 @@ contract PropertyInterestPool {
         Property storage property = properties[_propertyId];
         uint256 depositAmount = property.tenantDeposits[msg.sender];
         require(depositAmount > 0, "No deposit to withdraw");
-
         property.tenantDeposits[msg.sender] = 0;
-
         mxnbToken.safeTransfer(msg.sender, depositAmount);
-
         emit InterestWithdrawn(_propertyId, msg.sender, depositAmount);
     }
+
+    // --- NUEVAS FUNCIONES DE GESTIÓN DE BÓVEDA ---
+
+    function addLandlordFunds(uint256 _propertyId, uint256 _amount) external onlyLandlord(_propertyId) {
+        require(_amount > 0, "Amount must be positive");
+        properties[_propertyId].amountPooledForRent += _amount;
+        mxnbToken.safeTransferFrom(msg.sender, address(this), _amount);
+        emit LandlordFundsAdded(_propertyId, _amount);
+    }
+
+    function depositToVault(uint256 _propertyId) external onlyLandlord(_propertyId) {
+        Property storage property = properties[_propertyId];
+        uint256 amountToDeposit = property.amountPooledForRent;
+        require(amountToDeposit > 0, "No funds in pool to deposit");
+
+        property.amountPooledForRent = 0;
+        property.amountInVault += amountToDeposit;
+
+        mxnbToken.approve(address(interestGenerator), amountToDeposit);
+        interestGenerator.deposit(amountToDeposit);
+
+        emit FundsDepositedToVault(_propertyId, amountToDeposit);
+    }
+
+    function withdrawFromVault(uint256 _propertyId, uint256 _amount) external onlyLandlord(_propertyId) {
+        Property storage property = properties[_propertyId];
+        require(_amount > 0, "Amount must be positive");
+        require(property.amountInVault >= _amount, "Withdraw amount exceeds vault balance");
+
+        property.amountInVault -= _amount;
+        property.amountPooledForRent += _amount;
+
+        interestGenerator.withdraw(_amount);
+
+        emit FundsWithdrawnFromVault(_propertyId, _amount);
+    }
+
+    // --- Funciones de Vista ---
 
     function _isInterested(uint256 _propertyId, address _tenant) internal view returns (bool) {
         address[] memory tenants = properties[_propertyId].interestedTenants;
@@ -181,19 +220,35 @@ contract PropertyInterestPool {
         return false;
     }
 
-    // NUEVA FUNCIÓN: Devuelve los detalles de la propiedad sin el mapping, para ser compatible con el ABI.
+    // --- ACTUALIZADO: Devuelve también amountInVault ---
     function getPropertyInfo(uint256 _propertyId) 
         public 
         view 
-        returns (address, uint256, uint256, uint256, uint256, address[] memory, State, uint256, uint256)
+        returns (
+            string memory name,
+            string memory description,
+            address landlord,
+            uint256 totalRentAmount,
+            uint256 seriousnessDeposit,
+            uint256 requiredTenantCount,
+            uint256 amountPooledForRent,
+            uint256 amountInVault,
+            address[] memory interestedTenants,
+            State state,
+            uint256 paymentDayStart,
+            uint256 paymentDayEnd
+        )
     {
         Property storage p = properties[_propertyId];
         return (
+            p.name,
+            p.description,
             p.landlord,
             p.totalRentAmount,
             p.seriousnessDeposit,
             p.requiredTenantCount,
             p.amountPooledForRent,
+            p.amountInVault,
             p.interestedTenants,
             p.state,
             p.paymentDayStart,
