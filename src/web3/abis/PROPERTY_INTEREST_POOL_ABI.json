@@ -148,72 +148,91 @@
   },
   {
     "type": "function",
+    "name": "getPropertiesByLandlord",
+    "inputs": [
+      {
+        "name": "landlord",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getPropertyInfo",
     "inputs": [
       {
-        "name": "_propertyId",
+        "name": "propertyId",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "outputs": [
       {
-        "name": "name",
+        "name": "",
         "type": "string",
         "internalType": "string"
       },
       {
-        "name": "description",
+        "name": "",
         "type": "string",
         "internalType": "string"
       },
       {
-        "name": "landlord",
+        "name": "",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "totalRentAmount",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "seriousnessDeposit",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "requiredTenantCount",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "amountPooledForRent",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "amountInVault",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "interestedTenants",
+        "name": "",
         "type": "address[]",
         "internalType": "address[]"
       },
       {
-        "name": "state",
+        "name": "",
         "type": "uint8",
         "internalType": "enum PropertyInterestPool.State"
       },
       {
-        "name": "paymentDayStart",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "paymentDayEnd",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -229,6 +248,49 @@
         "name": "",
         "type": "address",
         "internalType": "contract IMXNBInterestGenerator"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "landlordProperties",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "landlordToPropertyCount",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"

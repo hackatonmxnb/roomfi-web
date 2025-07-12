@@ -303,7 +303,7 @@ function App() {
 
       setNotification({ open: true, message: 'Enviando transacción de depósito...', severity: 'info' });
       const tx = await interestContract.deposit(amountToDeposit);
-      await tx.wait();
+      await tx.wait(2); // Esperar 2 confirmaciones para asegurar la propagación del estado
 
       setNotification({ open: true, message: '¡Depósito realizado con éxito!', severity: 'success' });
       await fetchVaultData();
@@ -424,6 +424,27 @@ function App() {
       setNotification({ open: true, message: 'Error al retirar los fondos de la bóveda.', severity: 'error' });
     }
   };
+
+  const handleCancelPool = async (propertyId: number) => {
+    if (!account || !provider) return;
+    if (!(await checkNetwork(provider))) return;
+
+    try {
+      const signer = await provider.getSigner();
+      const poolContract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, signer);
+
+      setNotification({ open: true, message: 'Cancelando el pool...', severity: 'info' });
+      const tx = await poolContract.cancelPool(propertyId);
+      await tx.wait();
+
+      setNotification({ open: true, message: '¡Pool cancelado exitosamente!', severity: 'success' });
+      await handleViewMyProperties(); // Recargar datos
+    } catch (error: any) {
+      console.error("Error canceling pool:", error);
+      const reason = error.reason || 'Error al cancelar el pool.';
+      setNotification({ open: true, message: reason, severity: 'error' });
+    }
+  };
   // --- FIN DE NUEVA LÓGICA ---
 
   const checkNetwork = async (prov: ethers.BrowserProvider): Promise<boolean> => {
@@ -516,26 +537,28 @@ function App() {
       // --- END DEBUGGING ---
 
       const contract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, provider);
-      const count = await contract.propertyCounter();
+      const propertyIds = await contract.getPropertiesByLandlord(account);
+      
       const properties = [];
-      for (let i = 1; i <= count; i++) {
-        const p = await contract.getPropertyInfo(i);
-        if (p[0].toLowerCase() === account.toLowerCase()) {
-          properties.push({
-            id: i,
-            landlord: p[0],
-            totalRentAmount: p[1],
-            seriousnessDeposit: p[2],
-            requiredTenantCount: p[3],
-            amountPooledForRent: p[4],
-            amountInVault: p[5], // --- NUEVO ---
-            interestedTenants: p[6],
-            state: p[7],
-            paymentDayStart: p[8],
-            paymentDayEnd: p[9],
-          });
-        }
+      for (const id of propertyIds) {
+        const p = await contract.getPropertyInfo(id);
+        properties.push({
+          id: id,
+          name: p[0],
+          description: p[1],
+          landlord: p[2],
+          totalRentAmount: p[3],
+          seriousnessDeposit: p[4],
+          requiredTenantCount: p[5],
+          amountPooledForRent: p[6],
+          amountInVault: p[7],
+          interestedTenants: p[8],
+          state: Number(p[9]),
+          paymentDayStart: p[10],
+          paymentDayEnd: p[11],
+        });
       }
+
       setMyProperties(properties);
       setShowMyPropertiesModal(true);
     } catch (error: any) {
@@ -754,7 +777,7 @@ function App() {
       fetchVaultData(); // Carga inicial de datos de la bóveda
       checkAllowance(); // Carga inicial del allowance
 
-      const intervalId = setInterval(fetchVaultData, 5000);
+      const intervalId = setInterval(fetchVaultData, 2000); // Refrescar cada 2 segundos
       return () => clearInterval(intervalId);
     }
   }, [showVaultModal, account, provider, fetchVaultData, checkAllowance]);
@@ -1119,58 +1142,84 @@ function App() {
                       const amountInPool = parseFloat(ethers.formatUnits(prop.amountPooledForRent, tokenDecimals));
                       const isInVault = amountInVault > 0;
 
+                      const statusMap: { [key: number]: { text: string; color: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' } } = {
+                        0: { text: 'Activo (Abierto)', color: 'primary' },
+                        1: { text: 'Activo (Fondeando)', color: 'secondary' },
+                        2: { text: 'Rentado', color: 'success' },
+                        3: { text: 'Cancelado', color: 'error' }
+                      };
+                      const currentStatus = statusMap[prop.state] || { text: 'Desconocido', color: 'info' };
+
                       return (
                         <Paper key={prop.id} variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
                           <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                             <Typography variant="h6" fontWeight="600">
-                              Propiedad ID: {prop.id.toString()}
+                              {prop.name || `Propiedad ID: ${prop.id.toString()}`}
                             </Typography>
                             <Chip 
-                              label={isInVault ? "En Bóveda" : (prop.state === 0 ? 'Abierto' : prop.state === 1 ? 'Fondeando' : prop.state === 2 ? 'Rentado' : 'Cancelado')}
-                              color={isInVault ? "success" : "primary"}
+                              label={isInVault ? "En Bóveda" : currentStatus.text}
+                              color={isInVault ? "success" : currentStatus.color}
                               variant="filled"
                             />
                           </Stack>
                           
                           <Grid container spacing={2} sx={{ mb: 2 }}>
-                            <Grid item xs={6}>
+                            <Grid item xs={12}>
+                                <Typography variant="body1">
+                                    <Typography component="span" fontWeight="bold">Interesados:</Typography> {prop.interestedTenants.length} de {prop.requiredTenantCount.toString()}
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Typography variant="body1">
+                                <Typography component="span" fontWeight="bold">Renta Mensual:</Typography> {ethers.formatUnits(prop.totalRentAmount, tokenDecimals)} MXNBT
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Typography variant="body1">
+                                <Typography component="span" fontWeight="bold">Depósito de Seriedad:</Typography> {ethers.formatUnits(prop.seriousnessDeposit, tokenDecimals)} MXNBT
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
                               <Typography variant="body1">
                                 <Typography component="span" fontWeight="bold">Fondos en Pool:</Typography> {amountInPool.toFixed(4)} MXNBT
                               </Typography>
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid item xs={12} sm={6}>
                               <Typography variant="body1">
-                                <Typography component="span" fontWeight="bold">Fondos en B��veda:</Typography> {amountInVault.toFixed(4)} MXNBT
-                              </Typography>
-                            </Grid>
-                            <Grid item xs={12}>
-                               <Typography variant="body1" color="secondary.main">
-                                <Typography component="span" fontWeight="bold" color="text.primary">Intereses Ganados:</Typography> {/* Placeholder, la lógica real es más compleja */}
-                                + 0.0000 MXNBT
+                                <Typography component="span" fontWeight="bold">Fondos en Bóveda:</Typography> {amountInVault.toFixed(4)} MXNBT
                               </Typography>
                             </Grid>
                           </Grid>
 
                           <Stack spacing={2}>
-                            {/* Sección para mover fondos a la bóveda */}
+                            {/* Botones de acciones principales */}
                             <Button 
                               variant="contained" 
                               onClick={() => handleDepositPoolToVault(prop.id)}
-                              disabled={amountInPool <= 0}
+                              disabled={amountInPool <= 0 || prop.state > 1}
                             >
-                              Mover Fondos del Pool a la Bóveda
+                              Mover Fondos a Bóveda
                             </Button>
                             
-                            {/* Sección para retirar fondos de la bóveda */}
                             {isInVault && (
                               <Button 
                                 variant="outlined" 
                                 color="secondary"
                                 onClick={() => handleWithdrawPoolFromVault(prop.id, prop.amountInVault.toString())}
                               >
-                                Retirar Todo de la Bóveda
+                                Retirar de Bóveda
                               </Button>
                             )}
+
+                            {/* Botón para cancelar */}
+                            <Button
+                                variant="outlined"
+                                color="error"
+                                onClick={() => handleCancelPool(prop.id)}
+                                disabled={prop.state !== 0 && prop.state !== 1}
+                            >
+                                Cancelar Pool
+                            </Button>
 
                             {/* Sección para añadir fondos del landlord */}
                             <Box sx={{ pt: 2, borderTop: '1px solid #e0e0e0' }}>

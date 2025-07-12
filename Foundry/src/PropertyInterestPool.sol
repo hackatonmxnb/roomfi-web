@@ -4,14 +4,12 @@ pragma solidity ^0.8.20;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-// Interfaz para interactuar con TenantPassport
 interface ITenantPassport {
     function incrementPropertiesOwned(uint256 tokenId) external;
     function balanceOf(address owner) external view returns (uint256);
     function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256);
 }
 
-// --- NUEVO: Interfaz para interactuar con la Bóveda de Intereses ---
 interface IMXNBInterestGenerator {
     function deposit(uint256 amount) external;
     function withdraw(uint256 amount) external;
@@ -33,8 +31,8 @@ contract PropertyInterestPool {
     }
 
     struct Property {
-        string name; // --- NUEVO ---
-        string description; // --- NUEVO ---
+        string name; 
+        string description; 
         address landlord;
         uint256 totalRentAmount;
         uint256 seriousnessDeposit;
@@ -50,10 +48,14 @@ contract PropertyInterestPool {
 
     IERC20 public mxnbToken;
     ITenantPassport public tenantPassport;
-    IMXNBInterestGenerator public interestGenerator; // --- NUEVO: Instancia del contrato de la Bóveda
+    IMXNBInterestGenerator public interestGenerator; // Instancia del contrato de la Bóveda
 
     mapping(uint256 => Property) public properties;
     uint256 public propertyCounter;
+
+    // --- NUEVO: Mappings para rastrear propiedades por propietario ---
+    mapping(address => uint256) public landlordToPropertyCount;
+    mapping(address => uint256[]) public landlordProperties;
 
     // --- Eventos ---
     event PropertyCreated(uint256 indexed propertyId, address indexed landlord, uint256 totalRent);
@@ -103,6 +105,10 @@ contract PropertyInterestPool {
 
         propertyCounter++;
         uint256 propertyId = propertyCounter;
+
+        // --- Lógica para actualizar mappings del propietario ---
+        landlordToPropertyCount[msg.sender]++;
+        landlordProperties[msg.sender].push(propertyId);
 
         Property storage newProperty = properties[propertyId];
         newProperty.name = _name;
@@ -221,25 +227,8 @@ contract PropertyInterestPool {
     }
 
     // --- ACTUALIZADO: Devuelve también amountInVault ---
-    function getPropertyInfo(uint256 _propertyId) 
-        public 
-        view 
-        returns (
-            string memory name,
-            string memory description,
-            address landlord,
-            uint256 totalRentAmount,
-            uint256 seriousnessDeposit,
-            uint256 requiredTenantCount,
-            uint256 amountPooledForRent,
-            uint256 amountInVault,
-            address[] memory interestedTenants,
-            State state,
-            uint256 paymentDayStart,
-            uint256 paymentDayEnd
-        )
-    {
-        Property storage p = properties[_propertyId];
+    function getPropertyInfo(uint256 propertyId) public view returns (string memory, string memory, address, uint256, uint256, uint256, uint256, uint256, address[] memory, State, uint256, uint256) {
+        Property storage p = properties[propertyId];
         return (
             p.name,
             p.description,
@@ -254,5 +243,9 @@ contract PropertyInterestPool {
             p.paymentDayStart,
             p.paymentDayEnd
         );
+    }
+
+    function getPropertiesByLandlord(address landlord) public view returns (uint256[] memory) {
+        return landlordProperties[landlord];
     }
 }
