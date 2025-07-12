@@ -7,7 +7,6 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /**
  * @title MXNBInterestGenerator
- * @author Gemini
  * @notice Este contrato actua como una boveda (vault) que genera intereses
  * para los depositos de tokens MXNB. Simula un protocolo de yield.
  */
