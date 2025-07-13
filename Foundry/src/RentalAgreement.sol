@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract RentalAgreement {
     using SafeERC20 for IERC20;
 
-    // --- State ---
 
     enum AgreementState { Funding, Active, Completed, Cancelled }
 
@@ -33,14 +32,12 @@ contract RentalAgreement {
     uint256 public paymentDayStart;
     uint256 public paymentDayEnd;
 
-    // --- Events ---
     event FundsDeposited(address indexed tenant, uint256 amount);
     event AgreementActivated(uint256 totalAmount);
     event RentPaid(address indexed tenant, uint256 amount, bool onTime);
     event VaultDeposit(address indexed caller, uint256 amount);
     event VaultWithdrawal(address indexed caller, uint256 amount);
 
-    // --- Modifiers ---
     modifier onlyTenant() {
         require(isTenant[msg.sender], "Only a tenant can call this");
         _;
@@ -94,7 +91,6 @@ contract RentalAgreement {
         require(tenants.length > 0, "No tenants specified");
     }
 
-    // --- Functions ---
 
     /**
      * @dev Permite al inquilino depositar su parte del fondo inicial (depósito + primer mes).
@@ -161,7 +157,6 @@ contract RentalAgreement {
         emit RentPaid(msg.sender, paymentAmount, onTime);
     }
 
-    // --- Vault Interaction Functions ---
 
     /**
      * @notice Deposita fondos del contrato en la boveda de intereses. Solo el arrendador puede llamar.
@@ -204,7 +199,6 @@ contract RentalAgreement {
         mxnbToken.safeTransfer(landlord, _amount);
     }
 
-    // --- View Functions ---
 
     /**
      * @notice Devuelve el balance total de este contrato en la boveda de intereses.

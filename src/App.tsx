@@ -210,6 +210,7 @@ function App() {
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
   const [tokenBalance, setTokenBalance] = useState<number>(0);
   const [tokenDecimals, setTokenDecimals] = useState<number>(18); // Default to 18, will be updated
+  const [showHowItWorksModal, setShowHowItWorksModal] = useState(false);
 
   // --- NUEVOS ESTADOS PARA LA BÓVEDA ---
   const [showVaultModal, setShowVaultModal] = useState(false);
@@ -817,6 +818,7 @@ function App() {
         onMintNFTClick={mintNewTenantPassport}
         onViewMyPropertiesClick={handleViewMyProperties}
         onSavingsClick={handleVaultModalOpen}
+        onHowItWorksClick={() => setShowHowItWorksModal(true)}
         tenantPassportData={tenantPassportData}
         isCreatingWallet={isCreatingWallet}
         setShowOnboarding={setShowOnboarding}
@@ -1414,6 +1416,74 @@ function App() {
         </Paper>
       </Modal>
       {/* --- FIN DE MODAL --- */}
+
+      <Modal open={showHowItWorksModal} onClose={() => setShowHowItWorksModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Paper sx={{ p: 4, borderRadius: 4, maxWidth: 800, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+          <Typography variant="h4" component="h2" sx={{ mb: 2, fontWeight: 700, textAlign: 'center' }}>
+            Cómo Funciona RoomFi: La Revolución DeFi en Bienes Raíces
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 3, textAlign: 'center', color: 'text.secondary' }}>
+            RoomFi es más que una plataforma para encontrar roomies; es un ecosistema financiero descentralizado (DeFi) construido sobre la red Arbitrum, diseñado para resolver los problemas de confianza, liquidez y acceso que sufren tanto arrendadores como inquilinos en el mercado tradicional. Nuestro motor es el <strong>token MXNB</strong>, que impulsa cada transacción y oportunidad de rendimiento dentro de <strong>México</strong>.
+          </Typography>
+
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={6}>
+              <Paper variant="outlined" sx={{ p: 3, height: '100%' }}>
+                <Typography variant="h6" component="h3" sx={{ mb: 2, fontWeight: 600 }}>
+                  Para Arrendadores: Liquidez y Rendimiento
+                </Typography>
+                <Typography variant="body1" paragraph>
+                  <strong>1. Crea un "Pool de Interés":</strong> En lugar de un simple anuncio, creas un pool de liquidez para tu propiedad con la renta y depósito en tokens MXNB.
+                </Typography>
+                <Typography variant="body1" paragraph>
+                  <strong>2. Genera Ingresos Pasivos (DeFi):</strong> ¡Aquí está la magia! Mientras tu pool se llena, puedes depositar los fondos en nuestra <strong>Bóveda de Ahorros</strong>. Esta bóveda es un protocolo de rendimiento (yield protocol) que genera intereses sobre tus MXNB. Tu dinero trabaja para ti desde el día uno.
+                </Typography>
+                <Typography variant="body1" paragraph>
+                  <strong>3. Gestión Automatizada:</strong> El contrato inteligente gestiona depósitos, pagos y liberaciones de fondos de forma transparente y segura.
+                </Typography>
+                <Alert severity="success" sx={{ mt: 2 }}>
+                  <strong>Beneficio Clave:</strong> Obtienes liquidez inmediata y acceso a rendimiento DeFi sobre tu propiedad.
+                </Alert>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Paper variant="outlined" sx={{ p: 3, height: '100%' }}>
+                <Typography variant="h6" component="h3" sx={{ mb: 2, fontWeight: 600 }}>
+                  Para Inquilinos: Tu Reputación es tu Mejor Activo
+                </Typography>
+                <Typography variant="body1" paragraph>
+                  <strong>1. Tu Pasaporte de Inquilino (NFT):</strong> Al unirte, recibes un "Tenant Passport", un NFT único que registra tu historial de pagos en la blockchain. Cada pago a tiempo mejora tu reputación on-chain.
+                </Typography>
+                <Typography variant="body1" paragraph>
+                  <strong>2. Pagos Seguros y Transparentes:</strong> Todos los pagos se realizan en MXNB a través del contrato inteligente, eliminando intermediarios y asegurando tu dinero.
+                </Typography>
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  <strong>Beneficio Clave:</strong> Construyes una reputación verificable y portable que te dará acceso a mejores oportunidades de vivienda.
+                </Alert>
+              </Paper>
+            </Grid>
+          </Grid>
+
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="h5" component="h3" sx={{ mb: 2, fontWeight: 600, textAlign: 'center' }}>
+              Nuestro Ecosistema DeFi con MXNB
+            </Typography>
+            <Typography variant="body1" paragraph>
+              <strong>El Token MXNB:</strong> Es el corazón de RoomFi. Se utiliza para pagar la renta, los depósitos, y es el activo que se deposita en la bóveda para generar rendimiento. Su integración total crea un ciclo económico virtuoso.
+            </Typography>
+            <Typography variant="body1" paragraph>
+              <strong>La Bóveda de Ahorros:</strong> Es nuestro principal producto DeFi. Permite a los arrendadores convertirse en proveedores de liquidez, obteniendo un "yield" sobre su capital de renta, un concepto revolucionario en el sector inmobiliario.
+            </Typography>
+            <Typography variant="body1" paragraph>
+              <strong>Contratos Inteligentes:</strong> Son las reglas incorruptibles del juego. Automatizan los acuerdos, garantizan la custodia de los fondos y ejecutan los pagos sin necesidad de confianza ciega, solo confianza en el código.
+            </Typography>
+          </Box>
+
+          <Typography variant="h6" component="p" sx={{ mt: 4, fontWeight: 700, textAlign: 'center', color: 'primary.main' }}>
+            RoomFi es la simbiosis perfecta entre Real Estate y DeFi, creando un mercado más justo, eficiente y rentable para todos.
+          </Typography>
+        </Paper>
+      </Modal>
     </>
   );
 }
