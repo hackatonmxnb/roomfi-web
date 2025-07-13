@@ -160,15 +160,33 @@ const customTheme = createTheme({
   },
 });
 
-const portal = new Portal({
-  apiKey: process.env.REACT_APP_PORTAL_API_KEY,
-  rpcConfig: {
-    [NETWORK_CONFIG.chainId.toString()]: NETWORK_CONFIG.rpcUrl,
-  },
-  chainId: NETWORK_CONFIG.chainId.toString(),
-});
-
 function App() {
+  const { updateUser, user } = useUser();
+  const navigate = useNavigate();
+
+  // Initialize portal instance
+  const portal = new Portal({
+    apiKey: process.env.REACT_APP_PORTAL_API_KEY,
+    rpcConfig: {
+      [NETWORK_CONFIG.chainId.toString()]: NETWORK_CONFIG.rpcUrl,
+    },
+    chainId: NETWORK_CONFIG.chainId.toString(),
+  });
+
+  const createPortalWallet = async () => {
+    return new Promise<string>(async resolve => {
+      portal.onReady(async () => {
+        const walletExists = await portal.doesWalletExist();
+        if (!walletExists) {
+          await portal.createWallet();
+        }
+        const ethAddress = await portal.getEip155Address();
+        updateUser({ wallet: ethAddress });
+        resolve(ethAddress);
+      });
+    });
+  };
+
   const isMobileOnly = useMediaQuery(customTheme.breakpoints.down('sm'));
   const location = useLocation();
   const [matches, setMatches] = useState<any[] | null>(null);
@@ -665,9 +683,6 @@ function App() {
     }
   };
 
-  const { updateUser, user } = useUser();
-  const navigate = useNavigate();
-
   const login = useGoogleLogin({
     onSuccess: async tokenResponse => {
       if (tokenResponse.access_token) {
@@ -678,7 +693,7 @@ function App() {
           const profile = await res.json();
           setIsCreatingWallet(true);
           
-          const ethAddress = await portal.createWallet();
+          const ethAddress = await createPortalWallet();
           setAccount(ethAddress);
           updateUser({ wallet: ethAddress });
 
@@ -788,7 +803,7 @@ function App() {
       checkAllowance();
     }
   }, [vaultAmount, showVaultModal, checkAllowance]);
-  // --- FIN DE USE EFFECT ---
+
 
   return (
     <>
