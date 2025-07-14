@@ -43,6 +43,7 @@ https://drive.google.com/file/d/1SBO2Q0yp4t3lHAXxz30pKFkD81uh7Iwm/view?usp=share
 
    ```env
    REACT_APP_GOOGLE_MAPS_API_KEY=your_api_key
+   REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
    REACT_APP_PORTAL_API_KEY=your_portal_api_key
    REACT_APP_API=https://api.your-backend.com
    ```
