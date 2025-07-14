@@ -73,4 +73,5 @@ Pull requests and suggestions are welcome! Please open an issue to discuss major
 
 ## License
 
-MIT
+This project is private and currently *not licensed for reuse*.
+Do not copy, distribute, or modify the contents without written permission.
