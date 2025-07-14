@@ -39,8 +39,11 @@ RoomFi is a Web3 platform to find roommates and share a home in a secure, transp
 
    ```env
    REACT_APP_GOOGLE_MAPS_API_KEY=your_api_key
+   REACT_APP_GOOGLE_CLIENT_ID
    REACT_APP_PORTAL_API_KEY=your_portal_api_key
    REACT_APP_API=https://api.your-backend.com
+   REACT_APP_JUNO_API_KEY=your_juno_api_key
+   REACT_APP_JUNO_API_SECRET=your_juno_api_secret
    ```
 
 4. Run the application:
