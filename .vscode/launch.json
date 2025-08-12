@@ -1,0 +1,46 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach to Chrome",
+            "port": 9222,
+            "request": "attach",
+            "type": "chrome",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Heal & Run (todos los specs)",
+            "program": "${workspaceFolder}/fixingwithAI.mjs",
+            "args": ["cypress/e2e/**/*.cy.*"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+            "env": {
+                "AI_AGENT_URL": "http://127.0.0.1:8000/fix_locator"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Heal & Run (spec actual)",
+            "program": "${workspaceFolder}/fixingwithAI.mjs",
+            "args": ["${file}"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+            "envFile": "${workspaceFolder}/.env"
+        }        
+    ]
+}
