@@ -15,17 +15,21 @@ contract DeployContracts is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // --- Deployments ---
+        // Get the deployer's address from the private key
+        address deployerAddress = vm.addr(deployerPrivateKey);
+
         // 1. Deploy the TenantPassport contract
-        TenantPassport tenantPassport = new TenantPassport();
+        TenantPassport tenantPassport = new TenantPassport(deployerAddress);
         
         // 2. Deploy the MXNBInterestGenerator, linking the existing token
-        MXNBInterestGenerator interestGenerator = new MXNBInterestGenerator(existingMXNBToken);
+        MXNBInterestGenerator interestGenerator = new MXNBInterestGenerator(existingMXNBToken, deployerAddress);
 
         // 3. Deploy the PropertyInterestPool, linking the token, passport, AND the new interest generator
         PropertyInterestPool propertyInterestPool = new PropertyInterestPool(
             existingMXNBToken,
             address(tenantPassport),
-            address(interestGenerator) // --- NUEVO: Pasando la dirección de la bóveda
+            address(interestGenerator),
+            deployerAddress // --- NUEVO: Pasando el dueño inicial
         );
 
         // --- Post-deployment Configuration ---

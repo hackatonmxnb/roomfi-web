@@ -3,15 +3,15 @@ src = "src"                    # Carpeta donde se encuentran los contratos fuent
 out = "out"                    # Carpeta donde se generarán los artefactos compilados
 libs = ["lib"]                 # Carpeta donde se encuentran las bibliotecas externas
 remappings = [
-    "@openzeppelin/=lib/openzeppelin-contracts/", # Remapping para OpenZeppelin
-    "@forge-std/=lib/forge-std/"                  # Remapping para forge-std
+    "@openzeppelin/=lib/openzeppelin-contracts/", 
+    "@forge-std/=lib/forge-std/"                  
 ]
 
 # Opciones de optimización
-optimizer = true               # Habilitar optimización
-optimizer_runs = 200           # Número de ejecuciones para optimización
+optimizer = true               
+optimizer_runs = 200           
 
 # Permisos de acceso a archivos
 fs_permissions = [
-    { access = "read", path = "./" }              # Permitir solo lectura en el directorio actual
+    { access = "read", path = "./" }              
 ]
