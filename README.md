@@ -2,6 +2,10 @@
 
 RoomFi is a Web3 platform to find roommates and share a home in a secure, transparent, and trustworthy way. It leverages blockchain technology to manage identities, reputations, and payments in a decentralized manner.
 
+# Demos
+https://roomfi.netlify.app/
+https://drive.google.com/file/d/1SBO2Q0yp4t3lHAXxz30pKFkD81uh7Iwm/view?usp=share_link
+
 ## Main Features
 
 - **Search for rooms and roommates** with advanced filters.
@@ -11,7 +15,7 @@ RoomFi is a Web3 platform to find roommates and share a home in a secure, transp
 - **Google and MetaMask integration** for onboarding and login.
 - **Interactive map** to visualize properties.
 
-## Technologies Used
+## Tech Stack
 
 - **React** + **TypeScript** (frontend)
 - **Material UI** (UI/UX)
@@ -39,6 +43,7 @@ RoomFi is a Web3 platform to find roommates and share a home in a secure, transp
 
    ```env
    REACT_APP_GOOGLE_MAPS_API_KEY=your_api_key
+   REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
    REACT_APP_PORTAL_API_KEY=your_portal_api_key
    REACT_APP_API=https://api.your-backend.com
    ```
@@ -66,6 +71,13 @@ The app will be available at [http://localhost:3000](http://localhost:3000).
 ## Smart Contracts
 
 The contracts are located in `Foundry/src/` and can be deployed using Foundry (`forge`).
+
+## Built For — Hackathon Tracks
+
+| Track          | Integration Highlights                                                                 |
+|----------------|----------------------------------------------------------------------------------------|
+| ✅ Payments    | Uses MXNB for SPEI deposits via Juno multi-clabe feature, withdrawals to any bank via Juno                              |
+| ✅ DeFi        | Users can obtain NFT for on-chain reputation, Yield pools using the MXNB minted, MPC wallets via PortalHQ
 
 ## Contributing
 
