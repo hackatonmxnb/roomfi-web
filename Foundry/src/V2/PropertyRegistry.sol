@@ -14,35 +14,26 @@ pragma solidity ^0.8.20;
  * -Badges de verificación y desempeño
  * -Property reputation score
  * -Integración con TenantPassport
- * -Optimizado para Polkadot/Moonbeam
+ * -Optimizado para EVM chains (Mantle, Ethereum L2s)
  *
- * Arquitectura cross-chain:
- * Diseñado para integrarse con XCM (Cross-Consensus Messaging):
- * -Moonbeam ←→ Acala (DeFi - hipotecas, colateral)
- * -Moonbeam ←→ KILT (Identity verification)
- * -Moonbeam ←→ Oráculos de precios de mercado
+ * Arquitectura:
+ * Diseñado para integrarse con protocolos DeFi y oráculos:
+ * - DeFi protocols (lending, yield farming)
+ * - Identity verification providers
+ * - Price oracles
  */
 
-// Imports locales de OpenZeppelin (optimizado para Foundry/Paseo)
+// Imports de OpenZeppelin
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
-
-/**
- * @notice Interfaz simplificada de TenantPassport para validaciones
- */
-interface ITenantPassport {
-    function hasPassport(address user) external view returns (bool);
-    function getTokenIdByAddress(address user) external pure returns (uint256);
-    function getReputationWithDecay(uint256 tokenId) external view returns (uint32);
-    function incrementPropertiesOwned(uint256 tokenId) external;
-}
+import "./Interfaces.sol";
 
 contract PropertyRegistry is ERC721, Ownable {
     using Strings for uint256;
 
-    // Tracking manual de tokens (reemplaza ERC721Enumerable)
+    // Tracking manual de tokens, optimización para IDE
     uint256[] private _allTokens;
     mapping(uint256 => uint256) private _allTokensIndex;
 
@@ -218,6 +209,9 @@ contract PropertyRegistry is ERC721, Ownable {
     /// @notice Verificadores autorizados (notarios, inspectores)
     mapping(address => bool) public authorizedVerifiers;
 
+    /// @notice Contratos autorizados para actualizar reputación (RentalAgreement, etc)
+    mapping(address => bool) public authorizedUpdaters;
+
     /// @notice Propiedades por landlord
     mapping(address => uint256[]) public landlordProperties;
 
@@ -330,6 +324,14 @@ contract PropertyRegistry is ERC721, Ownable {
         _;
     }
 
+    modifier onlyAuthorizedUpdater() {
+        require(
+            authorizedUpdaters[msg.sender],
+            "PropertyRegistry: No autorizado para actualizar"
+        );
+        _;
+    }
+
     modifier propertyExists(uint256 propertyId) {
         require(
             _ownerOf(propertyId) != address(0),
@@ -378,7 +380,7 @@ contract PropertyRegistry is ERC721, Ownable {
      * 5. Guarda información
      * 6. Estado inicial: DRAFT
      *
-     * COSTO ESTIMADO (Moonbeam): ~$0.10 USD
+     * COSTO ESTIMADO (Mantle): ~$0.01-0.05 USD (low fees)
      */
     function registerProperty(
         // Basic Info
@@ -773,9 +775,9 @@ contract PropertyRegistry is ERC721, Ownable {
         uint32 valueRating
     )
         external
+        onlyAuthorizedUpdater
         propertyExists(propertyId)
     {
-        // TODO: Agregar modifier para solo contratos autorizados
         Property storage prop = properties[propertyId];
         PropertyReputation storage rep = prop.reputation;
 
@@ -817,9 +819,9 @@ contract PropertyRegistry is ERC721, Ownable {
      */
     function recordFastMaintenance(uint256 propertyId)
         external
+        onlyAuthorizedUpdater
         propertyExists(propertyId)
     {
-        // TODO: Agregar modifier para solo contratos autorizados
         maintenanceResponseCount[propertyId]++;
 
         // Verificar badge FAST_MAINTENANCE
@@ -924,6 +926,22 @@ contract PropertyRegistry is ERC721, Ownable {
         returns (Property memory)
     {
         return properties[propertyId];
+    }
+
+    /**
+     * @notice Verifica si una propiedad está disponible para rentar
+     * @dev Valida que esté activa, verificada y no delisted
+     */
+    function isPropertyAvailableForRent(uint256 propertyId)
+        external
+        view
+        propertyExists(propertyId)
+        returns (bool)
+    {
+        Property storage prop = properties[propertyId];
+        return prop.isActive &&
+               !prop.isDelisted &&
+               prop.verificationStatus == PropertyVerificationStatus.VERIFIED;
     }
 
     /**
@@ -1187,6 +1205,28 @@ contract PropertyRegistry is ERC721, Ownable {
      */
     function isAuthorizedVerifier(address verifier) external view returns (bool) {
         return authorizedVerifiers[verifier];
+    }
+
+    /**
+     * @notice Autoriza un contrato para actualizar reputación (e.g., RentalAgreement)
+     */
+    function authorizeUpdater(address updater) external onlyOwner {
+        require(updater != address(0), "Invalid address");
+        authorizedUpdaters[updater] = true;
+    }
+
+    /**
+     * @notice Revoca autorización de actualizador
+     */
+    function revokeUpdater(address updater) external onlyOwner {
+        authorizedUpdaters[updater] = false;
+    }
+
+    /**
+     * @notice Verifica si una dirección es actualizador autorizado
+     */
+    function isAuthorizedUpdater(address updater) external view returns (bool) {
+        return authorizedUpdaters[updater];
     }
 
     // Overrides requeridos

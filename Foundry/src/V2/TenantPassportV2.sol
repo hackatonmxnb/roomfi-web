@@ -5,7 +5,7 @@ pragma solidity ^0.8.20;
  * @title TenantPassportV2
  * @author RoomFi Team - Firrton
  * @notice NFT Soul-Bound que representa la identidad y reputación on-chain de tenants
- * @dev Optimizado para Polkadot/Moonbeam/Paseo
+ * @dev Optimizado para EVM chains (Mantle, Ethereum L2s)
  *
  * Características:
  * - Soul-Bound Token (NO transferible)
@@ -21,7 +21,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract TenantPassportV2 is ERC721, Ownable {
 
     // 
-    // ENUMS Y ESTRUCTURAS
+    // Enums y estructuras
     // 
 
     /**
@@ -74,9 +74,11 @@ contract TenantPassportV2 is ERC721, Ownable {
         uint32 paymentsMade;
         uint32 paymentsMissed;
         uint32 propertiesRented;
+        uint32 propertiesOwned;
         uint32 consecutiveOnTimePayments;
         uint32 totalMonthsRented;
         uint32 referralCount;
+        uint32 disputesCount;
         uint256 outstandingBalance;
         uint256 totalRentPaid;
         uint256 lastActivityTime;
@@ -91,6 +93,9 @@ contract TenantPassportV2 is ERC721, Ownable {
     /// @notice Tracking manual de todos los tokenIds (reemplaza Enumerable)
     uint256[] private _allTokens;
     mapping(uint256 => uint256) private _allTokensIndex;
+
+    /// @notice Total de passports mint eados (inmutable, nunca baja aunque haya burns)
+    uint256 private _totalMinted;
 
     /// @notice Información de cada tenant por tokenId
     mapping(uint256 => TenantInfo) public tenantInfo;
@@ -201,15 +206,20 @@ contract TenantPassportV2 is ERC721, Ownable {
         // Agregar a tracking manual
         _addTokenToAllTokensEnumeration(tokenId);
 
+        // Incrementar contador inmutable de total minted
+        _totalMinted++;
+
         // Inicializar información del tenant
         tenantInfo[tokenId] = TenantInfo({
             reputation: INITIAL_REPUTATION,
             paymentsMade: 0,
             paymentsMissed: 0,
             propertiesRented: 0,
+            propertiesOwned: 0,
             consecutiveOnTimePayments: 0,
             totalMonthsRented: 0,
             referralCount: 0,
+            disputesCount: 0,
             outstandingBalance: 0,
             totalRentPaid: 0,
             lastActivityTime: block.timestamp,
@@ -217,8 +227,8 @@ contract TenantPassportV2 is ERC721, Ownable {
             isVerified: false
         });
 
-        // Badge de Early Adopter
-        if (_allTokens.length <= EARLY_ADOPTER_LIMIT) {
+        // Badge de Early Adopter (usa _totalMinted que nunca baja)
+        if (_totalMinted <= EARLY_ADOPTER_LIMIT) {
             _awardBadgeInternal(tokenId, BadgeType.EARLY_ADOPTER);
         }
 
@@ -283,6 +293,16 @@ contract TenantPassportV2 is ERC721, Ownable {
         emit ActivityRecorded(tokenId, "property_rented", block.timestamp);
     }
 
+    function incrementPropertiesOwned(uint256 tokenId)
+        external
+        onlyAuthorizedUpdater
+        tokenExists(tokenId)
+    {
+        tenantInfo[tokenId].propertiesOwned++;
+        tenantInfo[tokenId].lastActivityTime = block.timestamp;
+        emit ActivityRecorded(tokenId, "property_owned", block.timestamp);
+    }
+
     function incrementMonthsRented(uint256 tokenId)
         external
         onlyAuthorizedUpdater
@@ -338,6 +358,30 @@ contract TenantPassportV2 is ERC721, Ownable {
 
         emit ReferralRecorded(referrerTokenId, referredTokenId,
                              _ownerOf(referrerTokenId), referredAddress);
+    }
+
+    function incrementDisputes(uint256 tokenId)
+        external
+        onlyAuthorizedUpdater
+        tokenExists(tokenId)
+    {
+        tenantInfo[tokenId].disputesCount++;
+        tenantInfo[tokenId].lastActivityTime = block.timestamp;
+
+        // Penalizar reputación por dispute
+        if (tenantInfo[tokenId].reputation > 10) {
+            tenantInfo[tokenId].reputation -= 10;
+        } else {
+            tenantInfo[tokenId].reputation = MIN_REPUTATION;
+        }
+
+        // Revocar badge ZERO_DISPUTES si lo tenía
+        if (badges[tokenId][BadgeType.ZERO_DISPUTES]) {
+            badges[tokenId][BadgeType.ZERO_DISPUTES] = false;
+            emit BadgeRevoked(tokenId, BadgeType.ZERO_DISPUTES, msg.sender, block.timestamp);
+        }
+
+        emit ActivityRecorded(tokenId, "dispute", block.timestamp);
     }
 
     // 
@@ -542,8 +586,8 @@ contract TenantPassportV2 is ERC721, Ownable {
             _awardBadgeInternal(tokenId, BadgeType.MULTI_PROPERTY);
         }
 
-        if (info.paymentsMissed == 0 &&
-            info.paymentsMade > 0 &&
+        if (info.disputesCount == 0 &&
+            info.propertiesRented > 0 &&
             !badges[tokenId][BadgeType.ZERO_DISPUTES]) {
             _awardBadgeInternal(tokenId, BadgeType.ZERO_DISPUTES);
         }
