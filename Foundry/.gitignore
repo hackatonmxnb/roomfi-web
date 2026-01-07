@@ -1,0 +1,78 @@
+# Foundry
+cache/
+out/
+broadcast/
+deployments/*.json
+!deployments/.gitkeep
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Foundry artifacts
+forge-cache/
+foundry-cache/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+
+# Build artifacts
+*.so
+*.rlib
+*.d
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
+
+# Logs
+logs/
+*.log
+
+# Test coverage
+coverage/
+.coverage
+lcov.info
+
+# Secrets (IMPORTANT)
+secrets/
+*.key
+*.pem
+mnemonic.txt
+keystore/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*backup*/
+V1.backup/
+*.backup
+
+# Deployment addresses (si contienen info sensible)
+# deployments/*.json ya está arriba
+
+# Scripts temporales
+scripts/temp/
+temp/
