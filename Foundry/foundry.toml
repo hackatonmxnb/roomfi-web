@@ -1,17 +1,41 @@
 [profile.default]
-src = "src"                    # Carpeta donde se encuentran los contratos fuente
-out = "out"                    # Carpeta donde se generarán los artefactos compilados
-libs = ["lib"]                 # Carpeta donde se encuentran las bibliotecas externas
+src = "src"
+out = "out"
+libs = ["lib"]
+ignore = ["src/V1.backup/**"]
 remappings = [
-    "@openzeppelin/=lib/openzeppelin-contracts/", 
-    "@forge-std/=lib/forge-std/"                  
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "@forge-std/=lib/forge-std/"
 ]
 
-# Opciones de optimización
-optimizer = true               
-optimizer_runs = 200           
+# Compiler configuration
+solc_version = "0.8.30"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+evm_version = "cancun"
 
 # Permisos de acceso a archivos
 fs_permissions = [
-    { access = "read", path = "./" }              
+    { access = "read", path = "./" },
+    { access = "write", path = "./" }
 ]
+
+# RPC endpoints configuration
+[rpc_endpoints]
+mantle_sepolia = "https://rpc.sepolia.mantle.xyz"
+mantle_mainnet = "https://rpc.mantle.xyz"
+
+# Etherscan configuration for verification
+[etherscan]
+mantle_sepolia = { key = "${MANTLE_API_KEY}", url = "https://explorer.sepolia.mantle.xyz/api" }
+mantle_mainnet = { key = "${MANTLE_API_KEY}", url = "https://explorer.mantle.xyz/api" }
+
+# Chain-specific settings
+[profile.mantle-sepolia]
+chain_id = 5003
+gas_price = 20_000_000
+
+[profile.mantle-mainnet]
+chain_id = 5000
+gas_price = 20_000_000
