@@ -12,6 +12,7 @@ import "../src/V2/strategies/USDYStrategy.sol";
 import "../src/V2/strategies/LendleYieldStrategy.sol";
 import "../test/mocks/MockUSDT.sol";
 import "../test/mocks/MockUSDY.sol";
+import "../src/V2/MockCivilRegistry.sol";
 import "../test/mocks/MockDEXRouter.sol";
 import "../test/mocks/MockAToken.sol";
 import "../test/mocks/MockLendlePool.sol";
@@ -49,6 +50,7 @@ contract DeployMantleSepolia is Script {
     MockDEXRouter public dexRouter;
     MockAToken public aToken;
     MockLendlePool public lendlePool;
+    MockCivilRegistry public civilRegistry;
 
     TenantPassportV2 public tenantPassport;
     PropertyRegistry public propertyRegistry;
@@ -151,6 +153,10 @@ contract DeployMantleSepolia is Script {
 
         console.log("  Minting USDT to deployer...");
         usdt.mint(deployer, 10_000 * 1e6);
+
+        console.log("  Deploying MockCivilRegistry (Govt Oracle)...");
+        civilRegistry = new MockCivilRegistry();
+        console.log("    Address:", address(civilRegistry));
     }
 
     function deployCoreContracts() internal {
@@ -161,6 +167,7 @@ contract DeployMantleSepolia is Script {
         console.log("  Deploying PropertyRegistry...");
         propertyRegistry = new PropertyRegistry(
             address(tenantPassport),
+            address(civilRegistry),
             deployer
         );
         console.log("    Address:", address(propertyRegistry));
@@ -265,6 +272,7 @@ contract DeployMantleSepolia is Script {
         console.log("  DEX Router:    ", address(dexRouter));
         console.log("  Lendle Pool:   ", address(lendlePool));
         console.log("  aUSDT:         ", address(aToken));
+        console.log("  CivilRegistry: ", address(civilRegistry));
         console.log("");
         console.log("CORE CONTRACTS:");
         console.log("  TenantPassport:", address(tenantPassport));

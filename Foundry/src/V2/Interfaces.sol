@@ -16,6 +16,10 @@ interface ITenantPassport {
     function incrementPropertiesRented(uint256 tokenId) external;
 }
 
+interface IMockCivilRegistry {
+    function checkPropertyStatus(int256 lat, int256 long) external view returns (bool isClean, string memory ownerID);
+}
+
 interface IPropertyRegistry {
     function ownerOf(uint256 tokenId) external view returns (address);
     function getProperty(uint256 propertyId) external view returns (

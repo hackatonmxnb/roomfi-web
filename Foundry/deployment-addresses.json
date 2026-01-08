@@ -2,42 +2,25 @@
   "network": "mantle-sepolia",
   "chainId": 5003,
   "deployer": "0x8A387ef9acC800eea39E3E6A2d92694dB6c813Ac",
-  "timestamp": 1767825381,
-  "deploymentDate": "2026-01-07",
-  "rpcUrl": "https://rpc.sepolia.mantle.xyz",
-  "explorerUrl": "https://explorer.sepolia.mantle.xyz",
-
+  "timestamp": 1767902201,
   "mocks": {
-    "usdt": "0xd615074c2603336fa0da8af44b5ccb9d9c0b2f9c",
-    "usdy": "0xa77db3bdaf8258f2af72d606948fffd898a1f5d1",
-    "dexRouter": "0xdc3c4c07e4675cf1bbdea627026e92170f9f5ae1",
-    "lendlePool": "0x5483b6c35b975f24ca21647650b1a93f8341b26a",
-    "aToken": "0x6536ee56e3f30a427bc83c208d829d059e8eeda4"
+    "usdt": "0x5602fec1b2B14D7f7099cE6d8acAa96233F7d837",
+    "usdy": "0x219284CFEE97741AEd3E3A7d193c1c1F360a780D",
+    "dexRouter": "0xEaa6cB7Fa8BEBEa72c78fAd2170b103aC1C2F126",
+    "lendlePool": "0xec9d7E17aDffa55181713495cC442e1A722838fE",
+    "aToken": "0x2E9ac9e97e909CD79D397a31E9811B86C430c5f5"
   },
-
   "core": {
-    "tenantPassport": "0xf6a6e553834ff33fc819b6639a557f1f4c647d86",
-    "propertyRegistry": "0xf8bb2ce2643f89e6b80fdac94483cda91110d95a",
-    "disputeResolver": "0x1acb65533d0f5dbb99d6f3c30acad0a5499325c2",
-    "vault": "0x111592714036d6870f63807f1b659b4def2c6c43",
-    "rentalAgreementNFT": "0xa70efcb817358689e46b664602b757f9fd183c6b",
-    "factory": "0x1b8e378f489021029b4e9049f261b204def16974"
+    "tenantPassport": "0x5DB2fa1e9eB8DB2A9F12ea39f4A95BcaEC671bd5",
+    "propertyRegistry": "0x4D796A99e55c72373f14324e938EFD53B98C456F",
+    "disputeResolver": "0x188169Cfee5814761E63431C9CdF672Fa42836EB",
+    "vault": "0x7b4289aB2eBeC7c1A1776aAD758E00Be4A942e5A",
+    "rentalAgreementNFT": "0x152f3f422f9148f51a840A765E3DfC3fb5097335",
+    "factory": "0xf944dfB7895D05AB71f8D512E93C34E19F58b3b2"
   },
-
   "strategies": {
-    "usdy": "0x61fc4578863da32dc4e879f59e1cb673da498618",
-    "lendle": "0x098ff07f87c1aaec0dd5b16c2f0199aa2b60bb75",
+    "usdy": "0xA5f92178CC9b048bBc4E5FcEfAEbeCf2690C89E0",
+    "lendle": "0x5c6fdA4cB5F3FB792B27aeF7405e2456fD6CB1FC",
     "active": "usdy"
-  },
-
-  "explorerLinks": {
-    "usdt": "https://explorer.sepolia.mantle.xyz/address/0xd615074c2603336fa0da8af44b5ccb9d9c0b2f9c",
-    "tenantPassport": "https://explorer.sepolia.mantle.xyz/address/0xf6a6e553834ff33fc819b6639a557f1f4c647d86",
-    "propertyRegistry": "https://explorer.sepolia.mantle.xyz/address/0xf8bb2ce2643f89e6b80fdac94483cda91110d95a",
-    "disputeResolver": "https://explorer.sepolia.mantle.xyz/address/0x1acb65533d0f5dbb99d6f3c30acad0a5499325c2",
-    "vault": "https://explorer.sepolia.mantle.xyz/address/0x111592714036d6870f63807f1b659b4def2c6c43",
-    "factory": "https://explorer.sepolia.mantle.xyz/address/0x1b8e378f489021029b4e9049f261b204def16974",
-    "usdyStrategy": "https://explorer.sepolia.mantle.xyz/address/0x61fc4578863da32dc4e879f59e1cb673da498618",
-    "lendleStrategy": "https://explorer.sepolia.mantle.xyz/address/0x098ff07f87c1aaec0dd5b16c2f0199aa2b60bb75"
   }
 }

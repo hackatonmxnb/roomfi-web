@@ -28,10 +28,14 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "./Interfaces.sol";
 
 contract PropertyRegistry is ERC721, Ownable {
     using Strings for uint256;
+    using ECDSA for bytes32;
+    using MessageHashUtils for bytes32;
 
     // Tracking manual de tokens, optimización para IDE
     uint256[] private _allTokens;
@@ -186,6 +190,10 @@ contract PropertyRegistry is ERC721, Ownable {
 
         uint256 createdAt;
         uint256 lastUpdatedAt;
+
+        // RICARDIAN DATA
+        bytes32 legalDocumentHash;      // Hash SHA-256 del PDF legal (Ricardian Link)
+        bytes signature;                // Firma del landlord aceptando términos legales
     }
 
     // Storage
@@ -220,6 +228,9 @@ contract PropertyRegistry is ERC721, Ownable {
 
     /// @notice Contador de issues de mantenimiento por propiedad
     mapping(uint256 => uint32) public maintenanceResponseCount;
+
+    /// @notice ORACLE: Registro Civil Mock (Gobierno)
+    IMockCivilRegistry public civilRegistry;
 
     // Constantes
 
@@ -357,13 +368,17 @@ contract PropertyRegistry is ERC721, Ownable {
      */
     constructor(
         address _tenantPassportAddress,
+        address _civilRegistryAddress,
         address initialOwner
     )
         ERC721("RoomFi Property NFT", "ROOMFI-PROPERTY")
         Ownable(initialOwner)
     {
         require(_tenantPassportAddress != address(0), "Invalid TenantPassport address");
+        require(_civilRegistryAddress != address(0), "Invalid CivilRegistry address");
+        
         tenantPassport = ITenantPassport(_tenantPassportAddress);
+        civilRegistry = IMockCivilRegistry(_civilRegistryAddress);
     }
 
     // Funciones principales - Registro
@@ -409,7 +424,11 @@ contract PropertyRegistry is ERC721, Ownable {
         bool furnishedIncluded,
 
         // Metadata
-        string calldata metadataURI
+        string calldata metadataURI,
+
+        // RICARDIAN & LEGAL
+        bytes32 legalDocumentHash,      // Hash del PDF
+        bytes calldata signature        // Firma del sender sobre el hash
     )
         external
         returns (uint256 propertyId)
@@ -446,6 +465,16 @@ contract PropertyRegistry is ERC721, Ownable {
             longitude >= -180000000 && longitude <= 180000000,
             "Longitud invalida"
         );
+
+        // 5. Validar ORACLE (Gobierno)
+        // Simulamos llamada al Registro Civil para ver si la lat/long está limpia
+        (bool isClean, string memory registeredOwner) = civilRegistry.checkPropertyStatus(latitude, longitude);
+        require(isClean, string.concat("RWA Oracle Rejected: Predio con problemas legales. Owner: ", registeredOwner));
+
+        // 6. Validar RICARDIAN LINK (Firma Digital)
+        // Verificamos que msg.sender haya firmado el hash del documento PDF
+        address signer = legalDocumentHash.toEthSignedMessageHash().recover(signature);
+        require(signer == msg.sender, "Ricardian: Firma invalida del contrato legal");
 
         // GENERAR PROPERTY ID ÚNICO
         propertyId = _generatePropertyId(latitude, longitude, fullAddress);
@@ -521,6 +550,9 @@ contract PropertyRegistry is ERC721, Ownable {
         prop.isDelisted = false;
         prop.createdAt = block.timestamp;
         prop.lastUpdatedAt = block.timestamp;
+        
+        prop.legalDocumentHash = legalDocumentHash;
+        prop.signature = signature;
 
         // Agregar a lista de propiedades del landlord
         landlordProperties[msg.sender].push(propertyId);
