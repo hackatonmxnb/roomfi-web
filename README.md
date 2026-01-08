@@ -1,439 +1,373 @@
-# RoomFi 🏠
+# RoomFi
 
-**Decentralized Real Estate Rental Platform on Mantle**
+<div align="center">
 
-Build on-chain reputation, tokenize properties, and earn yield on security deposits.
+**Tokenizing Real Estate Rentals on Mantle Network**
+
+[![Mantle Network](https://img.shields.io/badge/Network-Mantle_Sepolia-black?style=flat&logo=ethereum)](https://mantle.xyz)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.20-363636?style=flat&logo=solidity)](https://soliditylang.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-19%2F20_Passing-success)](TESTING_REPORT.md)
+
+[Documentation](docs/README.md) • [Smart Contracts](Foundry/src/V2/) • [Deployment](Foundry/deployment-addresses.json) • [Live Demo](#)
+
+</div>
 
 ---
 
-## 🎯 Overview
+## Overview
 
-RoomFi is a decentralized rental platform that brings transparency, trust, and financial efficiency to the real estate rental market using blockchain technology on Mantle Network.
+RoomFi transforms the rental real estate market by tokenizing properties and rental agreements as NFTs, enabling verifiable tenant reputation and yield-generating security deposits. Built on Mantle Network to leverage low gas costs for frequent rental payments.
+
+### The Problem
+
+The traditional rental market suffers from three critical inefficiencies:
+
+- **Trust Gap**: No portable tenant reputation system leads to redundant background checks and discrimination
+- **Capital Inefficiency**: $280B+ locked in security deposits earning zero yield
+- **High Friction**: Manual processes, expensive dispute resolution, and lack of transparency
+
+### Our Solution
+
+RoomFi introduces a decentralized rental ecosystem with three core innovations:
+
+1. **Tenant Reputation NFTs**: Soul-bound tokens that build portable, verifiable rental history
+2. **Yield-Generating Deposits**: Security deposits earn 4-6% APY through battle-tested DeFi protocols
+3. **NFT Rental Agreements**: ERC721 tokens representing each lease, enabling programmable rental economics
 
 ### Key Features
 
-- **Soul-Bound Tenant Passport**: Non-transferable NFT representing tenant reputation (0-100 score)
-- **Property Tokenization (RWA)**: Real estate properties as verified NFTs with GPS-based uniqueness
-- **Yield Farming on Deposits**: Security deposits earn 6-12% APY through DeFi integration
-- **Decentralized Dispute Resolution**: 3-arbitrator panel with on-chain voting
-- **Multi-Verification System**: 14 tenant badges + 10 property badges
+**For Tenants**
+- Build portable on-chain reputation across properties
+- Earn yield on security deposits (70% share)
+- Access better rental opportunities with verifiable history
+
+**For Landlords**
+- Screen tenants with transparent reputation data
+- Reduce vacancy with trustworthy tenant pool
+- Automate rent collection and compliance
+
+**For the Ecosystem**
+- Unlock $280B+ in idle capital
+- Enable data-driven rental underwriting
+- Create composable real estate primitives
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
-### Smart Contracts (Solidity 0.8.20)
+### Smart Contract System
 
 ```
-Foundry/src/V2/
-├── TenantPassportV2.sol         // Soul-bound NFT with reputation system
-├── PropertyRegistry.sol          // Property NFTs with legal verification
-├── RentalAgreement.sol          // Individual rental contracts
-├── RentalAgreementFactory.sol   // Clone factory (EIP-1167)
-├── DisputeResolver.sol          // Decentralized arbitration
-├── RoomFiVault.sol              // Vault for yield farming
+Core Contracts
+├── TenantPassportV2.sol          Soul-bound NFT with 14 achievement badges
+├── PropertyRegistry.sol           Property verification and tokenization
+├── RentalAgreementNFT.sol        ERC721 rental contracts with automated payments
+├── RentalAgreementFactory.sol    Gas-efficient contract creation
+├── DisputeResolver.sol           Decentralized arbitration system
+├── RoomFiVault.sol               Deposit management and yield distribution
 └── strategies/
-    └── GenericYieldStrategy.sol // Yield strategy template (Lendle, Aurelius)
+    ├── USDYStrategy.sol          Ondo Finance integration (4.29% APY)
+    └── LendleYieldStrategy.sol   Lendle protocol integration (~6% APY)
 ```
 
 ### Technology Stack
 
-**Blockchain**: Mantle Network (EVM-compatible L2)
-**Smart Contracts**: Solidity ^0.8.20 + Foundry
-**Frontend**: React 19 + TypeScript + Material UI
-**Wallets**: MetaMask + Portal HQ (MPC wallets)
-**DeFi Integration**: Lendle, Aurelius Finance (planned)
-**Maps**: Google Maps API
+| Layer | Technology |
+|-------|------------|
+| **Blockchain** | Mantle Network (Sepolia Testnet) |
+| **Smart Contracts** | Solidity 0.8.20, Foundry |
+| **Frontend** | React 19, TypeScript, Vite |
+| **Yield Sources** | Ondo USDY, Lendle Protocol |
+| **Standards** | ERC721, ERC20, Ownable |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- Node.js 16+
-- Foundry ([installation guide](https://book.getfoundry.sh/getting-started/installation))
-- MetaMask wallet configured for Mantle
+- Node.js 18+ and npm
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) for smart contract development
+- MetaMask or compatible Web3 wallet
 
-### 1. Clone Repository
+### Installation
 
 ```bash
-git clone https://github.com/your-repo/roomfi-web.git
+# Clone the repository
+git clone https://github.com/hackatonmxnb/roomfi-web.git
 cd roomfi-web
-```
 
-### 2. Install Dependencies
-
-```bash
-# Smart contracts
-cd Foundry
-forge install
-
-# Frontend
-cd ..
+# Install frontend dependencies
 npm install
+
+# Install smart contract dependencies
+cd Foundry && forge install
 ```
 
-### 3. Configure Environment
+### Configuration
 
 ```bash
+# Copy environment template
 cp .env.example .env
-```
 
-Edit `.env`:
-```env
-# Mantle Sepolia Testnet
-MANTLE_RPC_URL=https://rpc.sepolia.mantle.xyz
-PRIVATE_KEY=your_private_key_here
-
-# Frontend
+# Configure for Mantle Sepolia
 REACT_APP_NETWORK=mantle-sepolia
-REACT_APP_USDT_ADDRESS=0x... # USDT on Mantle Sepolia
+REACT_APP_CHAIN_ID=5003
+REACT_APP_RPC_URL=https://rpc.sepolia.mantle.xyz
 ```
 
-### 4. Compile Contracts
+### Build & Test
 
 ```bash
+# Compile smart contracts
 cd Foundry
 forge build
-```
 
-### 5. Deploy to Mantle Sepolia
-
-```bash
-# Deploy all contracts
-forge script script/DeployRoomFi.s.sol:DeployRoomFi \
-  --rpc-url $MANTLE_RPC_URL \
-  --broadcast \
-  --verify
-
-# Deployment addresses will be saved to deployments/mantle-sepolia.json
-```
-
-### 6. Run Frontend
-
-```bash
-cd ..
-npm start
-```
-
-Visit `http://localhost:3000`
-
----
-
-## 📋 Mantle Global Hackathon 2025
-
-### Track: RWA/RealFi ($15,000 Prize)
-
-RoomFi is specifically designed for Mantle's RWA/RealFi track, featuring:
-
-✅ **Asset Tokenization**: Real-world properties as NFTs
-✅ **Compliance Flows**: Legal verification + KYC badges
-✅ **DeFi Integration**: Yield farming on security deposits
-✅ **Low-Cost Operations**: Leveraging Mantle's low gas fees
-✅ **High Throughput**: Efficient for rental payment processing
-
-### Deliverables
-
-- ✅ Working MVP on Mantle Sepolia Testnet
-- ✅ GitHub repository with deployment instructions
-- ✅ Demo video (3-5 minutes)
-- ✅ One-pager pitch
-- ✅ Team bios
-
-### Judging Criteria Alignment
-
-| Criterion | How RoomFi Excels |
-|-----------|-------------------|
-| **Technical Excellence** | 6,894 lines of auditable Solidity, gas-optimized (EIP-1167 clones) |
-| **User Experience** | Material UI, Google OAuth, one-click wallet creation (Portal HQ) |
-| **Real-World Applicability** | $2.8T rental market, tangible problem |
-| **Mantle Integration** | Native EVM deployment, leverages low fees for micropayments |
-| **Ecosystem Potential** | RWA + DeFi composability, integrations with Lendle/Aurelius |
-
----
-
-## 🎨 Product Features
-
-### For Tenants
-
-1. **Mint Tenant Passport** (Soul-Bound NFT)
-   - Unique on-chain identity
-   - Reputation score (0-100)
-   - 14 verifiable badges
-
-2. **Build Reputation**
-   - Pay rent on-time → increase score
-   - Complete rentals → earn badges
-   - Portable across properties
-
-3. **Earn Yield**
-   - Security deposits earn 6-12% APY
-   - Receive 70% of yield at end of lease
-   - No lockup penalties
-
-### For Landlords
-
-1. **Register Properties**
-   - Tokenize as NFT (GPS-based uniqueness)
-   - Upload legal docs to IPFS
-   - Request verification
-
-2. **Screen Tenants**
-   - View on-chain reputation
-   - Check verified badges
-   - Filter by score threshold
-
-3. **Create Rental Agreements**
-   - Gas-optimized clones (~$0.50 vs $50)
-   - Automated payments
-   - Dispute resolution included
-
-### For Arbitrators
-
-1. **Join Arbitrator Pool**
-   - Stake collateral
-   - Build reputation
-   - Earn fees per case
-
-2. **Resolve Disputes**
-   - 3-person panels
-   - Voting mechanism
-   - Automated penalties
-
----
-
-## 💼 Business Model
-
-### Revenue Streams
-
-1. **Yield Farming Split**: 30% of yield earned on security deposits
-2. **Transaction Fees**: 0.5% on monthly rent payments
-3. **Verification Fees**: $10-50 per property verification
-4. **Premium Features**: Analytics, bulk property management
-
-### Unit Economics
-
-**Per rental agreement** (12 months, $1000/month):
-- Security deposit: $1500
-- Yield earned (8% APY): $120
-- RoomFi revenue: $36 (30% split) + $60 (tx fees) = **$96**
-- Tenant saves: $84 (yield) - $60 (fees) = **$24 net benefit**
-
----
-
-## 📊 Market Opportunity
-
-### Total Addressable Market
-
-- **Global Rental Market**: $2.8 trillion annually
-- **Security Deposits**: ~$280 billion locked (10% of market)
-- **Target (5 years)**: 0.1% market share = $2.8B TVL
-
-### Go-to-Market Strategy
-
-**Phase 1 (Months 1-3)**: Mantle Testnet + 100 beta users
-**Phase 2 (Months 4-6)**: Mantle Mainnet + Mexico City pilot (500 properties)
-**Phase 3 (Months 7-12)**: Multi-chain expansion + 5,000 properties
-**Phase 4 (Year 2+)**: Global rollout + institutional partnerships
-
----
-
-## 🛠️ Technical Details
-
-### Gas Optimization
-
-- **EIP-1167 Minimal Proxy**: Rental agreements deployed as clones (~99% gas savings)
-- **No ERC721Enumerable**: Saves ~40% on NFT minting
-- **Batch Operations**: Multi-property registration in single tx
-
-### Security
-
-- **OpenZeppelin v5.0**: Battle-tested contract libraries
-- **ReentrancyGuard**: All payable functions protected
-- **Access Control**: Role-based permissions (Ownable)
-- **SafeERC20**: Prevents token transfer failures
-
-### Yield Strategy (Planned)
-
-Integration with Mantle DeFi protocols:
-
-1. **Lendle** (70% allocation): USDT lending for stable yield
-2. **Aurelius Finance** (30% allocation): DEX liquidity for higher APY
-3. **Auto-compounding**: Harvest rewards weekly
-4. **Emergency Withdrawal**: Owner can pause + withdraw
-
----
-
-## 🧪 Testing
-
-```bash
-cd Foundry
-
-# Run all tests
+# Run tests
 forge test
 
-# Run with verbosity
-forge test -vvv
-
-# Run specific test
-forge test --match-test testMintPassport
-
-# Coverage report
-forge coverage
+# Start frontend development server
+cd ..
+npm run dev
 ```
 
-**Current Coverage**: ~30% (TODO: increase to 80%+)
+### Using Deployed Contracts
+
+The contracts are already deployed on Mantle Sepolia. See [deployment addresses](#deployed-contracts) below to interact with the live system.
 
 ---
 
-## 📜 Smart Contract Addresses
+## Deployed Contracts
 
 ### Mantle Sepolia Testnet
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| USDT (Mock) | `0x...` | [View](https://explorer.sepolia.mantle.xyz/address/0x...) |
-| TenantPassportV2 | `0x...` | [View](https://explorer.sepolia.mantle.xyz/address/0x...) |
-| PropertyRegistry | `0x...` | [View](https://explorer.sepolia.mantle.xyz/address/0x...) |
-| RentalAgreementFactory | `0x...` | [View](https://explorer.sepolia.mantle.xyz/address/0x...) |
-| DisputeResolver | `0x...` | [View](https://explorer.sepolia.mantle.xyz/address/0x...) |
-| RoomFiVault | `0x...` | [View](https://explorer.sepolia.mantle.xyz/address/0x...) |
+| **USDT (Mock)** | `0xd615074c2603336fa0da8af44b5ccb9d9c0b2f9c` | [View](https://explorer.sepolia.mantle.xyz/address/0xd615074c2603336fa0da8af44b5ccb9d9c0b2f9c) |
+| **TenantPassportV2** | `0xf6a6e553834ff33fc819b6639a557f1f4c647d86` | [View](https://explorer.sepolia.mantle.xyz/address/0xf6a6e553834ff33fc819b6639a557f1f4c647d86) |
+| **PropertyRegistry** | `0xf8bb2ce2643f89e6b80fdac94483cda91110d95a` | [View](https://explorer.sepolia.mantle.xyz/address/0xf8bb2ce2643f89e6b80fdac94483cda91110d95a) |
+| **DisputeResolver** | `0x1acb65533d0f5dbb99d6f3c30acad0a5499325c2` | [View](https://explorer.sepolia.mantle.xyz/address/0x1acb65533d0f5dbb99d6f3c30acad0a5499325c2) |
+| **RoomFiVault** | `0x111592714036d6870f63807f1b659b4def2c6c43` | [View](https://explorer.sepolia.mantle.xyz/address/0x111592714036d6870f63807f1b659b4def2c6c43) |
+| **RentalAgreementNFT** | `0xa70efcb817358689e46b664602b757f9fd183c6b` | [View](https://explorer.sepolia.mantle.xyz/address/0xa70efcb817358689e46b664602b757f9fd183c6b) |
+| **Factory** | `0x1b8e378f489021029b4e9049f261b204def16974` | [View](https://explorer.sepolia.mantle.xyz/address/0x1b8e378f489021029b4e9049f261b204def16974) |
+| **USDYStrategy** | `0x61fc4578863da32dc4e879f59e1cb673da498618` | [View](https://explorer.sepolia.mantle.xyz/address/0x61fc4578863da32dc4e879f59e1cb673da498618) |
+| **LendleStrategy** | `0x098ff07f87c1aaec0dd5b16c2f0199aa2b60bb75` | [View](https://explorer.sepolia.mantle.xyz/address/0x098ff07f87c1aaec0dd5b16c2f0199aa2b60bb75) |
 
-**Deployment Date**: TBD
-**Deployer**: `0x...`
+**Network Details**
+- Chain ID: 5003
+- RPC: https://rpc.sepolia.mantle.xyz
+- Explorer: https://explorer.sepolia.mantle.xyz
+- Deployed: January 7, 2026
 
----
-
-## 🎥 Demo Video
-
-🔗 [Watch on YouTube](https://youtube.com/...)
-
-Covers:
-1. Tenant mints passport (30s)
-2. Landlord registers property (45s)
-3. Create rental agreement (30s)
-4. Payment flow + reputation update (45s)
-5. Yield farming demonstration (30s)
-6. Dispute resolution (1min)
-
-**Total**: 3:30
+View complete deployment info: [deployment-addresses.json](Foundry/deployment-addresses.json)
 
 ---
 
-## 👥 Team
+## How It Works
 
-**RoomFi Team - Firrton**
+### For Tenants
 
-- **[Name]** - Smart Contract Developer
-  - Background: [Experience]
-  - GitHub: [@username](https://github.com/username)
+**1. Create Identity**
+- Mint a Tenant Passport NFT (soul-bound, non-transferable)
+- Start with base reputation score
+- Earn badges through verified actions
 
-- **[Name]** - Full Stack Developer
-  - Background: [Experience]
-  - GitHub: [@username](https://github.com/username)
+**2. Rent Properties**
+- Browse verified properties
+- Submit rental applications with on-chain history
+- Pay security deposit (automatically invested for yield)
 
-- **[Name]** - Product/Business
-  - Background: [Experience]
-  - LinkedIn: [Profile](https://linkedin.com/in/...)
+**3. Build Reputation**
+- On-time payments increase reputation score
+- Complete leases earn achievement badges
+- Reputation is portable across all properties
+
+**4. Earn Returns**
+- Security deposits generate 4-6% APY through DeFi
+- Receive 70% of yield at lease completion
+- Landlord receives 30% for providing capital
+
+### For Landlords
+
+**1. Register Property**
+- Tokenize property as NFT
+- Add property details and verification documents
+- Get verified through PropertyRegistry
+
+**2. List & Screen**
+- Create rental listing with terms
+- Review tenant reputation scores and badges
+- Select qualified tenants transparently
+
+**3. Manage Rentals**
+- Rental agreement deployed as ERC721 NFT
+- Automated monthly rent collection
+- Built-in dispute resolution mechanism
+
+### Protocol Features
+
+**Yield Strategy**
+- Active strategy: Ondo USDY (4.29% APY)
+- Alternative: Lendle Protocol (~6% APY)
+- Automatic yield distribution at lease end
+
+**Dispute Resolution**
+- Decentralized arbitration panel
+- 3-arbitrator voting system
+- On-chain enforcement of decisions
+
+**Badge System**
+- 14 tenant achievement badges
+- Verifiable on-chain credentials
+- Improves access to better properties
 
 ---
 
-## 📖 Documentation
+## Documentation
 
-- **Architecture**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- **API Reference**: [docs/API.md](docs/API.md)
-- **User Guide**: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
-- **Yield Strategy**: [docs/YIELD_STRATEGY.md](docs/YIELD_STRATEGY.md)
+Comprehensive documentation is available in the `/docs` directory:
 
----
-
-## 🗺️ Roadmap
-
-### Q1 2025 (Hackathon)
-- ✅ Core contracts development
-- ✅ Frontend MVP
-- ✅ Deploy to Mantle Sepolia
-- ✅ Hackathon submission
-
-### Q2 2025 (Post-Hackathon)
-- [ ] Security audit (CertiK or similar)
-- [ ] Integrate Lendle + Aurelius
-- [ ] Mainnet deployment
-- [ ] Beta launch (100 users)
-
-### Q3 2025 (Growth)
-- [ ] Mexico City expansion (500 properties)
-- [ ] Mobile app (iOS + Android)
-- [ ] Governance token launch
-- [ ] DAO formation
-
-### Q4 2025 (Scale)
-- [ ] Multi-chain expansion (Arbitrum, Base)
-- [ ] Institutional partnerships
-- [ ] $10M TVL milestone
-- [ ] 5,000 active users
+- **[Smart Contracts Architecture](docs/backend/SMART_CONTRACTS_ARCHITECTURE.md)** - Detailed technical specifications of all contracts
+- **[User Flows](docs/flows/USER_FLOWS.md)** - Complete platform mechanics and user journeys
+- **[Deployment Guide](docs/deployment/DEPLOYMENT_CHECKLIST.md)** - Step-by-step deployment instructions
+- **[Frontend Integration](docs/frontend/ANALISIS_COMPATIBILIDAD_FRONTEND_CONTRATOS.md)** - Frontend compatibility and migration guide
+- **[Testing Report](TESTING_REPORT.md)** - Test results and validation
 
 ---
 
-## 🤝 Contributing
+## Testing
 
-We welcome contributions! Please follow these steps:
+### Running Tests
+
+```bash
+cd Foundry
+
+# Compile contracts
+forge build
+
+# Run unit tests
+forge test
+
+# Run with gas reporting
+forge test --gas-report
+
+# Run specific test file
+forge test --match-path test/TenantPassport.t.sol
+```
+
+### Integration Tests
+
+```bash
+# Run integration test suite
+./test-deployment.sh
+
+# Run functional tests
+./test-functional.sh
+```
+
+**Test Coverage**: 19/20 integration tests passing (95%)
+See [TESTING_REPORT.md](TESTING_REPORT.md) for detailed results.
+
+---
+
+## Technical Highlights
+
+### Smart Contract Design
+
+**Gas Optimization**
+- Factory pattern for rental agreement creation
+- Efficient storage patterns
+- Minimal on-chain data storage
+
+**Security**
+- OpenZeppelin contracts v5.0
+- ReentrancyGuard on all payable functions
+- Role-based access control
+- No upgradeable proxies (immutable core logic)
+
+**Composability**
+- ERC721 standard for rental agreements
+- Modular yield strategy system
+- Extensible badge and reputation system
+
+### Yield Strategy Implementation
+
+Currently integrated yield sources:
+
+1. **Ondo USDY** (Active)
+   - Tokenized US Treasury yields
+   - 4.29% APY
+   - Low-risk, stable returns
+
+2. **Lendle Protocol** (Available)
+   - Aave V3 fork on Mantle
+   - ~6% APY on USDT
+   - Lending protocol integration
+
+Strategy selection is flexible and can be updated by vault owner.
+
+---
+
+## Why Mantle Network?
+
+RoomFi leverages Mantle's infrastructure for:
+
+- **Cost Efficiency**: Low gas fees enable frequent rent payments (~$0.01/tx)
+- **Scalability**: High throughput for rental payment processing
+- **EVM Compatibility**: Seamless Solidity deployment
+- **DeFi Ecosystem**: Native integrations with Lendle, Ondo Finance
+- **Data Availability**: Efficient on-chain property metadata storage
+
+---
+
+## Project Status
+
+**Current Phase**: Testnet Deployment (Mantle Global Hackathon 2025)
+
+- Contracts deployed on Mantle Sepolia
+- Integration tests passing (19/20)
+- Frontend in development
+- Documentation complete
+
+**Next Steps**:
+- Complete frontend integration
+- End-to-end testing
+- Security review
+- Mainnet deployment preparation
+
+---
+
+## Contributing
+
+Contributions are welcome. To contribute:
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Commit changes: `git commit -m "Add my feature"`
-4. Push to branch: `git push origin feature/my-feature`
+2. Create a feature branch (`git checkout -b feature/improvement`)
+3. Commit changes (`git commit -m "Add improvement"`)
+4. Push to branch (`git push origin feature/improvement`)
 5. Open a Pull Request
 
-### Development Guidelines
-
-- Follow Solidity style guide
-- Add tests for new features
-- Update documentation
-- Run `forge fmt` before committing
+Please ensure tests pass and documentation is updated.
 
 ---
 
-## 📄 License
+## License
 
-MIT License - see [LICENSE](LICENSE) file
-
----
-
-## 🔗 Links
-
-- **Website**: https://roomfi.io (coming soon)
-- **Demo**: https://demo.roomfi.io
-- **Twitter**: [@RoomFi_io](https://twitter.com/RoomFi_io)
-- **Discord**: [Join Community](https://discord.gg/...)
-- **Docs**: https://docs.roomfi.io
+This project is licensed under the MIT License. See [LICENSE](LICENSE) file for details.
 
 ---
 
-## 💡 Why Mantle?
+## Links
 
-RoomFi chose Mantle Network for several key reasons:
-
-1. **Low Gas Fees**: Rental payments can be as low as $0.01 per transaction
-2. **High Throughput**: Supports high-frequency payment processing
-3. **EVM Compatibility**: Easy migration of existing Solidity contracts
-4. **Modular Data Availability**: Efficient storage for property metadata
-5. **Growing Ecosystem**: Access to Lendle, Aurelius, and other DeFi protocols
-6. **Community Support**: Active developer community and documentation
+- **GitHub**: [github.com/hackatonmxnb/roomfi-web](https://github.com/hackatonmxnb/roomfi-web)
+- **Documentation**: [docs/](docs/)
+- **Mantle Network**: [mantle.xyz](https://mantle.xyz)
+- **Ondo Finance**: [ondo.finance](https://ondo.finance)
+- **Lendle Protocol**: [lendle.xyz](https://lendle.xyz)
 
 ---
 
-## 📞 Contact
+**Built for Mantle Global Hackathon 2025**
 
-For questions, partnerships, or support:
-
-- **Email**: hello@roomfi.io
-- **Telegram**: @roomfi
-- **Twitter DM**: [@RoomFi_io](https://twitter.com/RoomFi_io)
-
----
-
-**Built with ❤️ for Mantle Global Hackathon 2025**
-
-*Bringing transparency and efficiency to the $2.8T rental market*
+*Transforming the $2.8 trillion rental market through tokenization and DeFi*
