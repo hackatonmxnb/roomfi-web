@@ -8,6 +8,7 @@
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-363636?style=flat&logo=solidity)](https://soliditylang.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-19%2F20_Passing-success)](TESTING_REPORT.md)
+[![Compliance](https://img.shields.io/badge/Legal-Compliance_Memo-green?style=flat&logo=law)](docs/RoomFi_Legal_Compliance_Memo.md)
 
 [Documentation](docs/README.md) • [Smart Contracts](Foundry/src/V2/) • [Deployment](Foundry/deployment-addresses.json) • [Live Demo](#)
 
