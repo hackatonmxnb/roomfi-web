@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { Box, Typography, Paper, Grid, Divider, Link, Button, Modal } from '@mui/material';
-import { Card, CardContent, CardMedia, Avatar, Chip } from '@mui/material';
-import { renderAmenityIcon, getDaysAgo } from './utils/icons';
+import { Card, CardContent, CardMedia, Chip } from '@mui/material';
+import { renderAmenityIcon } from './utils/icons';
 
 const DashboardPage = () => {
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
-  const [selectedInterestListing, setSelectedInterestListing] = useState<any>(null);
-  const [showInterestModal, setShowInterestModal] = useState(false);
 
   const handleOpenWithdrawalModal = () => setShowWithdrawalModal(true);
   const handleCloseWithdrawalModal = () => setShowWithdrawalModal(false);
 
-  // Mock data
-  const activityData = { checkIns: 0, checkOuts: 0, tripsInProgress: 4, pendingReviews: 4 };
-  const performanceData = { occupancyRate: 64, fiveStarRatings: 100, conversionRate: 80 };
+  // V2: Dashboard data - TODO: Connect to RoomFiVault for real data
+  const dashboardData = {
+    apy: 4.29, // USDY Strategy APY
+    yieldEarned: 0,
+    availableBalance: 0,
+    totalValue: 0
+  };
   const bookingRequests = [
     { id: 1, nombre: 'Julieta', inquiry: 'aceptas un gato pequeño?', location: '1 cuarto cerca Del Valle' },
     { id: 2, nombre: 'Ana y Carla', inquiry: 'Me interesa pero somos 2 chavas, puedes aceptarnos a las 2?', location: '1 cuarto cerca Del Valle' },
@@ -63,25 +65,25 @@ const DashboardPage = () => {
           <Grid item xs={12} md={3}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6">Rendimiento</Typography>
-              <Typography variant="h4" color="primary">19%</Typography>
+              <Typography variant="h4" color="primary">{dashboardData.apy}%</Typography>
             </Paper>
           </Grid>
           <Grid item xs={12} md={3}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6">Intereses generados</Typography>
-              <Typography variant="h4" color="primary">$17,119.02 MXNB</Typography>
+              <Typography variant="h4" color="primary">${dashboardData.yieldEarned.toFixed(2)} USDT</Typography>
             </Paper>
           </Grid>
           <Grid item xs={12} md={3}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6">Efectivo disponible</Typography>
-              <Typography variant="h4" color="primary">$465.69 MXNB</Typography>
+              <Typography variant="h4" color="primary">${dashboardData.availableBalance.toFixed(2)} USDT</Typography>
             </Paper>
           </Grid>
           <Grid item xs={12} md={3}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6">Valor de tu cuenta</Typography>
-              <Typography variant="h4" color="primary">$14,847.29 MXNB</Typography>
+              <Typography variant="h4" color="primary">${dashboardData.totalValue.toFixed(2)} USDT</Typography>
             </Paper>
           </Grid>
           <Grid item xs={12} md={8}>

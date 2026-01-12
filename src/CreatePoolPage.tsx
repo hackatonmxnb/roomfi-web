@@ -3,10 +3,8 @@ import { ethers } from 'ethers';
 import { Box, Typography, Paper, TextField, Button, Alert, Stack, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import {
-    PROPERTY_INTEREST_POOL_ADDRESS,
-    PROPERTY_INTEREST_POOL_ABI,
-    MXNBT_ADDRESS,
-    MXNB_ABI
+    PROPERTY_REGISTRY_ADDRESS,
+    PROPERTY_REGISTRY_ABI,
 } from './web3/config';
 
 interface CreatePoolPageProps {
@@ -52,9 +50,9 @@ export default function CreatePoolPage({ account, tokenDecimals }: CreatePoolPag
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner();
 
-            const poolContract = new ethers.Contract(
-                PROPERTY_INTEREST_POOL_ADDRESS,
-                PROPERTY_INTEREST_POOL_ABI,
+            const registryContract = new ethers.Contract(
+                PROPERTY_REGISTRY_ADDRESS,
+                PROPERTY_REGISTRY_ABI,
                 signer
             );
 
@@ -63,27 +61,25 @@ export default function CreatePoolPage({ account, tokenDecimals }: CreatePoolPag
             if (Number(tenantCount) <= 0) {
                 throw new Error("El número de inquilinos debe ser mayor que 0.");
             }
-            if (Number(totalRent) % Number(tenantCount) !== 0) {
-                throw new Error("La renta total debe ser divisible por el número de inquilinos.");
-            }
 
-            const totalRentWei = ethers.parseUnits(totalRent, tokenDecimals);
-            const seriousnessDepositWei = ethers.parseUnits(seriousnessDeposit, tokenDecimals);
-
-            setStatusMessage('Creando el pool de interés en la blockchain...');
-            const tx = await poolContract.createPropertyPool(
+            setStatusMessage('Registrando propiedad en la blockchain...');
+            
+            // V2: Usar PropertyRegistry.registerProperty
+            // Parámetros: name, propertyType (0=APARTMENT), location, bedroomCount, bathroomCount, squareMeters, amenities[], terms
+            const tx = await registryContract.registerProperty(
                 propertyName,
-                description || " ", // Enviar descripción o un espacio si está vacía
-                totalRentWei,
-                seriousnessDepositWei,
-                tenantCount,
-                paymentDayStart,
-                paymentDayEnd
+                0, // propertyType: APARTMENT
+                description || "Sin ubicación especificada", // location
+                Number(tenantCount), // bedroomCount (usando tenantCount como proxy)
+                1, // bathroomCount
+                50, // squareMeters (valor por defecto)
+                [], // amenities
+                `Renta: ${totalRent}, Depósito: ${seriousnessDeposit}, Días de pago: ${paymentDayStart}-${paymentDayEnd}` // terms
             );
 
             await tx.wait();
             
-            setStatusMessage('¡Pool de interés creado exitosamente! Serás redirigido en 3 segundos.');
+            setStatusMessage('¡Propiedad registrada exitosamente! Serás redirigido en 3 segundos.');
 
             setTimeout(() => {
                 navigate('/');
@@ -103,7 +99,7 @@ export default function CreatePoolPage({ account, tokenDecimals }: CreatePoolPag
             <Box maxWidth={600} mx="auto" mt={6}>
                 <Paper sx={{ p: 4, borderRadius: 3 }}>
                     <Typography variant="h4" fontWeight={700} mb={3}>
-                        Crear un Nuevo Pool de Interés
+                        Registrar Nueva Propiedad
                     </Typography>
                     <Stack spacing={2}>
                         <TextField
@@ -115,7 +111,7 @@ export default function CreatePoolPage({ account, tokenDecimals }: CreatePoolPag
                             required
                         />
                         <TextField
-                            label="Renta Total Mensual (MXNB)"
+                            label="Renta Total Mensual (USDT)"
                             name="totalRent"
                             value={form.totalRent}
                             onChange={handleChange}
@@ -124,7 +120,7 @@ export default function CreatePoolPage({ account, tokenDecimals }: CreatePoolPag
                             required
                         />
                         <TextField
-                            label="Depósito de Seriedad (MXNB)"
+                            label="Depósito de Seguridad (USDT)"
                             name="seriousnessDeposit"
                             value={form.seriousnessDeposit}
                             onChange={handleChange}
@@ -170,7 +166,7 @@ export default function CreatePoolPage({ account, tokenDecimals }: CreatePoolPag
                             onClick={handleCreatePool}
                             startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
                         >
-                            {loading ? 'Procesando...' : 'Crear Pool'}
+                            {loading ? 'Procesando...' : 'Registrar Propiedad'}
                         </Button>
                     </Stack>
                 </Paper>

@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import {
   Typography, Button, Container, Box, Paper, Card, CardContent,
-  CardMedia, Avatar, Chip, Stack, Grid, useTheme, useMediaQuery, IconButton,
-  Menu, MenuItem, Modal, Snackbar, Alert, Drawer, List, ListItem, ListItemButton,
-  ListItemText, TextField, Slider, FormControl, InputLabel, Select, OutlinedInput,
+  CardMedia, Avatar, Chip, Stack, Grid, useMediaQuery,
+  MenuItem, Modal, Snackbar, Alert, Drawer,
+  TextField, Slider, FormControl, InputLabel, Select, OutlinedInput,
   createTheme, ThemeProvider, Fab
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -27,13 +27,13 @@ import Header from './Header';
 import {
   TENANT_PASSPORT_ABI,
   TENANT_PASSPORT_ADDRESS,
-  PROPERTY_INTEREST_POOL_ADDRESS,
-  PROPERTY_INTEREST_POOL_ABI,
+  PROPERTY_REGISTRY_ADDRESS,
+  PROPERTY_REGISTRY_ABI,
   NETWORK_CONFIG,
-  MXNBT_ADDRESS,
-  MXNB_ABI,
-  INTEREST_GENERATOR_ADDRESS,
-  INTEREST_GENERATOR_ABI,
+  USDT_ADDRESS,
+  USDT_ABI,
+  ROOM_FI_VAULT_ADDRESS,
+  ROOM_FI_VAULT_ABI,
 } from './web3/config';
 import Portal from '@portal-hq/web';
 import { renderAmenityIcon, getDaysAgo } from './utils/icons';
@@ -48,11 +48,21 @@ declare global {
 }
 
 interface TenantPassportData {
+  // V2 TenantPassport fields
   reputation: number;
   paymentsMade: number;
   paymentsMissed: number;
-  outstandingBalance: number;
+  propertiesRented: number;
   propertiesOwned: number;
+  consecutiveOnTimePayments: number;
+  totalMonthsRented: number;
+  referralCount: number;
+  disputesCount: number;
+  outstandingBalance: number;
+  totalRentPaid: number;
+  lastActivityTime: number;
+  lastPaymentTime: number;
+  isVerified: boolean;
   tokenId: BigInt;
   mintingWalletAddress?: string;
 }
@@ -267,28 +277,27 @@ function App() {
   const checkAllowance = useCallback(async () => {
     if (!account || !provider || !vaultAmount) return;
     try {
-      const tokenContract = new ethers.Contract(MXNBT_ADDRESS, MXNB_ABI, provider);
-      const currentAllowance = await tokenContract.allowance(account, INTEREST_GENERATOR_ADDRESS);
-      setAllowance(Number(ethers.formatUnits(currentAllowance, tokenDecimals)));
+      const tokenContract = new ethers.Contract(USDT_ADDRESS, USDT_ABI, provider);
+      const currentAllowance = await tokenContract.allowance(account, ROOM_FI_VAULT_ADDRESS);
+      setAllowance(Number(ethers.formatUnits(currentAllowance, 6))); // USDT has 6 decimals
     } catch (error) {
       console.error("Error checking allowance:", error);
     }
-  }, [account, provider, vaultAmount, tokenDecimals]);
+  }, [account, provider, vaultAmount]);
 
   const fetchVaultData = useCallback(async () => {
     if (!account || !provider) return;
     try {
-      const interestContract = new ethers.Contract(INTEREST_GENERATOR_ADDRESS, INTEREST_GENERATOR_ABI, provider);
-      const [rawBalance, rawInterest] = await Promise.all([
-        interestContract.balanceOf(account),
-        interestContract.calculateInterest(account)
-      ]);
-      setVaultBalance(Number(ethers.formatUnits(rawBalance, tokenDecimals)));
-      setInterestEarned(Number(ethers.formatUnits(rawInterest, tokenDecimals)));
+      const vaultContract = new ethers.Contract(ROOM_FI_VAULT_ADDRESS, ROOM_FI_VAULT_ABI, provider);
+      // V2: RoomFiVault uses different method names - adjust based on actual ABI
+      const rawBalance = await vaultContract.balanceOf(account);
+      setVaultBalance(Number(ethers.formatUnits(rawBalance, 6))); // USDT has 6 decimals
+      // TODO: Add yield calculation when method is confirmed in ABI
+      setInterestEarned(0);
     } catch (error) {
       console.error("Error fetching vault data:", error);
     }
-  }, [account, provider, tokenDecimals]);
+  }, [account, provider]);
 
   const handleApprove = async () => {
     if (!account || !provider || !vaultAmount) return;
@@ -296,11 +305,11 @@ function App() {
 
     try {
       const signer = await provider.getSigner();
-      const amountToApprove = ethers.parseUnits(vaultAmount, tokenDecimals);
-      const tokenContract = new ethers.Contract(MXNBT_ADDRESS, MXNB_ABI, signer);
+      const amountToApprove = ethers.parseUnits(vaultAmount, 6); // USDT has 6 decimals
+      const tokenContract = new ethers.Contract(USDT_ADDRESS, USDT_ABI, signer);
       
       setNotification({ open: true, message: 'Enviando transacción de aprobación...', severity: 'info' });
-      const tx = await tokenContract.approve(INTEREST_GENERATOR_ADDRESS, amountToApprove);
+      const tx = await tokenContract.approve(ROOM_FI_VAULT_ADDRESS, amountToApprove);
       await tx.wait();
       
       setNotification({ open: true, message: '¡Aprobación exitosa!', severity: 'success' });
@@ -317,11 +326,11 @@ function App() {
 
     try {
       const signer = await provider.getSigner();
-      const amountToDeposit = ethers.parseUnits(vaultAmount, tokenDecimals);
-      const interestContract = new ethers.Contract(INTEREST_GENERATOR_ADDRESS, INTEREST_GENERATOR_ABI, signer);
+      const amountToDeposit = ethers.parseUnits(vaultAmount, 6); // USDT has 6 decimals
+      const vaultContract = new ethers.Contract(ROOM_FI_VAULT_ADDRESS, ROOM_FI_VAULT_ABI, signer);
 
       setNotification({ open: true, message: 'Enviando transacción de depósito...', severity: 'info' });
-      const tx = await interestContract.deposit(amountToDeposit);
+      const tx = await vaultContract.deposit(account, amountToDeposit);
       await tx.wait(2); // Esperar 2 confirmaciones para asegurar la propagación del estado
 
       setNotification({ open: true, message: '¡Depósito realizado con éxito!', severity: 'success' });
@@ -340,11 +349,11 @@ function App() {
 
     try {
       const signer = await provider.getSigner();
-      const amount = ethers.parseUnits(vaultAmount, tokenDecimals);
+      const amount = ethers.parseUnits(vaultAmount, 6); // USDT has 6 decimals
       
-      const interestContract = new ethers.Contract(INTEREST_GENERATOR_ADDRESS, INTEREST_GENERATOR_ABI, signer);
+      const vaultContract = new ethers.Contract(ROOM_FI_VAULT_ADDRESS, ROOM_FI_VAULT_ABI, signer);
       setNotification({ open: true, message: 'Retirando fondos...', severity: 'info' });
-      const withdrawTx = await interestContract.withdraw(amount);
+      const withdrawTx = await vaultContract.withdraw(account, amount);
       await withdrawTx.wait();
 
       setNotification({ open: true, message: '¡Retiro realizado con éxito!', severity: 'success' });
@@ -359,112 +368,29 @@ function App() {
   };
   // --- FIN DE LÓGICA DE BÓVEDA ---
 
-  // --- NUEVA LÓGICA PARA GESTIÓN DE FONDOS DEL POOL ---
-  const handleApproveLandlordFunds = async (propertyId: number) => {
-    if (!account || !provider || !landlordFundAmount) return;
-    if (!(await checkNetwork(provider))) return;
-
-    try {
-      const signer = await provider.getSigner();
-      const amountToApprove = ethers.parseUnits(landlordFundAmount, tokenDecimals);
-      const tokenContract = new ethers.Contract(MXNBT_ADDRESS, MXNB_ABI, signer);
-      
-      setNotification({ open: true, message: 'Aprobando fondos...', severity: 'info' });
-      const tx = await tokenContract.approve(PROPERTY_INTEREST_POOL_ADDRESS, amountToApprove);
-      await tx.wait();
-      
-      setNotification({ open: true, message: '¡Aprobación exitosa! Ahora puedes añadir los fondos.', severity: 'success' });
-      // Aquí podríamos forzar una re-renderización o simplemente confiar en que el usuario hará clic en "Añadir Fondos"
-    } catch (error) {
-      console.error("Error approving landlord funds:", error);
-      setNotification({ open: true, message: 'Error al aprobar los fondos.', severity: 'error' });
-    }
+  // --- LÓGICA DE POOL V1 DESHABILITADA - TODO: Refactorizar para V2 con RentalAgreementNFT ---
+  // Estas funciones usaban PropertyInterestPool que ya no existe en V2
+  // En V2, los fondos se manejan a través de RentalAgreementNFT y RoomFiVault
+  const handleApproveLandlordFunds = async (_propertyId: number) => {
+    setNotification({ open: true, message: 'Esta función será implementada con los nuevos contratos V2.', severity: 'info' });
   };
 
-  const handleAddLandlordFunds = async (propertyId: number) => {
-    if (!account || !provider || !landlordFundAmount) return;
-    if (!(await checkNetwork(provider))) return;
-
-    try {
-      const signer = await provider.getSigner();
-      const amountToAdd = ethers.parseUnits(landlordFundAmount, tokenDecimals);
-      const poolContract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, signer);
-
-      setNotification({ open: true, message: 'Añadiendo fondos al pool...', severity: 'info' });
-      const tx = await poolContract.addLandlordFunds(propertyId, amountToAdd);
-      await tx.wait();
-
-      setNotification({ open: true, message: '¡Fondos añadidos exitosamente!', severity: 'success' });
-      await handleViewMyProperties(); // Recargar datos de propiedades
-      setLandlordFundAmount('');
-    } catch (error) {
-      console.error("Error adding landlord funds:", error);
-      setNotification({ open: true, message: 'Error al añadir los fondos.', severity: 'error' });
-    }
+  const handleAddLandlordFunds = async (_propertyId: number) => {
+    setNotification({ open: true, message: 'Esta función será implementada con los nuevos contratos V2.', severity: 'info' });
   };
 
-  const handleDepositPoolToVault = async (propertyId: number) => {
-    if (!account || !provider) return;
-    if (!(await checkNetwork(provider))) return;
-
-    try {
-      const signer = await provider.getSigner();
-      const poolContract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, signer);
-
-      setNotification({ open: true, message: 'Moviendo fondos del pool a la bóveda...', severity: 'info' });
-      const tx = await poolContract.depositToVault(propertyId);
-      await tx.wait();
-
-      setNotification({ open: true, message: '¡Fondos movidos a la bóveda exitosamente!', severity: 'success' });
-      await handleViewMyProperties();
-    } catch (error) {
-      console.error("Error depositing pool funds to vault:", error);
-      setNotification({ open: true, message: 'Error al mover los fondos a la bóveda.', severity: 'error' });
-    }
+  const handleDepositPoolToVault = async (_propertyId: number) => {
+    setNotification({ open: true, message: 'Esta función será implementada con los nuevos contratos V2.', severity: 'info' });
   };
 
-  const handleWithdrawPoolFromVault = async (propertyId: number, amount: string) => {
-    if (!account || !provider) return;
-    if (!(await checkNetwork(provider))) return;
-
-    try {
-      const signer = await provider.getSigner();
-      const amountToWithdraw = ethers.parseUnits(amount, tokenDecimals);
-      const poolContract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, signer);
-
-      setNotification({ open: true, message: 'Retirando fondos de la bóveda al pool...', severity: 'info' });
-      const tx = await poolContract.withdrawFromVault(propertyId, amountToWithdraw);
-      await tx.wait();
-
-      setNotification({ open: true, message: '¡Fondos retirados exitosamente!', severity: 'success' });
-      await handleViewMyProperties();
-    } catch (error) {
-      console.error("Error withdrawing pool funds from vault:", error);
-      setNotification({ open: true, message: 'Error al retirar los fondos de la bóveda.', severity: 'error' });
-    }
+  const handleWithdrawPoolFromVault = async (_propertyId: number, _amount: string) => {
+    setNotification({ open: true, message: 'Esta función será implementada con los nuevos contratos V2.', severity: 'info' });
   };
 
-  const handleCancelPool = async (propertyId: number) => {
-    if (!account || !provider) return;
-    if (!(await checkNetwork(provider))) return;
-
-    try {
-      const signer = await provider.getSigner();
-      const poolContract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, signer);
-
-      setNotification({ open: true, message: 'Cancelando el pool...', severity: 'info' });
-      const tx = await poolContract.cancelPool(propertyId);
-      await tx.wait();
-
-      setNotification({ open: true, message: '¡Pool cancelado exitosamente!', severity: 'success' });
-      await handleViewMyProperties(); // Recargar datos
-    } catch (error: any) {
-      console.error("Error canceling pool:", error);
-      const reason = error.reason || 'Error al cancelar el pool.';
-      setNotification({ open: true, message: reason, severity: 'error' });
-    }
+  const handleCancelPool = async (_propertyId: number) => {
+    setNotification({ open: true, message: 'Esta función será implementada con los nuevos contratos V2.', severity: 'info' });
   };
-  // --- FIN DE NUEVA LÓGICA ---
+  // --- FIN DE LÓGICA DE POOL ---
 
   const checkNetwork = async (prov: ethers.BrowserProvider): Promise<boolean> => {
     const network = await prov.getNetwork();
@@ -510,23 +436,20 @@ function App() {
 
   const fetchTokenBalance = useCallback(async (prov: ethers.Provider, acc: string) => {
     try {
-        const contract = new ethers.Contract(MXNBT_ADDRESS, MXNB_ABI, prov);
+        const contract = new ethers.Contract(USDT_ADDRESS, USDT_ABI, prov);
         
-        const [rawBalance, decimals] = await Promise.all([
-            contract.balanceOf(acc),
-            contract.decimals()
-        ]);
+        const rawBalance = await contract.balanceOf(acc);
+        const decimals = 6; // USDT always has 6 decimals
 
-        console.log("--- [DIAGNÓSTICO DE BALANCE] ---");
+        console.log("--- [DIAGNÓSTICO DE BALANCE USDT] ---");
         console.log("Billetera (Account):", acc);
-        console.log("Contrato del Token (Address):", MXNBT_ADDRESS);
-        console.log("Decimales del Contrato:", decimals.toString());
+        console.log("Contrato del Token (Address):", USDT_ADDRESS);
+        console.log("Decimales:", decimals);
         console.log("Balance Crudo (Raw):", rawBalance.toString());
         console.log("---------------------------------");
         
-        const numDecimals = Number(decimals);
-        setTokenDecimals(numDecimals);
-        setTokenBalance(Number(ethers.formatUnits(rawBalance, numDecimals)));
+        setTokenDecimals(decimals);
+        setTokenBalance(Number(ethers.formatUnits(rawBalance, decimals)));
     } catch (error) {
         console.error("Error fetching token balance:", error);
         setNotification({ open: true, message: 'Error al obtener el balance del token.', severity: 'error' });
@@ -541,10 +464,10 @@ function App() {
     if (!(await checkNetwork(provider))) return;
 
     try {
-      // --- DEBUGGING STEP ---
+      // V2: Usar PropertyRegistry en lugar de PropertyInterestPool
       const network = await provider.getNetwork();
-      const contractAddress = PROPERTY_INTEREST_POOL_ADDRESS;
-      console.log(`[DEBUG] Intentando llamar a 'propertyCounter' en:`);
+      const contractAddress = PROPERTY_REGISTRY_ADDRESS;
+      console.log(`[DEBUG] Intentando llamar a PropertyRegistry en:`);
       console.log(`[DEBUG] Contrato: ${contractAddress}`);
       console.log(`[DEBUG] Chain ID: ${network.chainId}`);
       const code = await provider.getCode(contractAddress);
@@ -553,29 +476,34 @@ function App() {
         setNotification({ open: true, message: '[DEBUG] ¡Error Crítico! No se encontró código de contrato en la dirección proporcionada. Verifica que el contrato esté desplegado y la dirección sea correcta.', severity: 'error' });
         return;
       }
-      // --- END DEBUGGING ---
 
-      const contract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, provider);
-      const propertyIds = await contract.getPropertiesByLandlord(account);
+      const contract = new ethers.Contract(PROPERTY_REGISTRY_ADDRESS, PROPERTY_REGISTRY_ABI, provider);
+      // V2: Usar getLandlordProperties o iterar sobre propiedades
+      // TODO: Verificar método exacto en el ABI de PropertyRegistry
+      const propertyCount = await contract.propertyCounter();
       
       const properties = [];
-      for (const id of propertyIds) {
-        const p = await contract.getPropertyInfo(id);
-        properties.push({
-          id: id,
-          name: p[0],
-          description: p[1],
-          landlord: p[2],
-          totalRentAmount: p[3],
-          seriousnessDeposit: p[4],
-          requiredTenantCount: p[5],
-          amountPooledForRent: p[6],
-          amountInVault: p[7],
-          interestedTenants: p[8],
-          state: Number(p[9]),
-          paymentDayStart: p[10],
-          paymentDayEnd: p[11],
-        });
+      for (let i = 1; i <= Number(propertyCount); i++) {
+        try {
+          const p = await contract.getProperty(i);
+          // Solo mostrar propiedades del landlord actual
+          if (p.landlord && p.landlord.toLowerCase() === account.toLowerCase()) {
+            properties.push({
+              id: i,
+              name: p.name || `Propiedad ${i}`,
+              description: p.location || '',
+              landlord: p.landlord,
+              propertyType: Number(p.propertyType),
+              bedroomCount: Number(p.bedroomCount),
+              bathroomCount: Number(p.bathroomCount),
+              squareMeters: Number(p.squareMeters),
+              isVerified: p.isVerified,
+              isActive: p.isActive,
+            });
+          }
+        } catch (e) {
+          console.log(`Property ${i} not found or error:`, e);
+        }
       }
 
       setMyProperties(properties);
@@ -615,12 +543,22 @@ function App() {
       }
 
       const info = await readOnlyContract.getTenantInfo(finalTokenId);
-      const passportData = {
+      // V2: TenantInfo struct has more fields
+      const passportData: TenantPassportData = {
         reputation: Number(info.reputation),
         paymentsMade: Number(info.paymentsMade),
         paymentsMissed: Number(info.paymentsMissed),
-        outstandingBalance: Number(info.outstandingBalance),
+        propertiesRented: Number(info.propertiesRented),
         propertiesOwned: Number(info.propertiesOwned),
+        consecutiveOnTimePayments: Number(info.consecutiveOnTimePayments),
+        totalMonthsRented: Number(info.totalMonthsRented),
+        referralCount: Number(info.referralCount),
+        disputesCount: Number(info.disputesCount),
+        outstandingBalance: Number(ethers.formatUnits(info.outstandingBalance, 6)), // USDT decimals
+        totalRentPaid: Number(ethers.formatUnits(info.totalRentPaid, 6)), // USDT decimals
+        lastActivityTime: Number(info.lastActivityTime),
+        lastPaymentTime: Number(info.lastPaymentTime),
+        isVerified: info.isVerified,
         tokenId: finalTokenId,
         mintingWalletAddress: userAddress,
       };

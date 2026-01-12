@@ -3,6 +3,7 @@ import TENANT_PASSPORT_ABI from './abis/TENANT_PASSPORT_ABI.json';
 import ROOM_FI_VAULT_ABI from './abis/ROOM_FI_VAULT_ABI.json';
 import RENTAL_AGREEMENT_NFT_ABI from './abis/RENTAL_AGREEMENT_NFT_ABI.json';
 import MOCK_CIVIL_REGISTRY_ABI from './abis/MOCK_CIVIL_REGISTRY_ABI.json';
+import USDT_ABI from './abis/USDT_ABI.json';
 
 export const NETWORK_CONFIG = {
   rpcUrl: "https://rpc.sepolia.mantle.xyz",
@@ -34,5 +35,6 @@ export {
   TENANT_PASSPORT_ABI,
   ROOM_FI_VAULT_ABI,
   RENTAL_AGREEMENT_NFT_ABI,
-  MOCK_CIVIL_REGISTRY_ABI
+  MOCK_CIVIL_REGISTRY_ABI,
+  USDT_ABI
 };

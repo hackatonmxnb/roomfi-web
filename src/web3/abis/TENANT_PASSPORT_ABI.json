@@ -1,0 +1,192 @@
+[
+  {
+    "inputs": [{"name": "initialOwner", "type": "address"}],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [{"name": "account", "type": "address"}],
+    "name": "balanceOf",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "tokenId", "type": "uint256"}],
+    "name": "ownerOf",
+    "outputs": [{"name": "", "type": "address"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "mintForSelf",
+    "outputs": [{"name": "tokenId", "type": "uint256"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "tokenId", "type": "uint256"}],
+    "name": "getTenantInfo",
+    "outputs": [
+      {
+        "components": [
+          {"name": "reputation", "type": "uint32"},
+          {"name": "paymentsMade", "type": "uint32"},
+          {"name": "paymentsMissed", "type": "uint32"},
+          {"name": "propertiesRented", "type": "uint32"},
+          {"name": "propertiesOwned", "type": "uint32"},
+          {"name": "consecutiveOnTimePayments", "type": "uint32"},
+          {"name": "totalMonthsRented", "type": "uint32"},
+          {"name": "referralCount", "type": "uint32"},
+          {"name": "disputesCount", "type": "uint32"},
+          {"name": "outstandingBalance", "type": "uint256"},
+          {"name": "totalRentPaid", "type": "uint256"},
+          {"name": "lastActivityTime", "type": "uint256"},
+          {"name": "lastPaymentTime", "type": "uint256"},
+          {"name": "isVerified", "type": "bool"}
+        ],
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "tokenId", "type": "uint256"}],
+    "name": "tenantInfo",
+    "outputs": [
+      {"name": "reputation", "type": "uint32"},
+      {"name": "paymentsMade", "type": "uint32"},
+      {"name": "paymentsMissed", "type": "uint32"},
+      {"name": "propertiesRented", "type": "uint32"},
+      {"name": "propertiesOwned", "type": "uint32"},
+      {"name": "consecutiveOnTimePayments", "type": "uint32"},
+      {"name": "totalMonthsRented", "type": "uint32"},
+      {"name": "referralCount", "type": "uint32"},
+      {"name": "disputesCount", "type": "uint32"},
+      {"name": "outstandingBalance", "type": "uint256"},
+      {"name": "totalRentPaid", "type": "uint256"},
+      {"name": "lastActivityTime", "type": "uint256"},
+      {"name": "lastPaymentTime", "type": "uint256"},
+      {"name": "isVerified", "type": "bool"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "user", "type": "address"}],
+    "name": "hasPassport",
+    "outputs": [{"name": "", "type": "bool"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "user", "type": "address"}],
+    "name": "getTokenIdByAddress",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "tokenId", "type": "uint256"}],
+    "name": "getReputationWithDecay",
+    "outputs": [{"name": "", "type": "uint32"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"name": "tokenId", "type": "uint256"},
+      {"name": "badgeType", "type": "uint8"}
+    ],
+    "name": "hasBadge",
+    "outputs": [{"name": "", "type": "bool"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "tokenId", "type": "uint256"}],
+    "name": "getAllBadges",
+    "outputs": [{"name": "badgeList", "type": "bool[14]"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "tokenId", "type": "uint256"}],
+    "name": "getBadgeCount",
+    "outputs": [{"name": "count", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "tokenId", "type": "uint256"}],
+    "name": "getTenantMetrics",
+    "outputs": [
+      {"name": "score", "type": "uint32"},
+      {"name": "totalPayments", "type": "uint32"},
+      {"name": "paymentSuccessRate", "type": "uint32"},
+      {"name": "badgeCount", "type": "uint256"},
+      {"name": "isActive", "type": "bool"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalSupply",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "index", "type": "uint256"}],
+    "name": "tokenByIndex",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"name": "owner", "type": "address"},
+      {"name": "index", "type": "uint256"}
+    ],
+    "name": "tokenOfOwnerByIndex",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "name": "user", "type": "address"},
+      {"indexed": true, "name": "tokenId", "type": "uint256"},
+      {"indexed": false, "name": "timestamp", "type": "uint256"}
+    ],
+    "name": "PassportMinted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "name": "tokenId", "type": "uint256"},
+      {"indexed": false, "name": "oldReputation", "type": "uint32"},
+      {"indexed": false, "name": "newReputation", "type": "uint32"},
+      {"indexed": false, "name": "reason", "type": "string"}
+    ],
+    "name": "ReputationUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "name": "tokenId", "type": "uint256"},
+      {"indexed": true, "name": "badgeType", "type": "uint8"},
+      {"indexed": true, "name": "awardedBy", "type": "address"},
+      {"indexed": false, "name": "timestamp", "type": "uint256"}
+    ],
+    "name": "BadgeAwarded",
+    "type": "event"
+  }
+]
