@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React,{ useState,useEffect,useCallback } from 'react';
 import { ethers } from 'ethers';
 import {
-  Typography, Button, Container, Box, Paper, Card, CardContent,
-  CardMedia, Avatar, Chip, Stack, Grid, useMediaQuery,
-  MenuItem, Modal, Snackbar, Alert, Drawer,
-  TextField, Slider, FormControl, InputLabel, Select, OutlinedInput,
-  createTheme, ThemeProvider, Fab
+  Typography,Button,Container,Box,Paper,Card,CardContent,
+  CardMedia,Avatar,Chip,Stack,Grid,useMediaQuery,
+  MenuItem,Modal,Snackbar,Alert,Drawer,
+  TextField,Slider,FormControl,InputLabel,Select,OutlinedInput,
+  createTheme,ThemeProvider,Fab
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import ListIcon from '@mui/icons-material/ViewList';
@@ -18,10 +18,11 @@ import ApartmentIcon from '@mui/icons-material/Apartment';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import GroupIcon from '@mui/icons-material/Group';
 import BedIcon from '@mui/icons-material/Bed';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap,useJsApiLoader,Marker,InfoWindow } from '@react-google-maps/api';
 import { useGoogleLogin } from '@react-oauth/google';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Routes,Route,useNavigate,useLocation } from 'react-router-dom';
 import CreatePoolPage from './CreatePoolPage';
+import LandingPage from './LandingPage';
 import RegisterPage from './RegisterPage';
 import Header from './Header';
 import {
@@ -36,8 +37,8 @@ import {
   ROOM_FI_VAULT_ABI,
 } from './web3/config';
 import Portal from '@portal-hq/web';
-import { renderAmenityIcon, getDaysAgo } from './utils/icons';
-import { useUser, UserProvider } from './UserContext';
+import { renderAmenityIcon,getDaysAgo } from './utils/icons';
+import { useUser,UserProvider } from './UserContext';
 import DashboardPage from './DashboardPage';
 import RentalAgreementsPage from './RentalAgreementsPage';
 import BadgesDisplay from './components/BadgesDisplay';
@@ -175,7 +176,7 @@ const customTheme = createTheme({
 });
 
 function App() {
-  const { updateUser, user } = useUser();
+  const { updateUser,user } = useUser();
   const navigate = useNavigate();
 
   // Initialize portal instance
@@ -203,14 +204,14 @@ function App() {
 
   const isMobileOnly = useMediaQuery(customTheme.breakpoints.down('sm'));
   const location = useLocation();
-  const [matches, setMatches] = useState<any[] | null>(null);
+  const [matches,setMatches] = useState<any[] | null>(null);
 
   // Estados de UI
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [drawerCardsOpen, setDrawerCardsOpen] = useState(false);
-  const [drawerMenuOpen, setDrawerMenuOpen] = useState(false);
-  const [precio, setPrecio] = React.useState([1000, 80000]);
-  const [amenidades, setAmenidades] = React.useState<string[]>([]);
+  const [anchorEl,setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [drawerCardsOpen,setDrawerCardsOpen] = useState(false);
+  const [drawerMenuOpen,setDrawerMenuOpen] = useState(false);
+  const [precio,setPrecio] = React.useState([1000,80000]);
+  const [amenidades,setAmenidades] = React.useState<string[]>([]);
 
   // Estados de Web3
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -220,7 +221,6 @@ function App() {
   const [depositAmount, setDepositAmount] = useState('');
   const [notification, setNotification] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ open: false, message: '', severity: 'success' });
   const [tenantPassportData, setTenantPassportData] = useState<TenantPassportData | null>(null);
-  const [tenantBadges, setTenantBadges] = useState<boolean[]>(new Array(14).fill(false));
   const [showTenantPassportModal, setShowTenantPassportModal] = useState(false);
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
   const [tokenBalance, setTokenBalance] = useState<number>(0);
@@ -233,35 +233,33 @@ function App() {
   const [interestEarned, setInterestEarned] = useState<number>(0);
   const [vaultAmount, setVaultAmount] = useState('');
   const [allowance, setAllowance] = useState<number>(0);
-  const [vaultAPY, setVaultAPY] = useState<number>(0);
-  const [vaultTotalDeposits, setVaultTotalDeposits] = useState<number>(0);
   // --- FIN DE NUEVOS ESTADOS ---
 
   // Estados del Mapa
-  const mapCenter = { lat: 19.4326, lng: -99.1333 };
+  const mapCenter = { lat: 19.4326,lng: -99.1333 };
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
   });
-  const [selectedListing, setSelectedListing] = useState<any>(null);
+  const [selectedListing,setSelectedListing] = useState<any>(null);
 
   // Estados para el popup de interés
-  const [showInterestModal, setShowInterestModal] = useState(false);
-  const [selectedInterestListing, setSelectedInterestListing] = useState<any>(null);
+  const [showInterestModal,setShowInterestModal] = useState(false);
+  const [selectedInterestListing,setSelectedInterestListing] = useState<any>(null);
   // Estado para el popup de SPEI
-  const [showSpeiModal, setShowSpeiModal] = useState(false);
+  const [showSpeiModal,setShowSpeiModal] = useState(false);
 
   // Handlers UI
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
-  const handlePrecioChange = (event: Event, newValue: number | number[]) => setPrecio(newValue as number[]);
+  const handlePrecioChange = (event: Event,newValue: number | number[]) => setPrecio(newValue as number[]);
   const handleAmenidadChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value;
     setAmenidades(typeof value === 'string' ? value.split(',') : value);
   };
 
-  const [showMyPropertiesModal, setShowMyPropertiesModal] = useState(false);
-  const [myProperties, setMyProperties] = useState<any[]>([]);
-  const [landlordFundAmount, setLandlordFundAmount] = useState(''); // --- NUEVO ---
+  const [showMyPropertiesModal,setShowMyPropertiesModal] = useState(false);
+  const [myProperties,setMyProperties] = useState<any[]>([]);
+  const [landlordFundAmount,setLandlordFundAmount] = useState(''); // --- NUEVO ---
 
   // Handlers Web3
   const handleOnboardingOpen = () => setShowOnboarding(true);
@@ -271,7 +269,7 @@ function App() {
     setShowFundingModal(false);
     setDepositAmount('');
   };
-  const handleNotificationClose = () => setNotification({ ...notification, open: false });
+  const handleNotificationClose = () => setNotification({ ...notification,open: false });
 
   // --- LÓGICA DE LA BÓVEDA (CORREGIDA CON DECIMALES DINÁMICOS) ---
   const handleVaultModalOpen = () => setShowVaultModal(true);
@@ -284,32 +282,27 @@ function App() {
   const checkAllowance = useCallback(async () => {
     if (!account || !provider || !vaultAmount) return;
     try {
-      const tokenContract = new ethers.Contract(USDT_ADDRESS, USDT_ABI, provider);
-      const currentAllowance = await tokenContract.allowance(account, ROOM_FI_VAULT_ADDRESS);
-      setAllowance(Number(ethers.formatUnits(currentAllowance, 6))); // USDT has 6 decimals
+      const tokenContract = new ethers.Contract(USDT_ADDRESS,USDT_ABI,provider);
+      const currentAllowance = await tokenContract.allowance(account,ROOM_FI_VAULT_ADDRESS);
+      setAllowance(Number(ethers.formatUnits(currentAllowance,6))); // USDT has 6 decimals
     } catch (error) {
-      console.error("Error checking allowance:", error);
+      console.error("Error checking allowance:",error);
     }
-  }, [account, provider, vaultAmount]);
+  },[account,provider,vaultAmount]);
 
   const fetchVaultData = useCallback(async () => {
     if (!account || !provider) return;
     try {
       const vaultContract = new ethers.Contract(ROOM_FI_VAULT_ADDRESS, ROOM_FI_VAULT_ABI, provider);
-      
-      // Get user info (balance + yield)
-      const userInfo = await vaultContract.getUserInfo(account);
-      setVaultBalance(Number(ethers.formatUnits(userInfo.depositAmount, 6)));
-      setInterestEarned(Number(ethers.formatUnits(userInfo.yieldEarned, 6)));
-
-      // Get vault stats (APY + total deposits)
-      const vaultStats = await vaultContract.getVaultStats();
-      setVaultAPY(Number(vaultStats.apy) / 100); // APY is in basis points (800 = 8%)
-      setVaultTotalDeposits(Number(ethers.formatUnits(vaultStats.totalDepositsAmount, 6)));
+      // V2: RoomFiVault uses different method names - adjust based on actual ABI
+      const rawBalance = await vaultContract.balanceOf(account);
+      setVaultBalance(Number(ethers.formatUnits(rawBalance, 6))); // USDT has 6 decimals
+      // TODO: Add yield calculation when method is confirmed in ABI
+      setInterestEarned(0);
     } catch (error) {
-      console.error("Error fetching vault data:", error);
+      console.error("Error fetching vault data:",error);
     }
-  }, [account, provider]);
+  },[account,provider]);
 
   const handleApprove = async () => {
     if (!account || !provider || !vaultAmount) return;
@@ -317,18 +310,18 @@ function App() {
 
     try {
       const signer = await provider.getSigner();
-      const amountToApprove = ethers.parseUnits(vaultAmount, 6); // USDT has 6 decimals
-      const tokenContract = new ethers.Contract(USDT_ADDRESS, USDT_ABI, signer);
-      
-      setNotification({ open: true, message: 'Enviando transacción de aprobación...', severity: 'info' });
-      const tx = await tokenContract.approve(ROOM_FI_VAULT_ADDRESS, amountToApprove);
+      const amountToApprove = ethers.parseUnits(vaultAmount,6); // USDT has 6 decimals
+      const tokenContract = new ethers.Contract(USDT_ADDRESS,USDT_ABI,signer);
+
+      setNotification({ open: true,message: 'Enviando transacción de aprobación...',severity: 'info' });
+      const tx = await tokenContract.approve(ROOM_FI_VAULT_ADDRESS,amountToApprove);
       await tx.wait();
-      
-      setNotification({ open: true, message: '¡Aprobación exitosa!', severity: 'success' });
+
+      setNotification({ open: true,message: '¡Aprobación exitosa!',severity: 'success' });
       await checkAllowance();
     } catch (error) {
-      console.error("Error approving:", error);
-      setNotification({ open: true, message: 'Error al aprobar la transacción.', severity: 'error' });
+      console.error("Error approving:",error);
+      setNotification({ open: true,message: 'Error al aprobar la transacción.',severity: 'error' });
     }
   };
 
@@ -338,20 +331,20 @@ function App() {
 
     try {
       const signer = await provider.getSigner();
-      const amountToDeposit = ethers.parseUnits(vaultAmount, 6); // USDT has 6 decimals
-      const vaultContract = new ethers.Contract(ROOM_FI_VAULT_ADDRESS, ROOM_FI_VAULT_ABI, signer);
+      const amountToDeposit = ethers.parseUnits(vaultAmount,6); // USDT has 6 decimals
+      const vaultContract = new ethers.Contract(ROOM_FI_VAULT_ADDRESS,ROOM_FI_VAULT_ABI,signer);
 
-      setNotification({ open: true, message: 'Enviando transacción de depósito...', severity: 'info' });
-      const tx = await vaultContract.deposit(account, amountToDeposit);
+      setNotification({ open: true,message: 'Enviando transacción de depósito...',severity: 'info' });
+      const tx = await vaultContract.deposit(account,amountToDeposit);
       await tx.wait(2); // Esperar 2 confirmaciones para asegurar la propagación del estado
 
-      setNotification({ open: true, message: '¡Depósito realizado con éxito!', severity: 'success' });
+      setNotification({ open: true,message: '¡Depósito realizado con éxito!',severity: 'success' });
       await fetchVaultData();
-      await fetchTokenBalance(provider, account);
+      await fetchTokenBalance(provider,account);
       handleVaultModalClose();
     } catch (error) {
-      console.error("Error depositing to vault:", error);
-      setNotification({ open: true, message: 'Error al realizar el depósito.', severity: 'error' });
+      console.error("Error depositing to vault:",error);
+      setNotification({ open: true,message: 'Error al realizar el depósito.',severity: 'error' });
     }
   };
 
@@ -361,21 +354,21 @@ function App() {
 
     try {
       const signer = await provider.getSigner();
-      const amount = ethers.parseUnits(vaultAmount, 6); // USDT has 6 decimals
-      
-      const vaultContract = new ethers.Contract(ROOM_FI_VAULT_ADDRESS, ROOM_FI_VAULT_ABI, signer);
-      setNotification({ open: true, message: 'Retirando fondos...', severity: 'info' });
-      const withdrawTx = await vaultContract.withdraw(account, amount);
+      const amount = ethers.parseUnits(vaultAmount,6); // USDT has 6 decimals
+
+      const vaultContract = new ethers.Contract(ROOM_FI_VAULT_ADDRESS,ROOM_FI_VAULT_ABI,signer);
+      setNotification({ open: true,message: 'Retirando fondos...',severity: 'info' });
+      const withdrawTx = await vaultContract.withdraw(account,amount);
       await withdrawTx.wait();
 
-      setNotification({ open: true, message: '¡Retiro realizado con éxito!', severity: 'success' });
+      setNotification({ open: true,message: '¡Retiro realizado con éxito!',severity: 'success' });
       await fetchVaultData();
-      await fetchTokenBalance(provider, account);
+      await fetchTokenBalance(provider,account);
       handleVaultModalClose();
 
     } catch (error) {
-      console.error("Error withdrawing from vault:", error);
-      setNotification({ open: true, message: 'Error al realizar el retiro.', severity: 'error' });
+      console.error("Error withdrawing from vault:",error);
+      setNotification({ open: true,message: 'Error al realizar el retiro.',severity: 'error' });
     }
   };
   // --- FIN DE LÓGICA DE BÓVEDA ---
@@ -384,23 +377,23 @@ function App() {
   // Estas funciones usaban PropertyInterestPool que ya no existe en V2
   // En V2, los fondos se manejan a través de RentalAgreementNFT y RoomFiVault
   const handleApproveLandlordFunds = async (_propertyId: number) => {
-    setNotification({ open: true, message: 'Esta función será implementada con los nuevos contratos V2.', severity: 'info' });
+    setNotification({ open: true,message: 'Esta función será implementada con los nuevos contratos V2.',severity: 'info' });
   };
 
   const handleAddLandlordFunds = async (_propertyId: number) => {
-    setNotification({ open: true, message: 'Esta función será implementada con los nuevos contratos V2.', severity: 'info' });
+    setNotification({ open: true,message: 'Esta función será implementada con los nuevos contratos V2.',severity: 'info' });
   };
 
   const handleDepositPoolToVault = async (_propertyId: number) => {
-    setNotification({ open: true, message: 'Esta función será implementada con los nuevos contratos V2.', severity: 'info' });
+    setNotification({ open: true,message: 'Esta función será implementada con los nuevos contratos V2.',severity: 'info' });
   };
 
-  const handleWithdrawPoolFromVault = async (_propertyId: number, _amount: string) => {
-    setNotification({ open: true, message: 'Esta función será implementada con los nuevos contratos V2.', severity: 'info' });
+  const handleWithdrawPoolFromVault = async (_propertyId: number,_amount: string) => {
+    setNotification({ open: true,message: 'Esta función será implementada con los nuevos contratos V2.',severity: 'info' });
   };
 
   const handleCancelPool = async (_propertyId: number) => {
-    setNotification({ open: true, message: 'Esta función será implementada con los nuevos contratos V2.', severity: 'info' });
+    setNotification({ open: true,message: 'Esta función será implementada con los nuevos contratos V2.',severity: 'info' });
   };
   // --- FIN DE LÓGICA DE POOL ---
 
@@ -453,58 +446,58 @@ function App() {
 
   const connectWithMetaMask = async () => {
     if (typeof window.ethereum === 'undefined') {
-      setNotification({ open: true, message: 'MetaMask no está instalado.', severity: 'warning' });
+      setNotification({ open: true,message: 'MetaMask no está instalado.',severity: 'warning' });
       return;
     }
 
     try {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       const userAccount = accounts[0];
-      
+
       const browserProvider = new ethers.BrowserProvider(window.ethereum);
-      
+
       if (await checkNetwork(browserProvider)) {
         setProvider(browserProvider);
         setAccount(userAccount);
-        setNotification({ open: true, message: 'Wallet conectada exitosamente.', severity: 'success' });
+        setNotification({ open: true,message: 'Wallet conectada exitosamente.',severity: 'success' });
       } else {
         setAccount(null);
         setProvider(null);
       }
-      
+
       handleOnboardingClose();
 
     } catch (error) {
-      console.error("Error connecting with MetaMask:", error);
-      setNotification({ open: true, message: 'Error al conectar con MetaMask.', severity: 'error' });
+      console.error("Error connecting with MetaMask:",error);
+      setNotification({ open: true,message: 'Error al conectar con MetaMask.',severity: 'error' });
     }
   };
 
-  const fetchTokenBalance = useCallback(async (prov: ethers.Provider, acc: string) => {
+  const fetchTokenBalance = useCallback(async (prov: ethers.Provider,acc: string) => {
     try {
-        const contract = new ethers.Contract(USDT_ADDRESS, USDT_ABI, prov);
-        
-        const rawBalance = await contract.balanceOf(acc);
-        const decimals = 6; // USDT always has 6 decimals
+      const contract = new ethers.Contract(USDT_ADDRESS,USDT_ABI,prov);
 
-        console.log("--- [DIAGNÓSTICO DE BALANCE USDT] ---");
-        console.log("Billetera (Account):", acc);
-        console.log("Contrato del Token (Address):", USDT_ADDRESS);
-        console.log("Decimales:", decimals);
-        console.log("Balance Crudo (Raw):", rawBalance.toString());
-        console.log("---------------------------------");
-        
-        setTokenDecimals(decimals);
-        setTokenBalance(Number(ethers.formatUnits(rawBalance, decimals)));
+      const rawBalance = await contract.balanceOf(acc);
+      const decimals = 6; // USDT always has 6 decimals
+
+      console.log("--- [DIAGNÓSTICO DE BALANCE USDT] ---");
+      console.log("Billetera (Account):",acc);
+      console.log("Contrato del Token (Address):",USDT_ADDRESS);
+      console.log("Decimales:",decimals);
+      console.log("Balance Crudo (Raw):",rawBalance.toString());
+      console.log("---------------------------------");
+
+      setTokenDecimals(decimals);
+      setTokenBalance(Number(ethers.formatUnits(rawBalance,decimals)));
     } catch (error) {
-        console.error("Error fetching token balance:", error);
-        setNotification({ open: true, message: 'Error al obtener el balance del token.', severity: 'error' });
+      console.error("Error fetching token balance:",error);
+      setNotification({ open: true,message: 'Error al obtener el balance del token.',severity: 'error' });
     }
-  }, []);
+  },[]);
 
   const handleViewMyProperties = async () => {
     if (!account || !provider) {
-      setNotification({ open: true, message: 'Por favor, conecta tu wallet primero.', severity: 'error' });
+      setNotification({ open: true,message: 'Por favor, conecta tu wallet primero.',severity: 'error' });
       return;
     }
     if (!(await checkNetwork(provider))) return;
@@ -517,17 +510,17 @@ function App() {
       console.log(`[DEBUG] Contrato: ${contractAddress}`);
       console.log(`[DEBUG] Chain ID: ${network.chainId}`);
       const code = await provider.getCode(contractAddress);
-      console.log(`[DEBUG] Bytecode en la dirección: ${code.substring(0, 40)}...`);
+      console.log(`[DEBUG] Bytecode en la dirección: ${code.substring(0,40)}...`);
       if (code === '0x') {
-        setNotification({ open: true, message: '[DEBUG] ¡Error Crítico! No se encontró código de contrato en la dirección proporcionada. Verifica que el contrato esté desplegado y la dirección sea correcta.', severity: 'error' });
+        setNotification({ open: true,message: '[DEBUG] ¡Error Crítico! No se encontró código de contrato en la dirección proporcionada. Verifica que el contrato esté desplegado y la dirección sea correcta.',severity: 'error' });
         return;
       }
 
-      const contract = new ethers.Contract(PROPERTY_REGISTRY_ADDRESS, PROPERTY_REGISTRY_ABI, provider);
+      const contract = new ethers.Contract(PROPERTY_REGISTRY_ADDRESS,PROPERTY_REGISTRY_ABI,provider);
       // V2: Usar getLandlordProperties o iterar sobre propiedades
       // TODO: Verificar método exacto en el ABI de PropertyRegistry
       const propertyCount = await contract.propertyCounter();
-      
+
       const properties = [];
       for (let i = 1; i <= Number(propertyCount); i++) {
         try {
@@ -548,44 +541,44 @@ function App() {
             });
           }
         } catch (e) {
-          console.log(`Property ${i} not found or error:`, e);
+          console.log(`Property ${i} not found or error:`,e);
         }
       }
 
       setMyProperties(properties);
       setShowMyPropertiesModal(true);
     } catch (error: any) {
-      console.error("Error fetching properties:", error);
-      const errorMessage = error.code === 'BAD_DATA' 
-        ? 'No se pudo leer la información del contrato. ¿Estás en la red correcta?' 
+      console.error("Error fetching properties:",error);
+      const errorMessage = error.code === 'BAD_DATA'
+        ? 'No se pudo leer la información del contrato. ¿Estás en la red correcta?'
         : 'Error al obtener tus propiedades.';
-      setNotification({ open: true, message: errorMessage, severity: 'error' });
+      setNotification({ open: true,message: errorMessage,severity: 'error' });
     }
   };
 
   const getOrCreateTenantPassport = useCallback(async (userAddress: string) => {
     if (!provider) {
-        setNotification({ open: true, message: 'Provider no inicializado. Conecta tu wallet.', severity: 'error' });
-        return null;
+      setNotification({ open: true,message: 'Provider no inicializado. Conecta tu wallet.',severity: 'error' });
+      return null;
     }
     if (!(await checkNetwork(provider))) return null;
 
     try {
-      const readOnlyContract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, provider);
+      const readOnlyContract = new ethers.Contract(TENANT_PASSPORT_ADDRESS,TENANT_PASSPORT_ABI,provider);
       const balance = await readOnlyContract.balanceOf(userAddress);
       let finalTokenId: BigInt;
 
       if (balance.toString() === '0') {
         console.log("No Tenant Passport found. Minting a new one...");
         const signer = await provider.getSigner();
-        const contractWithSigner = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, signer);
+        const contractWithSigner = new ethers.Contract(TENANT_PASSPORT_ADDRESS,TENANT_PASSPORT_ABI,signer);
         const tx = await contractWithSigner.mintForSelf();
         await tx.wait();
-        setNotification({ open: true, message: '¡Tu Tenant Passport se ha creado!', severity: 'success' });
+        setNotification({ open: true,message: '¡Tu Tenant Passport se ha creado!',severity: 'success' });
         const newBalance = await readOnlyContract.balanceOf(userAddress);
-        finalTokenId = await readOnlyContract.tokenOfOwnerByIndex(userAddress, newBalance - 1);
+        finalTokenId = await readOnlyContract.tokenOfOwnerByIndex(userAddress,newBalance - 1);
       } else {
-        finalTokenId = await readOnlyContract.tokenOfOwnerByIndex(userAddress, 0);
+        finalTokenId = await readOnlyContract.tokenOfOwnerByIndex(userAddress,0);
       }
 
       const info = await readOnlyContract.getTenantInfo(finalTokenId);
@@ -600,8 +593,8 @@ function App() {
         totalMonthsRented: Number(info.totalMonthsRented),
         referralCount: Number(info.referralCount),
         disputesCount: Number(info.disputesCount),
-        outstandingBalance: Number(ethers.formatUnits(info.outstandingBalance, 6)), // USDT decimals
-        totalRentPaid: Number(ethers.formatUnits(info.totalRentPaid, 6)), // USDT decimals
+        outstandingBalance: Number(ethers.formatUnits(info.outstandingBalance,6)), // USDT decimals
+        totalRentPaid: Number(ethers.formatUnits(info.totalRentPaid,6)), // USDT decimals
         lastActivityTime: Number(info.lastActivityTime),
         lastPaymentTime: Number(info.lastPaymentTime),
         isVerified: info.isVerified,
@@ -622,71 +615,56 @@ function App() {
 
       return passportData;
     } catch (error) {
-      console.error("Error getting or creating Tenant Passport:", error);
-      setNotification({ open: true, message: 'Error al gestionar el Tenant Passport.', severity: 'error' });
+      console.error("Error getting or creating Tenant Passport:",error);
+      setNotification({ open: true,message: 'Error al gestionar el Tenant Passport.',severity: 'error' });
       return null;
     }
-  }, [provider]);
+  },[provider]);
 
   const handleViewNFTClick = async () => {
     if (account) {
       await getOrCreateTenantPassport(account);
       setShowTenantPassportModal(true);
     } else {
-      setNotification({ open: true, message: 'Por favor, conecta tu wallet primero.', severity: 'error' });
+      setNotification({ open: true,message: 'Por favor, conecta tu wallet primero.',severity: 'error' });
     }
   };
-  
+
   const mintNewTenantPassport = async () => {
-      if (!account || !provider) {
-          setNotification({ open: true, message: 'Por favor, conecta tu wallet primero para mintear.', severity: 'error' });
-          return;
-      }
-      if (!(await checkNetwork(provider))) return;
+    if (!account || !provider) {
+      setNotification({ open: true,message: 'Por favor, conecta tu wallet primero para mintear.',severity: 'error' });
+      return;
+    }
+    if (!(await checkNetwork(provider))) return;
 
       try {
-          // Check if already has passport
-          const readContract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, provider);
-          const hasPassport = await readContract.hasPassport(account);
-          
-          if (hasPassport) {
-              setNotification({ open: true, message: '¡Ya tienes un Tenant Passport! Haz clic en "Ver mi NFT" para verlo.', severity: 'info' });
-              await checkTenantPassport(account);
-              return;
-          }
-
           const signer = await provider.getSigner();
           const contract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, signer);
           const tx = await contract.mintForSelf();
           await tx.wait();
           setNotification({ open: true, message: '¡Tu Tenant Passport se ha minteado exitosamente!', severity: 'success' });
-          await checkTenantPassport(account);
-      } catch (error: any) {
+          await getOrCreateTenantPassport(account);
+      } catch (error) {
           console.error("Error minting new Tenant Passport:", error);
-          if (error.message?.includes('ya existente')) {
-              setNotification({ open: true, message: '¡Ya tienes un Tenant Passport!', severity: 'info' });
-              await checkTenantPassport(account);
-          } else {
-              setNotification({ open: true, message: 'Error al mintear un nuevo Tenant Passport.', severity: 'error' });
-          }
+          setNotification({ open: true, message: 'Error al mintear un nuevo Tenant Passport.', severity: 'error' });
       }
   };
 
   const handleCreatePoolClick = async () => {
     if (!account || !provider) {
-      setNotification({ open: true, message: 'Por favor, conecta tu wallet primero.', severity: 'warning' });
+      setNotification({ open: true,message: 'Por favor, conecta tu wallet primero.',severity: 'warning' });
       return;
     }
-    
+
     // Verificar si el usuario tiene un Tenant Passport
-    const passportContract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, provider);
+    const passportContract = new ethers.Contract(TENANT_PASSPORT_ADDRESS,TENANT_PASSPORT_ABI,provider);
     const balance = await passportContract.balanceOf(account);
 
     if (balance.toString() === '0') {
-      setNotification({ 
-        open: true, 
-        message: 'Necesitas un Tenant Passport para crear un pool. Obtenlo en la sección "Ver mi NFT".', 
-        severity: 'info' 
+      setNotification({
+        open: true,
+        message: 'Necesitas un Tenant Passport para crear un pool. Obtenlo en la sección "Ver mi NFT".',
+        severity: 'info'
       });
     } else {
       navigate('/create-pool');
@@ -697,12 +675,12 @@ function App() {
     onSuccess: async tokenResponse => {
       if (tokenResponse.access_token) {
         try {
-          const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{
             headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
           });
           const profile = await res.json();
           setIsCreatingWallet(true);
-          
+
           const ethAddress = await createPortalWallet();
           setAccount(ethAddress);
           updateUser({ wallet: ethAddress });
@@ -711,7 +689,7 @@ function App() {
           handleOnboardingClose();
 
           const fullName = profile.name || (profile.given_name ? (profile.given_name + (profile.family_name ? ' ' + profile.family_name : '')) : '');
-          navigate('/register', {
+          navigate('/register',{
             state: {
               email: profile.email,
               name: fullName,
@@ -721,12 +699,12 @@ function App() {
           });
         } catch (error) {
           setIsCreatingWallet(false);
-          setNotification({ open: true, message: 'Error al procesar el login de Google', severity: 'error' });
+          setNotification({ open: true,message: 'Error al procesar el login de Google',severity: 'error' });
         }
       }
     },
     onError: () => {
-      setNotification({ open: true, message: 'Error al iniciar sesión con Google', severity: 'error' });
+      setNotification({ open: true,message: 'Error al iniciar sesión con Google',severity: 'error' });
     },
     flow: 'implicit',
     scope: 'openid email profile',
@@ -737,7 +715,7 @@ function App() {
       setMatches(location.state.matches);
     } else {
       const user_id = '7c74d216-7c65-47e6-b02d-1e6954f39ba7';
-      fetch(process.env.REACT_APP_API + "/matchmaking/match/top?user_id=" + user_id, {
+      fetch(process.env.REACT_APP_API + "/matchmaking/match/top?user_id=" + user_id,{
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })
@@ -746,11 +724,11 @@ function App() {
           if (Array.isArray(data.property_matches)) {
             const baseLat = 19.4326;
             const baseLng = -99.1333;
-            const randomNearby = (base: number, delta: number) => base + (Math.random() - 0.5) * delta;
+            const randomNearby = (base: number,delta: number) => base + (Math.random() - 0.5) * delta;
             const matchesWithCoords = data.property_matches.map((match: any) => ({
               ...match,
-              lat: randomNearby(baseLat, 0.025),
-              lng: randomNearby(baseLng, 0.025),
+              lat: randomNearby(baseLat,0.025),
+              lng: randomNearby(baseLng,0.025),
             }));
             setMatches(matchesWithCoords);
           } else {
@@ -761,70 +739,13 @@ function App() {
     }
   }, [location.state]);
 
-  // Check if user has TenantPassport (without creating one)
-  const checkTenantPassport = useCallback(async (userAddress: string) => {
-    if (!provider) return;
-    try {
-      const contract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, provider);
-      
-      // Use hasPassport which is simpler and more reliable
-      const hasPassport = await contract.hasPassport(userAddress);
-      console.log("[TenantPassport] hasPassport:", hasPassport);
-      
-      if (hasPassport) {
-        // User has a passport, fetch the data
-        const tokenId = await contract.getTokenIdByAddress(userAddress);
-        console.log("[TenantPassport] tokenId:", tokenId.toString());
-        
-        const passportInfo = await contract.getTenantInfo(tokenId);
-        
-        const passportData: TenantPassportData = {
-          tokenId: tokenId,
-          reputation: Number(passportInfo.reputation || 0),
-          isVerified: passportInfo.isVerified || false,
-          paymentsMade: Number(passportInfo.paymentsMade || 0),
-          paymentsMissed: Number(passportInfo.paymentsMissed || 0),
-          propertiesRented: Number(passportInfo.propertiesRented || 0),
-          propertiesOwned: Number(passportInfo.propertiesOwned || 0),
-          totalMonthsRented: Number(passportInfo.totalMonthsRented || 0),
-          consecutiveOnTimePayments: Number(passportInfo.consecutiveOnTimePayments || 0),
-          referralCount: Number(passportInfo.referralCount || 0),
-          disputesCount: Number(passportInfo.disputesCount || 0),
-          outstandingBalance: Number(ethers.formatUnits(passportInfo.outstandingBalance || 0, 6)),
-          totalRentPaid: Number(ethers.formatUnits(passportInfo.totalRentPaid || 0, 6)),
-          lastActivityTime: Number(passportInfo.lastActivityTime || 0),
-          lastPaymentTime: Number(passportInfo.lastPaymentTime || 0),
-          mintingWalletAddress: userAddress,
-        };
-        setTenantPassportData(passportData);
-        console.log("[TenantPassport] Data loaded:", passportData);
-        
-        // Fetch badges
-        try {
-          const badgesList = await contract.getAllBadges(tokenId);
-          setTenantBadges([...badgesList]);
-        } catch (e) {
-          console.log("Error fetching badges:", e);
-        }
-      } else {
-        console.log("[TenantPassport] User does not have a passport");
-        setTenantPassportData(null);
-      }
-    } catch (error) {
-      console.error("Error checking TenantPassport:", error);
-      setTenantPassportData(null);
-    }
-  }, [provider]);
-
   useEffect(() => {
     if (provider && account) {
       fetchTokenBalance(provider, account);
-      // Check if user has TenantPassport
-      checkTenantPassport(account);
       const intervalId = setInterval(() => fetchTokenBalance(provider, account), 10000);
       return () => clearInterval(intervalId);
     }
-  }, [provider, account, fetchTokenBalance, checkTenantPassport]);
+  }, [provider, account, fetchTokenBalance]);
 
   // Listener for account and network changes
   useEffect(() => {
@@ -843,15 +764,15 @@ function App() {
         window.location.reload();
       };
 
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('chainChanged', handleChainChanged);
+      window.ethereum.on('accountsChanged',handleAccountsChanged);
+      window.ethereum.on('chainChanged',handleChainChanged);
 
       return () => {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-        window.ethereum.removeListener('chainChanged', handleChainChanged);
+        window.ethereum.removeListener('accountsChanged',handleAccountsChanged);
+        window.ethereum.removeListener('chainChanged',handleChainChanged);
       };
     }
-  }, []);
+  },[]);
 
   // --- USE EFFECT PARA LA BÓVEDA ---
   useEffect(() => {
@@ -859,17 +780,17 @@ function App() {
       fetchVaultData(); // Carga inicial de datos de la bóveda
       checkAllowance(); // Carga inicial del allowance
 
-      const intervalId = setInterval(fetchVaultData, 2000); // Refrescar cada 2 segundos
+      const intervalId = setInterval(fetchVaultData,2000); // Refrescar cada 2 segundos
       return () => clearInterval(intervalId);
     }
-  }, [showVaultModal, account, provider, fetchVaultData, checkAllowance]);
+  },[showVaultModal,account,provider,fetchVaultData,checkAllowance]);
 
   // Comprobar el allowance cada vez que el monto a depositar cambia
   useEffect(() => {
     if (showVaultModal) {
       checkAllowance();
     }
-  }, [vaultAmount, showVaultModal, checkAllowance]);
+  },[vaultAmount,showVaultModal,checkAllowance]);
 
 
   return (
@@ -891,10 +812,11 @@ function App() {
         showOnboarding={showOnboarding}
       />
       <Routes>
-        <Route path="/" element={
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/app" element={
           <>
-            <Container maxWidth="xl" sx={{ mt: { xs: 2, sm: 4, md: 8 }, px: { xs: 1, sm: 2, md: 3 } }}>
-              <Grid container spacing={{ xs: 2, sm: 4 }} alignItems="center">
+            <Container maxWidth="xl" sx={{ mt: { xs: 2,sm: 4,md: 8 },px: { xs: 1,sm: 2,md: 3 } }}>
+              <Grid container spacing={{ xs: 2,sm: 4 }} alignItems="center">
                 <Grid item xs={12} md={5}>
                   <Typography
                     variant="h2"
@@ -903,8 +825,8 @@ function App() {
                     sx={{
                       fontWeight: 800,
                       color: 'primary.main',
-                      fontSize: { xs: '1.3rem', sm: '1.7rem', md: '2.2rem' },
-                      lineHeight: { xs: 1.1, sm: 1.2, md: 1.25 },
+                      fontSize: { xs: '1.3rem',sm: '1.7rem',md: '2.2rem' },
+                      lineHeight: { xs: 1.1,sm: 1.2,md: 1.25 },
                       mb: 1
                     }}
                   >
@@ -915,8 +837,8 @@ function App() {
                     color="text.secondary"
                     paragraph
                     sx={{
-                      fontSize: { xs: '0.95rem', sm: '1rem', md: '1.1rem' },
-                      lineHeight: { xs: 1.3, sm: 1.4, md: 1.5 },
+                      fontSize: { xs: '0.95rem',sm: '1rem',md: '1.1rem' },
+                      lineHeight: { xs: 1.3,sm: 1.4,md: 1.5 },
                       mb: 1
                     }}
                   >
@@ -925,16 +847,16 @@ function App() {
                   <Box sx={{
                     mt: 2,
                     display: 'flex',
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    gap: { xs: 1, sm: 1.5 }
+                    flexDirection: { xs: 'column',sm: 'row' },
+                    gap: { xs: 1,sm: 1.5 }
                   }}>
                     <Button
                       variant="contained"
                       size="small"
                       color="primary"
                       sx={{
-                        width: { xs: '100%', sm: 'auto' },
-                        fontSize: { xs: '0.95rem', sm: '1rem' },
+                        width: { xs: '100%',sm: 'auto' },
+                        fontSize: { xs: '0.95rem',sm: '1rem' },
                         py: 1.1,
                         px: 2.5
                       }}
@@ -946,8 +868,8 @@ function App() {
                       size="small"
                       color="primary"
                       sx={{
-                        width: { xs: '100%', sm: 'auto' },
-                        fontSize: { xs: '0.95rem', sm: '1rem' },
+                        width: { xs: '100%',sm: 'auto' },
+                        fontSize: { xs: '0.95rem',sm: '1rem' },
                         py: 1.1,
                         px: 2.5
                       }}
@@ -959,7 +881,7 @@ function App() {
                 </Grid>
                 <Grid item xs={12} md={7}>
                   <Paper elevation={3} sx={{
-                    p: { xs: 1, sm: 2 },
+                    p: { xs: 1,sm: 2 },
                     bgcolor: '#f5f7fa',
                     textAlign: 'center',
                     borderRadius: 4,
@@ -967,16 +889,16 @@ function App() {
                   }}>
                     <Grid container spacing={2}>
                       <Grid item xs={12} md={6}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        <Box sx={{ display: 'flex',flexDirection: 'column',gap: 1.5 }}>
                           <TextField
                             fullWidth
                             label="¿En dónde buscas departamento?"
                             variant="outlined"
                             size="small"
-                            sx={{ bgcolor: 'white', borderRadius: 2, mb: 1 }}
+                            sx={{ bgcolor: 'white',borderRadius: 2,mb: 1 }}
                           />
-                          <Box sx={{ mt: 0.5, px: 2.5 }}>
-                            <Typography gutterBottom sx={{ fontWeight: 500, color: 'primary.main', mb: 0.5, fontSize: '0.95rem', textAlign: 'left' }}>
+                          <Box sx={{ mt: 0.5,px: 2.5 }}>
+                            <Typography gutterBottom sx={{ fontWeight: 500,color: 'primary.main',mb: 0.5,fontSize: '0.95rem',textAlign: 'left' }}>
                               ¿Qué precio buscas?
                             </Typography>
                             <Slider
@@ -987,13 +909,13 @@ function App() {
                               max={80000}
                               step={500}
                               marks={[
-                                { value: 1000, label: <span style={{ fontWeight: 500, color: '#1976d2', fontSize: '0.85rem' }}>$1,000</span> },
-                                { value: 80000, label: <span style={{ fontWeight: 500, color: '#1976d2', fontSize: '0.85rem' }}>$80,000</span> }
+                                { value: 1000,label: <span style={{ fontWeight: 500,color: '#1976d2',fontSize: '0.85rem' }}>$1,000</span> },
+                                { value: 80000,label: <span style={{ fontWeight: 500,color: '#1976d2',fontSize: '0.85rem' }}>$80,000</span> }
                               ]}
-                              sx={{ color: 'primary.main', height: 4, mb: 2, width: '100%' }}
+                              sx={{ color: 'primary.main',height: 4,mb: 2,width: '100%' }}
                             />
                           </Box>
-                          <FormControl fullWidth sx={{ mt: 1.5, bgcolor: 'white', borderRadius: 2 }} size="small">
+                          <FormControl fullWidth sx={{ mt: 1.5,bgcolor: 'white',borderRadius: 2 }} size="small">
                             <InputLabel id="amenidad-label" sx={{ fontSize: '0.95rem' }}>¿Qué amenidades buscas?</InputLabel>
                             <Select
                               fullWidth
@@ -1004,25 +926,25 @@ function App() {
                               onChange={handleAmenidadChange}
                               input={<OutlinedInput label="¿Qué amenidades buscas?" />}
                               renderValue={(selected) => (
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                <Box sx={{ display: 'flex',flexWrap: 'wrap',gap: 0.5 }}>
                                   {(selected as string[]).map((value) => (
                                     <Chip key={value} label={value} size="small" />
                                   ))}
                                 </Box>
                               )}
                             >
-                              <MenuItem value="amueblado"><BedIcon sx={{ color: '#6d4c41', fontSize: 20, mr: 1 }} />Amueblado</MenuItem>
-                              <MenuItem value="baño privado"><MeetingRoomIcon sx={{ color: '#43a047', fontSize: 20, mr: 1 }} />Baño privado</MenuItem>
-                              <MenuItem value="pet friendly"><PetsIcon sx={{ color: '#ff9800', fontSize: 20, mr: 1 }} />Pet friendly</MenuItem>
-                              <MenuItem value="estacionamiento"><LocalParkingIcon sx={{ color: '#1976d2', fontSize: 20, mr: 1 }} />Estacionamiento</MenuItem>
-                              <MenuItem value="piscina"><PoolIcon sx={{ color: '#00bcd4', fontSize: 20, mr: 1 }} />Piscina</MenuItem>
+                              <MenuItem value="amueblado"><BedIcon sx={{ color: '#6d4c41',fontSize: 20,mr: 1 }} />Amueblado</MenuItem>
+                              <MenuItem value="baño privado"><MeetingRoomIcon sx={{ color: '#43a047',fontSize: 20,mr: 1 }} />Baño privado</MenuItem>
+                              <MenuItem value="pet friendly"><PetsIcon sx={{ color: '#ff9800',fontSize: 20,mr: 1 }} />Pet friendly</MenuItem>
+                              <MenuItem value="estacionamiento"><LocalParkingIcon sx={{ color: '#1976d2',fontSize: 20,mr: 1 }} />Estacionamiento</MenuItem>
+                              <MenuItem value="piscina"><PoolIcon sx={{ color: '#00bcd4',fontSize: 20,mr: 1 }} />Piscina</MenuItem>
                             </Select>
                           </FormControl>
                         </Box>
                       </Grid>
                       <Grid item xs={12} md={6}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                          <FormControl fullWidth sx={{ bgcolor: 'white', borderRadius: 2 }} size="small">
+                        <Box sx={{ display: 'flex',flexDirection: 'column',gap: 1.5 }}>
+                          <FormControl fullWidth sx={{ bgcolor: 'white',borderRadius: 2 }} size="small">
                             <InputLabel id="tipo-propiedad-label" sx={{ fontSize: '0.95rem' }}>Tipo de propiedad</InputLabel>
                             <Select
                               labelId="tipo-propiedad-label"
@@ -1030,12 +952,12 @@ function App() {
                               label="Tipo de propiedad"
                               defaultValue=""
                             >
-                              <MenuItem value="departamento"><ApartmentIcon sx={{ color: '#1976d2', fontSize: 20, mr: 1 }} />Departamento completo</MenuItem>
-                              <MenuItem value="privada"><MeetingRoomIcon sx={{ color: '#43a047', fontSize: 20, mr: 1 }} />Habitación privada</MenuItem>
-                              <MenuItem value="compartida"><GroupIcon sx={{ color: '#fbc02d', fontSize: 20, mr: 1 }} />Habitación compartida</MenuItem>
+                              <MenuItem value="departamento"><ApartmentIcon sx={{ color: '#1976d2',fontSize: 20,mr: 1 }} />Departamento completo</MenuItem>
+                              <MenuItem value="privada"><MeetingRoomIcon sx={{ color: '#43a047',fontSize: 20,mr: 1 }} />Habitación privada</MenuItem>
+                              <MenuItem value="compartida"><GroupIcon sx={{ color: '#fbc02d',fontSize: 20,mr: 1 }} />Habitación compartida</MenuItem>
                             </Select>
                           </FormControl>
-                          <FormControl fullWidth sx={{ bgcolor: 'white', borderRadius: 2, mt: { xs: 2, md: 4 } }} size="small">
+                          <FormControl fullWidth sx={{ bgcolor: 'white',borderRadius: 2,mt: { xs: 2,md: 4 } }} size="small">
                             <InputLabel id="genero-label" sx={{ fontSize: '0.95rem' }}>Preferencia de roomie</InputLabel>
                             <Select
                               labelId="genero-label"
@@ -1043,10 +965,10 @@ function App() {
                               label="Preferencia de roomie"
                               defaultValue=""
                             >
-                              <MenuItem value="mujeres"><FemaleIcon sx={{ color: '#e91e63', fontSize: 20, mr: 1 }} />Solo mujeres</MenuItem>
-                              <MenuItem value="hombres"><MaleIcon sx={{ color: '#1976d2', fontSize: 20, mr: 1 }} />Solo hombres</MenuItem>
-                              <MenuItem value="igual"><span style={{ fontSize: 20, marginRight: 8 }}>⚧️</span>Me da igual</MenuItem>
-                              <MenuItem value="lgbtq"><span style={{ fontSize: 20, marginRight: 8 }}>🏳️‍🌈</span>LGBTQ+</MenuItem>
+                              <MenuItem value="mujeres"><FemaleIcon sx={{ color: '#e91e63',fontSize: 20,mr: 1 }} />Solo mujeres</MenuItem>
+                              <MenuItem value="hombres"><MaleIcon sx={{ color: '#1976d2',fontSize: 20,mr: 1 }} />Solo hombres</MenuItem>
+                              <MenuItem value="igual"><span style={{ fontSize: 20,marginRight: 8 }}>⚧️</span>Me da igual</MenuItem>
+                              <MenuItem value="lgbtq"><span style={{ fontSize: 20,marginRight: 8 }}>🏳️‍🌈</span>LGBTQ+</MenuItem>
                             </Select>
                           </FormControl>
                         </Box>
@@ -1056,51 +978,51 @@ function App() {
                 </Grid>
               </Grid>
 
-              <Box sx={{ position: 'relative', width: '100%', minHeight: '100vh', mt: { xs: 4, sm: 6, md: 8 } }}>
-                <Box sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0 }}>
+              <Box sx={{ position: 'relative',width: '100%',minHeight: '100vh',mt: { xs: 4,sm: 6,md: 8 } }}>
+                <Box sx={{ position: 'absolute',inset: 0,width: '100%',height: '100%',zIndex: 0 }}>
                   {isLoaded && (
                     <GoogleMap
-                      mapContainerStyle={{ width: '100%', height: '100%' }}
+                      mapContainerStyle={{ width: '100%',height: '100%' }}
                       center={mapCenter}
                       zoom={13}
-                      options={{ disableDefaultUI: true, gestureHandling: 'greedy', styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }, { featureType: 'transit', stylers: [{ visibility: 'off' }] }] }}
+                      options={{ disableDefaultUI: true,gestureHandling: 'greedy',styles: [{ featureType: 'poi',stylers: [{ visibility: 'off' }] },{ featureType: 'transit',stylers: [{ visibility: 'off' }] }] }}
                       onClick={() => setSelectedListing(null)}
                     >
                       {(matches ?? []).map((listing: any) => (
                         listing.lat && listing.lng ? (
                           <Marker
                             key={listing.id}
-                            position={{ lat: listing.lat, lng: listing.lng }}
+                            position={{ lat: listing.lat,lng: listing.lng }}
                             onClick={() => setSelectedListing(listing)}
                             icon={{
                               url: "/roomcasa.png",
-                              scaledSize: new window.google.maps.Size(40, 40)
+                              scaledSize: new window.google.maps.Size(40,40)
                             }}
                           />
                         ) : null
                       ))}
                       {selectedListing && (selectedListing as any).lat && (selectedListing as any).lng && (
                         <InfoWindow
-                          position={{ lat: (selectedListing as any).lat, lng: (selectedListing as any).lng }}
+                          position={{ lat: (selectedListing as any).lat,lng: (selectedListing as any).lng }}
                           onCloseClick={() => setSelectedListing(null)}
                         >
-                          <Box sx={{ minWidth: 220, maxWidth: 260 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <Box sx={{ minWidth: 220,maxWidth: 260 }}>
+                            <Box sx={{ display: 'flex',alignItems: 'center',mb: 1 }}>
                               <Avatar src={(selectedListing as any).user?.avatar} alt={(selectedListing as any).user?.name} sx={{ mr: 1 }} />
                               <Typography fontWeight={700}>John</Typography>
-                              <Chip label={getDaysAgo(selectedListing.created_at)} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
+                              <Chip label={getDaysAgo(selectedListing.created_at)} color="success" size="small" sx={{ mx: 1,fontWeight: 700 }} />
                               <Chip label={`1 ROOMIE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
                             </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
-                              <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d" alt={(selectedListing as any).location} style={{ width: '100%', borderRadius: 8, maxHeight: 100, objectFit: 'cover' }} />
+                            <Box sx={{ display: 'flex',justifyContent: 'center',mb: 1 }}>
+                              <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d" alt={(selectedListing as any).location} style={{ width: '100%',borderRadius: 8,maxHeight: 100,objectFit: 'cover' }} />
                             </Box>
                             <Typography variant="h6" fontWeight={800} gutterBottom>
                               ${(selectedListing as any).price?.toLocaleString()}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{selectedListing.address}</Typography>
-                            <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                              {selectedListing.amenities.slice(0, 4).map((amenity: any, idx: any) => (
-                                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box sx={{ display: 'flex',gap: 1,mt: 1,flexWrap: 'wrap' }}>
+                              {selectedListing.amenities.slice(0,4).map((amenity: any,idx: any) => (
+                                <Box key={idx} sx={{ display: 'flex',alignItems: 'center',gap: 0.5 }}>
                                   {renderAmenityIcon(amenity)}
                                 </Box>
                               ))}
@@ -1113,33 +1035,33 @@ function App() {
                 </Box>
                 {isMobileOnly ? (
                   <>
-                    <Fab color="primary" aria-label="Ver lista" onClick={() => setDrawerCardsOpen(true)} sx={{ position: 'absolute', bottom: 24, right: 24, zIndex: 2 }}>
+                    <Fab color="primary" aria-label="Ver lista" onClick={() => setDrawerCardsOpen(true)} sx={{ position: 'absolute',bottom: 24,right: 24,zIndex: 2 }}>
                       <ListIcon />
                     </Fab>
                     <Drawer
                       anchor="bottom"
                       open={drawerCardsOpen}
                       onClose={() => setDrawerCardsOpen(false)}
-                      PaperProps={{ sx: { borderTopLeftRadius: 16, borderTopRightRadius: 16, bgcolor: 'white', border: '1px solid #e0e0e0', maxHeight: '70vh', p: 2 } }}
+                      PaperProps={{ sx: { borderTopLeftRadius: 16,borderTopRightRadius: 16,bgcolor: 'white',border: '1px solid #e0e0e0',maxHeight: '70vh',p: 2 } }}
                     >
-                      <Box sx={{ overflowY: 'auto', maxHeight: '100vh' }}>
-                        {(matches ?? []).map((listing: any, index: number) => (
-                          <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
+                      <Box sx={{ overflowY: 'auto',maxHeight: '100vh' }}>
+                        {(matches ?? []).map((listing: any,index: number) => (
+                          <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4,boxShadow: 'none',border: '1px solid #e0e0e0',mb: 2,cursor: 'pointer','&:hover': { boxShadow: 4,borderColor: 'primary.main' } }}>
+                            <Box sx={{ display: 'flex',alignItems: 'center',p: 2,pb: 0 }}>
                               <Avatar src={listing.user?.avatar} alt={listing.user?.name} sx={{ mr: 1 }} />
                               <Typography fontWeight={700}>Sara</Typography>
-                              <Chip label={getDaysAgo(listing.created_at)} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
+                              <Chip label={getDaysAgo(listing.created_at)} color="success" size="small" sx={{ mx: 1,fontWeight: 700 }} />
                               <Chip label={`1 ROOMIE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
                             </Box>
-                            <CardMedia component="img" height="120" image="https://images.unsplash.com/photo-1571896349842-33c89424de2d" alt={listing.location} sx={{ objectFit: 'cover', borderRadius: 2, m: 2, mb: 0 }} />
+                            <CardMedia component="img" height="120" image="https://images.unsplash.com/photo-1571896349842-33c89424de2d" alt={listing.location} sx={{ objectFit: 'cover',borderRadius: 2,m: 2,mb: 0 }} />
                             <CardContent sx={{ p: 2 }}>
                               <Typography variant="h6" fontWeight={800} gutterBottom>${listing.price.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">/ mo</Typography></Typography>
                               <Typography variant="body2" color="text.secondary">{listing.available}</Typography>
                               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{listing.address}</Typography>
                               {listing.amenities && listing.amenities.length > 0 && (
-                                <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                                  {listing.amenities.slice(0, 4).map((amenity: any, idx: any) => (
-                                    <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Box sx={{ display: 'flex',gap: 1,mt: 1,flexWrap: 'wrap' }}>
+                                  {listing.amenities.slice(0,4).map((amenity: any,idx: any) => (
+                                    <Box key={idx} sx={{ display: 'flex',alignItems: 'center',gap: 0.5 }}>
                                       {renderAmenityIcon(amenity)}
                                     </Box>
                                   ))}
@@ -1152,28 +1074,28 @@ function App() {
                     </Drawer>
                   </>
                 ) : (
-                  <Box sx={{ position: 'relative', zIndex: 1, width: { xs: '100%', sm: 400 }, maxWidth: 480, height: { xs: 340, sm: 500, md: '100vh' }, overflowY: 'auto', bgcolor: 'white', border: '1px solid #e0e0e0', borderRadius: 3, p: 2, ml: { sm: 4 }, mt: { xs: 0, sm: 0 } }}>
-                    {(matches ?? []).map((listing: any, index: number) => (
-                      <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
+                  <Box sx={{ position: 'relative',zIndex: 1,width: { xs: '100%',sm: 400 },maxWidth: 480,height: { xs: 340,sm: 500,md: '100vh' },overflowY: 'auto',bgcolor: 'white',border: '1px solid #e0e0e0',borderRadius: 3,p: 2,ml: { sm: 4 },mt: { xs: 0,sm: 0 } }}>
+                    {(matches ?? []).map((listing: any,index: number) => (
+                      <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4,boxShadow: 'none',border: '1px solid #e0e0e0',mb: 2,cursor: 'pointer','&:hover': { boxShadow: 4,borderColor: 'primary.main' } }}>
+                        <Box sx={{ display: 'flex',alignItems: 'center',p: 2,pb: 0 }}>
                           <Avatar src={listing.user?.avatar || ''} alt={listing.user?.name || ''} sx={{ mr: 1 }} />
                           <Typography fontWeight={700}>John</Typography>
                           <Box sx={{ flexGrow: 1 }} />
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Chip label={getDaysAgo(listing.created_at)} color="success" size="small" sx={{ mx: 1, fontWeight: 700 }} />
+                          <Box sx={{ display: 'flex',alignItems: 'center' }}>
+                            <Chip label={getDaysAgo(listing.created_at)} color="success" size="small" sx={{ mx: 1,fontWeight: 700 }} />
                             <Chip label={`1 ROOMIE`} color="primary" size="small" sx={{ fontWeight: 700 }} />
                           </Box>
                         </Box>
-                        <CardMedia component="img" height="120" image="https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80" alt={listing.address} sx={{ objectFit: 'cover', borderRadius: 2, m: 2, mb: 0 }} />
+                        <CardMedia component="img" height="120" image="https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80" alt={listing.address} sx={{ objectFit: 'cover',borderRadius: 2,m: 2,mb: 0 }} />
                         <CardContent sx={{ p: 2 }}>
                           <Typography variant="h6" fontWeight={800} gutterBottom>${listing.price.toLocaleString()}</Typography>
                           <Typography variant="body2" color="text.secondary">{listing.available}</Typography>
                           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{listing.address}</Typography>
                           {listing.amenities && listing.amenities.length > 0 && (
-                            <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                {listing.amenities.slice(0, 4).map((amenity: any, idx: any) => (
-                                  <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box sx={{ display: 'flex',gap: 1,mt: 1,flexWrap: 'wrap',alignItems: 'center',justifyContent: 'space-between' }}>
+                              <Box sx={{ display: 'flex',gap: 1,flexWrap: 'wrap' }}>
+                                {listing.amenities.slice(0,4).map((amenity: any,idx: any) => (
+                                  <Box key={idx} sx={{ display: 'flex',alignItems: 'center',gap: 0.5 }}>
                                     {renderAmenityIcon(amenity)}
                                   </Box>
                                 ))}
@@ -1182,7 +1104,7 @@ function App() {
                                 variant="contained"
                                 color="primary"
                                 size="small"
-                                sx={{ width: { xs: '100%', sm: 'auto' }, fontSize: { xs: '0.75rem', sm: '1rem' }, py: 1.1, px: 2.5 }}
+                                sx={{ width: { xs: '100%',sm: 'auto' },fontSize: { xs: '0.75rem',sm: '1rem' },py: 1.1,px: 2.5 }}
                                 onClick={() => { setSelectedInterestListing(listing); setShowInterestModal(true); }}
                               >
                                 ¡Me interesa!
@@ -1197,69 +1119,69 @@ function App() {
               </Box>
             </Container>
 
-            <Box sx={{ bgcolor: 'primary.main', color: 'white', py: { xs: 4, sm: 6 }, mt: { xs: 4, sm: 6, md: 8 } }}>
+            <Box sx={{ bgcolor: 'primary.main',color: 'white',py: { xs: 4,sm: 6 },mt: { xs: 4,sm: 6,md: 8 } }}>
               {/* ... Footer ... */}
             </Box>
 
-            <Box sx={{ bgcolor: '#222', color: 'white', py: 3, textAlign: 'center' }}>
-              <Typography variant="body2" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+            <Box sx={{ bgcolor: '#222',color: 'white',py: 3,textAlign: 'center' }}>
+              <Typography variant="body2" sx={{ fontSize: { xs: '0.8rem',sm: '0.875rem' } }}>
                 &copy; {new Date().getFullYear()} RoomFi. Todos los derechos reservados.
               </Typography>
             </Box>
 
-            <Snackbar open={notification.open} autoHideDuration={6000} onClose={handleNotificationClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+            <Snackbar open={notification.open} autoHideDuration={6000} onClose={handleNotificationClose} anchorOrigin={{ vertical: 'bottom',horizontal: 'center' }}>
               <Alert onClose={handleNotificationClose} severity={notification.severity} sx={{ width: '100%' }}>
                 {notification.message}
               </Alert>
             </Snackbar>
 
-            <Modal open={showMyPropertiesModal} onClose={() => setShowMyPropertiesModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Paper sx={{ p: 4, borderRadius: 4, maxWidth: 700, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
-                <Typography variant="h5" component="h2" sx={{ mb: 3, fontWeight: 700 }}>
+            <Modal open={showMyPropertiesModal} onClose={() => setShowMyPropertiesModal(false)} sx={{ display: 'flex',alignItems: 'center',justifyContent: 'center' }}>
+              <Paper sx={{ p: 4,borderRadius: 4,maxWidth: 700,width: '100%',maxHeight: '90vh',overflowY: 'auto' }}>
+                <Typography variant="h5" component="h2" sx={{ mb: 3,fontWeight: 700 }}>
                   Panel de Mis Propiedades
                 </Typography>
                 {myProperties.length > 0 ? (
                   <Stack spacing={3}>
                     {myProperties.map(prop => {
-                      const amountInVault = parseFloat(ethers.formatUnits(prop.amountInVault, tokenDecimals));
-                      const amountInPool = parseFloat(ethers.formatUnits(prop.amountPooledForRent, tokenDecimals));
+                      const amountInVault = parseFloat(ethers.formatUnits(prop.amountInVault,tokenDecimals));
+                      const amountInPool = parseFloat(ethers.formatUnits(prop.amountPooledForRent,tokenDecimals));
                       const isInVault = amountInVault > 0;
 
                       const statusMap: { [key: number]: { text: string; color: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' } } = {
-                        0: { text: 'Activo (Abierto)', color: 'primary' },
-                        1: { text: 'Activo (Fondeando)', color: 'secondary' },
-                        2: { text: 'Rentado', color: 'success' },
-                        3: { text: 'Cancelado', color: 'error' }
+                        0: { text: 'Activo (Abierto)',color: 'primary' },
+                        1: { text: 'Activo (Fondeando)',color: 'secondary' },
+                        2: { text: 'Rentado',color: 'success' },
+                        3: { text: 'Cancelado',color: 'error' }
                       };
-                      const currentStatus = statusMap[prop.state] || { text: 'Desconocido', color: 'info' };
+                      const currentStatus = statusMap[prop.state] || { text: 'Desconocido',color: 'info' };
 
                       return (
-                        <Paper key={prop.id} variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
+                        <Paper key={prop.id} variant="outlined" sx={{ p: 3,borderRadius: 3 }}>
                           <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                             <Typography variant="h6" fontWeight="600">
                               {prop.name || `Propiedad ID: ${prop.id.toString()}`}
                             </Typography>
-                            <Chip 
+                            <Chip
                               label={isInVault ? "En Bóveda" : currentStatus.text}
                               color={isInVault ? "success" : currentStatus.color}
                               variant="filled"
                             />
                           </Stack>
-                          
+
                           <Grid container spacing={2} sx={{ mb: 2 }}>
                             <Grid item xs={12}>
-                                <Typography variant="body1">
-                                    <Typography component="span" fontWeight="bold">Interesados:</Typography> {prop.interestedTenants.length} de {prop.requiredTenantCount.toString()}
-                                </Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
                               <Typography variant="body1">
-                                <Typography component="span" fontWeight="bold">Renta Mensual:</Typography> {ethers.formatUnits(prop.totalRentAmount, tokenDecimals)} MXNBT
+                                <Typography component="span" fontWeight="bold">Interesados:</Typography> {prop.interestedTenants.length} de {prop.requiredTenantCount.toString()}
                               </Typography>
                             </Grid>
                             <Grid item xs={12} sm={6}>
                               <Typography variant="body1">
-                                <Typography component="span" fontWeight="bold">Depósito de Seriedad:</Typography> {ethers.formatUnits(prop.seriousnessDeposit, tokenDecimals)} MXNBT
+                                <Typography component="span" fontWeight="bold">Renta Mensual:</Typography> {ethers.formatUnits(prop.totalRentAmount,tokenDecimals)} MXNBT
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Typography variant="body1">
+                                <Typography component="span" fontWeight="bold">Depósito de Seriedad:</Typography> {ethers.formatUnits(prop.seriousnessDeposit,tokenDecimals)} MXNBT
                               </Typography>
                             </Grid>
                             <Grid item xs={12} sm={6}>
@@ -1276,19 +1198,19 @@ function App() {
 
                           <Stack spacing={2}>
                             {/* Botones de acciones principales */}
-                            <Button 
-                              variant="contained" 
+                            <Button
+                              variant="contained"
                               onClick={() => handleDepositPoolToVault(prop.id)}
                               disabled={amountInPool <= 0 || prop.state > 1}
                             >
                               Mover Fondos a Bóveda
                             </Button>
-                            
+
                             {isInVault && (
-                              <Button 
-                                variant="outlined" 
+                              <Button
+                                variant="outlined"
                                 color="secondary"
-                                onClick={() => handleWithdrawPoolFromVault(prop.id, prop.amountInVault.toString())}
+                                onClick={() => handleWithdrawPoolFromVault(prop.id,prop.amountInVault.toString())}
                               >
                                 Retirar de Bóveda
                               </Button>
@@ -1296,18 +1218,18 @@ function App() {
 
                             {/* Botón para cancelar */}
                             <Button
-                                variant="outlined"
-                                color="error"
-                                onClick={() => handleCancelPool(prop.id)}
-                                disabled={prop.state !== 0 && prop.state !== 1}
+                              variant="outlined"
+                              color="error"
+                              onClick={() => handleCancelPool(prop.id)}
+                              disabled={prop.state !== 0 && prop.state !== 1}
                             >
-                                Cancelar Pool
+                              Cancelar Pool
                             </Button>
 
                             {/* Sección para añadir fondos del landlord */}
-                            <Box sx={{ pt: 2, borderTop: '1px solid #e0e0e0' }}>
-                               <Typography variant="body2" sx={{mb: 1}}>¿Deseas añadir tus propios fondos a este pool?</Typography>
-                               <Stack direction="row" spacing={1}>
+                            <Box sx={{ pt: 2,borderTop: '1px solid #e0e0e0' }}>
+                              <Typography variant="body2" sx={{ mb: 1 }}>¿Deseas añadir tus propios fondos a este pool?</Typography>
+                              <Stack direction="row" spacing={1}>
                                 <TextField
                                   fullWidth
                                   size="small"
@@ -1333,73 +1255,33 @@ function App() {
             </Modal>
 
             <Modal open={showTenantPassportModal} onClose={() => setShowTenantPassportModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 600, width: '100%', maxHeight: '90vh', overflow: 'auto' }}>
-                <Typography variant="h5" component="h2" sx={{ mb: 3, fontWeight: 700 }}>Tu Tenant Passport</Typography>
+              <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
+                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Tu Tenant Passport</Typography>
                 {tenantPassportData ? (
-                  <Stack spacing={3}>
-                    {/* Reputation Score */}
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', borderRadius: 2 }}>
-                      <Typography variant="h2" color="primary" fontWeight={700}>{tenantPassportData.reputation}</Typography>
-                      <Typography variant="body2" color="text.secondary">Puntuación de Reputación</Typography>
-                      {tenantPassportData.isVerified && (
-                        <Chip label="Verificado" color="success" size="small" sx={{ mt: 1 }} />
-                      )}
-                    </Paper>
-
-                    {/* Stats Grid */}
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
-                          <Typography variant="h6" fontWeight={600}>{tenantPassportData.paymentsMade}</Typography>
-                          <Typography variant="caption" color="text.secondary">Pagos a tiempo</Typography>
-                        </Paper>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
-                          <Typography variant="h6" fontWeight={600} color={tenantPassportData.paymentsMissed > 0 ? 'error' : 'inherit'}>{tenantPassportData.paymentsMissed}</Typography>
-                          <Typography variant="caption" color="text.secondary">Pagos perdidos</Typography>
-                        </Paper>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
-                          <Typography variant="h6" fontWeight={600}>{tenantPassportData.propertiesRented}</Typography>
-                          <Typography variant="caption" color="text.secondary">Propiedades rentadas</Typography>
-                        </Paper>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
-                          <Typography variant="h6" fontWeight={600}>{tenantPassportData.totalMonthsRented}</Typography>
-                          <Typography variant="caption" color="text.secondary">Meses totales</Typography>
-                        </Paper>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
-                          <Typography variant="h6" fontWeight={600}>{tenantPassportData.consecutiveOnTimePayments}</Typography>
-                          <Typography variant="caption" color="text.secondary">Pagos consecutivos</Typography>
-                        </Paper>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
-                          <Typography variant="h6" fontWeight={600}>${tenantPassportData.totalRentPaid.toFixed(0)}</Typography>
-                          <Typography variant="caption" color="text.secondary">Total pagado (USDT)</Typography>
-                        </Paper>
-                      </Grid>
-                    </Grid>
-
-                    {/* Badges Section */}
-                    <BadgesDisplay badges={tenantBadges} />
-
-                    {/* Token Info */}
-                    <Box sx={{ pt: 2, borderTop: '1px solid #e0e0e0' }}>
+                  <Stack spacing={1}>
+                    <Typography variant="body1">
+                      <Typography component="span" fontWeight="bold">Reputación:</Typography> {tenantPassportData.reputation}%
+                    </Typography>
+                    <Typography variant="body1">
+                      <Typography component="span" fontWeight="bold">Pagos a tiempo:</Typography> {tenantPassportData.paymentsMade}
+                    </Typography>
+                    <Typography variant="body1">
+                      <Typography component="span" fontWeight="bold">Pagos no realizados:</Typography> {tenantPassportData.paymentsMissed}
+                    </Typography>
+                    <Typography variant="body1">
+                      <Typography component="span" fontWeight="bold">Propiedades Poseídas:</Typography> {tenantPassportData.propertiesOwned}
+                    </Typography>
+                    <Typography variant="body1">
+                      <Typography component="span" fontWeight="bold">Saldo pendiente:</Typography> ${tenantPassportData.outstandingBalance.toLocaleString()} MXNB
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                      Token ID: {tenantPassportData.tokenId.toString()}
+                    </Typography>
+                    {tenantPassportData.mintingWalletAddress && (
                       <Typography variant="body2" color="text.secondary">
-                        Token ID: {tenantPassportData.tokenId.toString()}
+                        Wallet: {tenantPassportData.mintingWalletAddress.substring(0, 6)}...{tenantPassportData.mintingWalletAddress.substring(tenantPassportData.mintingWalletAddress.length - 4)}
                       </Typography>
-                      {tenantPassportData.mintingWalletAddress && (
-                        <Typography variant="body2" color="text.secondary">
-                          Wallet: {tenantPassportData.mintingWalletAddress.substring(0, 6)}...{tenantPassportData.mintingWalletAddress.substring(tenantPassportData.mintingWalletAddress.length - 4)}
-                        </Typography>
-                      )}
-                    </Box>
+                    )}
                   </Stack>
                 ) : (
                   <Typography variant="body1">No se encontró un Tenant Passport para tu wallet.</Typography>
@@ -1408,8 +1290,8 @@ function App() {
               </Paper>
             </Modal>
 
-            <Modal open={showInterestModal} onClose={() => setShowInterestModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
+            <Modal open={showInterestModal} onClose={() => setShowInterestModal(false)} sx={{ display: 'flex',alignItems: 'center',justifyContent: 'center' }}>
+              <Paper sx={{ p: 4,borderRadius: 2,maxWidth: 400,width: '100%' }}>
                 <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Reservar propiedad</Typography>
                 <Typography variant="body1" sx={{ mb: 3 }}>
                   Necesita depositar el 5% del valor de la renta mensual como anticipo para reservar.
@@ -1421,8 +1303,8 @@ function App() {
               </Paper>
             </Modal>
 
-            <Modal open={showSpeiModal} onClose={() => setShowSpeiModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
+            <Modal open={showSpeiModal} onClose={() => setShowSpeiModal(false)} sx={{ display: 'flex',alignItems: 'center',justifyContent: 'center' }}>
+              <Paper sx={{ p: 4,borderRadius: 2,maxWidth: 400,width: '100%' }}>
                 <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Datos para transferencia SPEI</Typography>
                 <Typography variant="body1" sx={{ mb: 2 }}>
                   Para reservar la propiedad, realiza una transferencia SPEI con los siguientes datos. Una vez realizado el pago, guarda tu comprobante y notifícalo en la plataforma.
@@ -1462,22 +1344,15 @@ function App() {
         <Route path="/create-property" element={<CreatePropertyPage account={account} />} />
       </Routes>
 
-      {/* --- MODAL DE LA BÓVEDA (V2 con APY real) --- */}
+      {/* --- MODAL DE LA BÓVEDA (CORREGIDO) --- */}
       <Modal open={showVaultModal} onClose={handleVaultModalClose} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Paper sx={{ p: 4, borderRadius: 4, maxWidth: 520, width: '100%', textAlign: 'center' }}>
+        <Paper sx={{ p: 4, borderRadius: 4, maxWidth: 480, width: '100%', textAlign: 'center' }}>
           <Typography variant="h5" component="h2" sx={{ mb: 3, fontWeight: 700 }}>
-            RoomFi Vault
+            Mi Bóveda de Ahorros
           </Typography>
           
-          {/* APY Banner */}
-          <Paper sx={{ p: 2, mb: 3, borderRadius: 3, bgcolor: 'success.light', color: 'success.contrastText' }}>
-            <Typography variant="h3" fontWeight={700}>{vaultAPY.toFixed(2)}% APY</Typography>
-            <Typography variant="body2">Rendimiento anual actual (USDY Strategy)</Typography>
-          </Paper>
-
-          {/* User Balance */}
           <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3 }}>
-            <Typography variant="h6" color="text.secondary">Tu Saldo en Vault</Typography>
+            <Typography variant="h6" color="text.secondary">Saldo en Bóveda</Typography>
             <Typography variant="h4" fontWeight="bold" color="primary.main" sx={{ mb: 1 }}>
               ${vaultBalance.toFixed(2)} USDT
             </Typography>
@@ -1514,29 +1389,29 @@ function App() {
               endAdornment: <Typography variant="body2" color="text.secondary">USDT</Typography>
             }}
           />
-          
+
           <Stack direction="row" spacing={2} justifyContent="center">
             {allowance < parseFloat(vaultAmount || '0') ? (
-              <Button 
-                variant="contained" 
-                color="primary" 
+              <Button
+                variant="contained"
+                color="primary"
                 onClick={handleApprove}
                 disabled={!vaultAmount || parseFloat(vaultAmount) <= 0}
               >
                 Aprobar USDT
               </Button>
             ) : (
-              <Button 
-                variant="contained" 
-                color="primary" 
+              <Button
+                variant="contained"
+                color="primary"
                 onClick={handleDeposit}
                 disabled={!vaultAmount || parseFloat(vaultAmount) <= 0}
               >
                 Depositar
               </Button>
             )}
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               color="secondary"
               onClick={handleWithdrawFromVault}
               disabled={!vaultAmount || parseFloat(vaultAmount) <= 0 || vaultBalance <= 0}
@@ -1552,19 +1427,19 @@ function App() {
       </Modal>
       {/* --- FIN DE MODAL --- */}
 
-      <Modal open={showHowItWorksModal} onClose={() => setShowHowItWorksModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Paper sx={{ p: 4, borderRadius: 4, maxWidth: 800, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
-          <Typography variant="h4" component="h2" sx={{ mb: 2, fontWeight: 700, textAlign: 'center' }}>
+      <Modal open={showHowItWorksModal} onClose={() => setShowHowItWorksModal(false)} sx={{ display: 'flex',alignItems: 'center',justifyContent: 'center' }}>
+        <Paper sx={{ p: 4,borderRadius: 4,maxWidth: 800,width: '100%',maxHeight: '90vh',overflowY: 'auto' }}>
+          <Typography variant="h4" component="h2" sx={{ mb: 2,fontWeight: 700,textAlign: 'center' }}>
             Cómo Funciona RoomFi: La Revolución DeFi en Bienes Raíces
           </Typography>
-          <Typography variant="body1" sx={{ mb: 3, textAlign: 'center', color: 'text.secondary' }}>
+          <Typography variant="body1" sx={{ mb: 3,textAlign: 'center',color: 'text.secondary' }}>
             RoomFi es más que una plataforma para encontrar roomies; es un ecosistema financiero descentralizado (DeFi) construido sobre la red Arbitrum, diseñado para resolver los problemas de confianza, liquidez y acceso que sufren tanto arrendadores como inquilinos en el mercado tradicional. Nuestro motor es el <strong>token MXNB</strong>, que impulsa cada transacción y oportunidad de rendimiento dentro de <strong>México</strong>.
           </Typography>
 
           <Grid container spacing={4}>
             <Grid item xs={12} md={6}>
-              <Paper variant="outlined" sx={{ p: 3, height: '100%' }}>
-                <Typography variant="h6" component="h3" sx={{ mb: 2, fontWeight: 600 }}>
+              <Paper variant="outlined" sx={{ p: 3,height: '100%' }}>
+                <Typography variant="h6" component="h3" sx={{ mb: 2,fontWeight: 600 }}>
                   Para Arrendadores: Liquidez y Rendimiento
                 </Typography>
                 <Typography variant="body1" paragraph>
@@ -1582,8 +1457,8 @@ function App() {
               </Paper>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Paper variant="outlined" sx={{ p: 3, height: '100%' }}>
-                <Typography variant="h6" component="h3" sx={{ mb: 2, fontWeight: 600 }}>
+              <Paper variant="outlined" sx={{ p: 3,height: '100%' }}>
+                <Typography variant="h6" component="h3" sx={{ mb: 2,fontWeight: 600 }}>
                   Para Inquilinos: Tu Reputación es tu Mejor Activo
                 </Typography>
                 <Typography variant="body1" paragraph>
@@ -1600,7 +1475,7 @@ function App() {
           </Grid>
 
           <Box sx={{ mt: 4 }}>
-            <Typography variant="h5" component="h3" sx={{ mb: 2, fontWeight: 600, textAlign: 'center' }}>
+            <Typography variant="h5" component="h3" sx={{ mb: 2,fontWeight: 600,textAlign: 'center' }}>
               Nuestro Ecosistema DeFi con MXNB
             </Typography>
             <Typography variant="body1" paragraph>
@@ -1614,7 +1489,7 @@ function App() {
             </Typography>
           </Box>
 
-          <Typography variant="h6" component="p" sx={{ mt: 4, fontWeight: 700, textAlign: 'center', color: 'primary.main' }}>
+          <Typography variant="h6" component="p" sx={{ mt: 4,fontWeight: 700,textAlign: 'center',color: 'primary.main' }}>
             RoomFi es la simbiosis perfecta entre Real Estate y DeFi, creando un mercado más justo, eficiente y rentable para todos.
           </Typography>
         </Paper>
