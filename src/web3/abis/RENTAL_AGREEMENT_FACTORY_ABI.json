@@ -1,0 +1,99 @@
+[
+  {
+    "inputs": [
+      {"name": "propertyId", "type": "uint256"},
+      {"name": "tenant", "type": "address"},
+      {"name": "monthlyRent", "type": "uint256"},
+      {"name": "securityDeposit", "type": "uint256"},
+      {"name": "duration", "type": "uint256"}
+    ],
+    "name": "createAgreement",
+    "outputs": [{"name": "agreementId", "type": "uint256"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "propertyId", "type": "uint256"}],
+    "name": "getPropertyAgreements",
+    "outputs": [{"name": "", "type": "uint256[]"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "tenant", "type": "address"}],
+    "name": "getTenantAgreements",
+    "outputs": [{"name": "", "type": "uint256[]"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "landlord", "type": "address"}],
+    "name": "getLandlordAgreements",
+    "outputs": [{"name": "", "type": "uint256[]"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getTotalAgreements",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getFactoryStats",
+    "outputs": [
+      {"name": "total", "type": "uint256"},
+      {"name": "active", "type": "uint256"},
+      {"name": "completed", "type": "uint256"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"name": "offset", "type": "uint256"},
+      {"name": "limit", "type": "uint256"}
+    ],
+    "name": "getAgreements",
+    "outputs": [{"name": "", "type": "uint256[]"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalAgreementsCreated",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "activeAgreements",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "rentalAgreementNFT",
+    "outputs": [{"name": "", "type": "address"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "name": "agreementId", "type": "uint256"},
+      {"indexed": true, "name": "propertyId", "type": "uint256"},
+      {"indexed": true, "name": "tenant", "type": "address"},
+      {"indexed": false, "name": "landlord", "type": "address"},
+      {"indexed": false, "name": "monthlyRent", "type": "uint256"},
+      {"indexed": false, "name": "duration", "type": "uint256"},
+      {"indexed": false, "name": "timestamp", "type": "uint256"}
+    ],
+    "name": "AgreementCreatedViaFactory",
+    "type": "event"
+  }
+]

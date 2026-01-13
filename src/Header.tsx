@@ -47,8 +47,8 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
               {/* Botones que solo aparecen si la wallet está conectada */}
               {account && (
                 <>
-                  <Button component={RouterLink} to="/create-pool" sx={{ color: 'primary.main', fontWeight: 600 }}>Crear Pool</Button>
-                  <Button onClick={onViewMyPropertiesClick} sx={{ color: 'primary.main', fontWeight: 600 }}>Mis Propiedades</Button>
+                  <Button component={RouterLink} to="/my-properties" sx={{ color: 'primary.main', fontWeight: 600 }}>Mis Propiedades</Button>
+                  <Button component={RouterLink} to="/agreements" sx={{ color: 'primary.main', fontWeight: 600 }}>Mis Contratos</Button>
                   <Button onClick={onSavingsClick} sx={{ color: 'primary.main', fontWeight: 600 }}>Bóveda</Button>
                 </>
               )}
@@ -98,12 +98,16 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
               {account ? (
                 <Paper elevation={2} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 2, borderRadius: 2 }}>
                   <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{tokenBalance?.toFixed(2)} MXNB</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{tokenBalance?.toFixed(2)} USDT</Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>{`${account?.substring(0, 6)}...${account?.substring(account.length - 4)}`}</Typography>
                   </Box>
                   <Button variant="contained" size="small" onClick={onFundingModalOpen}>Añadir Fondos</Button>
                   {account && (
-                    <Button variant="outlined" size="small" onClick={onViewNFTClick}>Ver mi NFT</Button>
+                    tenantPassportData ? (
+                      <Button variant="outlined" size="small" onClick={onViewNFTClick}>Ver mi NFT</Button>
+                    ) : (
+                      <Button variant="contained" size="small" color="secondary" onClick={onMintNFTClick}>Crear Passport</Button>
+                    )
                   )}
                 </Paper>
               ) : (

@@ -39,6 +39,10 @@ import Portal from '@portal-hq/web';
 import { renderAmenityIcon, getDaysAgo } from './utils/icons';
 import { useUser, UserProvider } from './UserContext';
 import DashboardPage from './DashboardPage';
+import RentalAgreementsPage from './RentalAgreementsPage';
+import BadgesDisplay from './components/BadgesDisplay';
+import MyPropertiesPage from './MyPropertiesPage';
+import CreatePropertyPage from './CreatePropertyPage';
 
 
 declare global {
@@ -216,6 +220,7 @@ function App() {
   const [depositAmount, setDepositAmount] = useState('');
   const [notification, setNotification] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ open: false, message: '', severity: 'success' });
   const [tenantPassportData, setTenantPassportData] = useState<TenantPassportData | null>(null);
+  const [tenantBadges, setTenantBadges] = useState<boolean[]>(new Array(14).fill(false));
   const [showTenantPassportModal, setShowTenantPassportModal] = useState(false);
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
   const [tokenBalance, setTokenBalance] = useState<number>(0);
@@ -228,6 +233,8 @@ function App() {
   const [interestEarned, setInterestEarned] = useState<number>(0);
   const [vaultAmount, setVaultAmount] = useState('');
   const [allowance, setAllowance] = useState<number>(0);
+  const [vaultAPY, setVaultAPY] = useState<number>(0);
+  const [vaultTotalDeposits, setVaultTotalDeposits] = useState<number>(0);
   // --- FIN DE NUEVOS ESTADOS ---
 
   // Estados del Mapa
@@ -289,11 +296,16 @@ function App() {
     if (!account || !provider) return;
     try {
       const vaultContract = new ethers.Contract(ROOM_FI_VAULT_ADDRESS, ROOM_FI_VAULT_ABI, provider);
-      // V2: RoomFiVault uses different method names - adjust based on actual ABI
-      const rawBalance = await vaultContract.balanceOf(account);
-      setVaultBalance(Number(ethers.formatUnits(rawBalance, 6))); // USDT has 6 decimals
-      // TODO: Add yield calculation when method is confirmed in ABI
-      setInterestEarned(0);
+      
+      // Get user info (balance + yield)
+      const userInfo = await vaultContract.getUserInfo(account);
+      setVaultBalance(Number(ethers.formatUnits(userInfo.depositAmount, 6)));
+      setInterestEarned(Number(ethers.formatUnits(userInfo.yieldEarned, 6)));
+
+      // Get vault stats (APY + total deposits)
+      const vaultStats = await vaultContract.getVaultStats();
+      setVaultAPY(Number(vaultStats.apy) / 100); // APY is in basis points (800 = 8%)
+      setVaultTotalDeposits(Number(ethers.formatUnits(vaultStats.totalDepositsAmount, 6)));
     } catch (error) {
       console.error("Error fetching vault data:", error);
     }
@@ -395,12 +407,46 @@ function App() {
   const checkNetwork = async (prov: ethers.BrowserProvider): Promise<boolean> => {
     const network = await prov.getNetwork();
     if (network.chainId !== BigInt(NETWORK_CONFIG.chainId)) {
-      setNotification({
-        open: true,
-        message: `Por favor, cambia tu wallet a la red ${NETWORK_CONFIG.chainName}.`,
-        severity: 'warning',
-      });
-      return false;
+      // Try to switch to Mantle Sepolia
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: `0x${NETWORK_CONFIG.chainId.toString(16)}` }],
+        });
+        return true;
+      } catch (switchError: any) {
+        // Chain not added, try to add it
+        if (switchError.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: `0x${NETWORK_CONFIG.chainId.toString(16)}`,
+                chainName: NETWORK_CONFIG.chainName,
+                nativeCurrency: NETWORK_CONFIG.nativeCurrency,
+                rpcUrls: [NETWORK_CONFIG.rpcUrl],
+                blockExplorerUrls: [NETWORK_CONFIG.blockExplorerUrl],
+              }],
+            });
+            return true;
+          } catch (addError) {
+            console.error("Error adding network:", addError);
+            setNotification({
+              open: true,
+              message: `Error al agregar la red ${NETWORK_CONFIG.chainName}.`,
+              severity: 'error',
+            });
+            return false;
+          }
+        }
+        console.error("Error switching network:", switchError);
+        setNotification({
+          open: true,
+          message: `Por favor, cambia manualmente a la red ${NETWORK_CONFIG.chainName}.`,
+          severity: 'warning',
+        });
+        return false;
+      }
     }
     return true;
   };
@@ -564,6 +610,16 @@ function App() {
       };
 
       setTenantPassportData(passportData);
+
+      // Fetch badges
+      try {
+        const badgesList = await readOnlyContract.getAllBadges(finalTokenId);
+        setTenantBadges([...badgesList]);
+      } catch (badgeError) {
+        console.error("Error fetching badges:", badgeError);
+        setTenantBadges(new Array(14).fill(false));
+      }
+
       return passportData;
     } catch (error) {
       console.error("Error getting or creating Tenant Passport:", error);
@@ -589,15 +645,30 @@ function App() {
       if (!(await checkNetwork(provider))) return;
 
       try {
+          // Check if already has passport
+          const readContract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, provider);
+          const hasPassport = await readContract.hasPassport(account);
+          
+          if (hasPassport) {
+              setNotification({ open: true, message: '¡Ya tienes un Tenant Passport! Haz clic en "Ver mi NFT" para verlo.', severity: 'info' });
+              await checkTenantPassport(account);
+              return;
+          }
+
           const signer = await provider.getSigner();
           const contract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, signer);
           const tx = await contract.mintForSelf();
           await tx.wait();
           setNotification({ open: true, message: '¡Tu Tenant Passport se ha minteado exitosamente!', severity: 'success' });
-          await getOrCreateTenantPassport(account);
-      } catch (error) {
+          await checkTenantPassport(account);
+      } catch (error: any) {
           console.error("Error minting new Tenant Passport:", error);
-          setNotification({ open: true, message: 'Error al mintear un nuevo Tenant Passport.', severity: 'error' });
+          if (error.message?.includes('ya existente')) {
+              setNotification({ open: true, message: '¡Ya tienes un Tenant Passport!', severity: 'info' });
+              await checkTenantPassport(account);
+          } else {
+              setNotification({ open: true, message: 'Error al mintear un nuevo Tenant Passport.', severity: 'error' });
+          }
       }
   };
 
@@ -690,13 +761,70 @@ function App() {
     }
   }, [location.state]);
 
+  // Check if user has TenantPassport (without creating one)
+  const checkTenantPassport = useCallback(async (userAddress: string) => {
+    if (!provider) return;
+    try {
+      const contract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, provider);
+      
+      // Use hasPassport which is simpler and more reliable
+      const hasPassport = await contract.hasPassport(userAddress);
+      console.log("[TenantPassport] hasPassport:", hasPassport);
+      
+      if (hasPassport) {
+        // User has a passport, fetch the data
+        const tokenId = await contract.getTokenIdByAddress(userAddress);
+        console.log("[TenantPassport] tokenId:", tokenId.toString());
+        
+        const passportInfo = await contract.getTenantInfo(tokenId);
+        
+        const passportData: TenantPassportData = {
+          tokenId: tokenId,
+          reputation: Number(passportInfo.reputation || 0),
+          isVerified: passportInfo.isVerified || false,
+          paymentsMade: Number(passportInfo.paymentsMade || 0),
+          paymentsMissed: Number(passportInfo.paymentsMissed || 0),
+          propertiesRented: Number(passportInfo.propertiesRented || 0),
+          propertiesOwned: Number(passportInfo.propertiesOwned || 0),
+          totalMonthsRented: Number(passportInfo.totalMonthsRented || 0),
+          consecutiveOnTimePayments: Number(passportInfo.consecutiveOnTimePayments || 0),
+          referralCount: Number(passportInfo.referralCount || 0),
+          disputesCount: Number(passportInfo.disputesCount || 0),
+          outstandingBalance: Number(ethers.formatUnits(passportInfo.outstandingBalance || 0, 6)),
+          totalRentPaid: Number(ethers.formatUnits(passportInfo.totalRentPaid || 0, 6)),
+          lastActivityTime: Number(passportInfo.lastActivityTime || 0),
+          lastPaymentTime: Number(passportInfo.lastPaymentTime || 0),
+          mintingWalletAddress: userAddress,
+        };
+        setTenantPassportData(passportData);
+        console.log("[TenantPassport] Data loaded:", passportData);
+        
+        // Fetch badges
+        try {
+          const badgesList = await contract.getAllBadges(tokenId);
+          setTenantBadges([...badgesList]);
+        } catch (e) {
+          console.log("Error fetching badges:", e);
+        }
+      } else {
+        console.log("[TenantPassport] User does not have a passport");
+        setTenantPassportData(null);
+      }
+    } catch (error) {
+      console.error("Error checking TenantPassport:", error);
+      setTenantPassportData(null);
+    }
+  }, [provider]);
+
   useEffect(() => {
     if (provider && account) {
       fetchTokenBalance(provider, account);
+      // Check if user has TenantPassport
+      checkTenantPassport(account);
       const intervalId = setInterval(() => fetchTokenBalance(provider, account), 10000);
       return () => clearInterval(intervalId);
     }
-  }, [provider, account, fetchTokenBalance]);
+  }, [provider, account, fetchTokenBalance, checkTenantPassport]);
 
   // Listener for account and network changes
   useEffect(() => {
@@ -1205,33 +1333,73 @@ function App() {
             </Modal>
 
             <Modal open={showTenantPassportModal} onClose={() => setShowTenantPassportModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
-                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Tu Tenant Passport</Typography>
+              <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 600, width: '100%', maxHeight: '90vh', overflow: 'auto' }}>
+                <Typography variant="h5" component="h2" sx={{ mb: 3, fontWeight: 700 }}>Tu Tenant Passport</Typography>
                 {tenantPassportData ? (
-                  <Stack spacing={1}>
-                    <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Reputación:</Typography> {tenantPassportData.reputation}%
-                    </Typography>
-                    <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Pagos a tiempo:</Typography> {tenantPassportData.paymentsMade}
-                    </Typography>
-                    <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Pagos no realizados:</Typography> {tenantPassportData.paymentsMissed}
-                    </Typography>
-                    <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Propiedades Poseídas:</Typography> {tenantPassportData.propertiesOwned}
-                    </Typography>
-                    <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Saldo pendiente:</Typography> ${tenantPassportData.outstandingBalance.toLocaleString()} MXNB
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                      Token ID: {tenantPassportData.tokenId.toString()}
-                    </Typography>
-                    {tenantPassportData.mintingWalletAddress && (
+                  <Stack spacing={3}>
+                    {/* Reputation Score */}
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', borderRadius: 2 }}>
+                      <Typography variant="h2" color="primary" fontWeight={700}>{tenantPassportData.reputation}</Typography>
+                      <Typography variant="body2" color="text.secondary">Puntuación de Reputación</Typography>
+                      {tenantPassportData.isVerified && (
+                        <Chip label="Verificado" color="success" size="small" sx={{ mt: 1 }} />
+                      )}
+                    </Paper>
+
+                    {/* Stats Grid */}
+                    <Grid container spacing={2}>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
+                          <Typography variant="h6" fontWeight={600}>{tenantPassportData.paymentsMade}</Typography>
+                          <Typography variant="caption" color="text.secondary">Pagos a tiempo</Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
+                          <Typography variant="h6" fontWeight={600} color={tenantPassportData.paymentsMissed > 0 ? 'error' : 'inherit'}>{tenantPassportData.paymentsMissed}</Typography>
+                          <Typography variant="caption" color="text.secondary">Pagos perdidos</Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
+                          <Typography variant="h6" fontWeight={600}>{tenantPassportData.propertiesRented}</Typography>
+                          <Typography variant="caption" color="text.secondary">Propiedades rentadas</Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
+                          <Typography variant="h6" fontWeight={600}>{tenantPassportData.totalMonthsRented}</Typography>
+                          <Typography variant="caption" color="text.secondary">Meses totales</Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
+                          <Typography variant="h6" fontWeight={600}>{tenantPassportData.consecutiveOnTimePayments}</Typography>
+                          <Typography variant="caption" color="text.secondary">Pagos consecutivos</Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
+                          <Typography variant="h6" fontWeight={600}>${tenantPassportData.totalRentPaid.toFixed(0)}</Typography>
+                          <Typography variant="caption" color="text.secondary">Total pagado (USDT)</Typography>
+                        </Paper>
+                      </Grid>
+                    </Grid>
+
+                    {/* Badges Section */}
+                    <BadgesDisplay badges={tenantBadges} />
+
+                    {/* Token Info */}
+                    <Box sx={{ pt: 2, borderTop: '1px solid #e0e0e0' }}>
                       <Typography variant="body2" color="text.secondary">
-                        Wallet: {tenantPassportData.mintingWalletAddress.substring(0, 6)}...{tenantPassportData.mintingWalletAddress.substring(tenantPassportData.mintingWalletAddress.length - 4)}
+                        Token ID: {tenantPassportData.tokenId.toString()}
                       </Typography>
-                    )}
+                      {tenantPassportData.mintingWalletAddress && (
+                        <Typography variant="body2" color="text.secondary">
+                          Wallet: {tenantPassportData.mintingWalletAddress.substring(0, 6)}...{tenantPassportData.mintingWalletAddress.substring(tenantPassportData.mintingWalletAddress.length - 4)}
+                        </Typography>
+                      )}
+                    </Box>
                   </Stack>
                 ) : (
                   <Typography variant="body1">No se encontró un Tenant Passport para tu wallet.</Typography>
@@ -1289,37 +1457,62 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/create-pool" element={<CreatePoolPage account={account} tokenDecimals={tokenDecimals} />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/agreements" element={<RentalAgreementsPage account={account} provider={provider} />} />
+        <Route path="/my-properties" element={<MyPropertiesPage account={account} provider={provider} />} />
+        <Route path="/create-property" element={<CreatePropertyPage account={account} />} />
       </Routes>
 
-      {/* --- MODAL DE LA BÓVEDA (CORREGIDO) --- */}
+      {/* --- MODAL DE LA BÓVEDA (V2 con APY real) --- */}
       <Modal open={showVaultModal} onClose={handleVaultModalClose} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Paper sx={{ p: 4, borderRadius: 4, maxWidth: 480, width: '100%', textAlign: 'center' }}>
+        <Paper sx={{ p: 4, borderRadius: 4, maxWidth: 520, width: '100%', textAlign: 'center' }}>
           <Typography variant="h5" component="h2" sx={{ mb: 3, fontWeight: 700 }}>
-            Mi Bóveda de Ahorros
+            RoomFi Vault
           </Typography>
           
+          {/* APY Banner */}
+          <Paper sx={{ p: 2, mb: 3, borderRadius: 3, bgcolor: 'success.light', color: 'success.contrastText' }}>
+            <Typography variant="h3" fontWeight={700}>{vaultAPY.toFixed(2)}% APY</Typography>
+            <Typography variant="body2">Rendimiento anual actual (USDY Strategy)</Typography>
+          </Paper>
+
+          {/* User Balance */}
           <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3 }}>
-            <Typography variant="h6" color="text.secondary">Saldo en Bóveda</Typography>
+            <Typography variant="h6" color="text.secondary">Tu Saldo en Vault</Typography>
             <Typography variant="h4" fontWeight="bold" color="primary.main" sx={{ mb: 1 }}>
-              {vaultBalance.toFixed(4)} MXNBT
+              ${vaultBalance.toFixed(2)} USDT
             </Typography>
-            <Typography variant="body1" color="secondary.main" sx={{ fontWeight: 600 }}>
-              + {interestEarned.toFixed(6)} Intereses Ganados
+            <Typography variant="body1" color="success.main" sx={{ fontWeight: 600 }}>
+              + ${interestEarned.toFixed(4)} Yield Generado
             </Typography>
           </Paper>
 
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            Tu balance disponible: {tokenBalance.toFixed(4)} MXNBT
-          </Typography>
+          {/* Vault Stats */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={6}>
+              <Paper variant="outlined" sx={{ p: 1.5 }}>
+                <Typography variant="caption" color="text.secondary">TVL Total</Typography>
+                <Typography variant="h6" fontWeight={600}>${vaultTotalDeposits.toFixed(0)}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={6}>
+              <Paper variant="outlined" sx={{ p: 1.5 }}>
+                <Typography variant="caption" color="text.secondary">Tu Balance USDT</Typography>
+                <Typography variant="h6" fontWeight={600}>${tokenBalance.toFixed(2)}</Typography>
+              </Paper>
+            </Grid>
+          </Grid>
 
           <TextField
             fullWidth
             type="number"
-            label="Monto a depositar / retirar"
+            label="Monto (USDT)"
             variant="outlined"
             value={vaultAmount}
             onChange={(e) => setVaultAmount(e.target.value)}
             sx={{ mb: 2 }}
+            InputProps={{
+              endAdornment: <Typography variant="body2" color="text.secondary">USDT</Typography>
+            }}
           />
           
           <Stack direction="row" spacing={2} justifyContent="center">
@@ -1330,7 +1523,7 @@ function App() {
                 onClick={handleApprove}
                 disabled={!vaultAmount || parseFloat(vaultAmount) <= 0}
               >
-                Aprobar
+                Aprobar USDT
               </Button>
             ) : (
               <Button 
@@ -1346,11 +1539,15 @@ function App() {
               variant="outlined" 
               color="secondary"
               onClick={handleWithdrawFromVault}
-              disabled={!vaultAmount || parseFloat(vaultAmount) <= 0}
+              disabled={!vaultAmount || parseFloat(vaultAmount) <= 0 || vaultBalance <= 0}
             >
               Retirar
             </Button>
           </Stack>
+
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
+            Los depósitos generan yield a través de USDY (Ondo Finance)
+          </Typography>
         </Paper>
       </Modal>
       {/* --- FIN DE MODAL --- */}
