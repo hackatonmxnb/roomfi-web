@@ -221,6 +221,7 @@ function App() {
   const [depositAmount, setDepositAmount] = useState('');
   const [notification, setNotification] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ open: false, message: '', severity: 'success' });
   const [tenantPassportData, setTenantPassportData] = useState<TenantPassportData | null>(null);
+  const [tenantBadges, setTenantBadges] = useState<boolean[]>(new Array(14).fill(false));
   const [showTenantPassportModal, setShowTenantPassportModal] = useState(false);
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
   const [tokenBalance, setTokenBalance] = useState<number>(0);
@@ -233,6 +234,8 @@ function App() {
   const [interestEarned, setInterestEarned] = useState<number>(0);
   const [vaultAmount, setVaultAmount] = useState('');
   const [allowance, setAllowance] = useState<number>(0);
+  const [vaultAPY, setVaultAPY] = useState<number>(0);
+  const [vaultTotalDeposits, setVaultTotalDeposits] = useState<number>(0);
   // --- FIN DE NUEVOS ESTADOS ---
 
   // Estados del Mapa
@@ -294,11 +297,16 @@ function App() {
     if (!account || !provider) return;
     try {
       const vaultContract = new ethers.Contract(ROOM_FI_VAULT_ADDRESS, ROOM_FI_VAULT_ABI, provider);
-      // V2: RoomFiVault uses different method names - adjust based on actual ABI
-      const rawBalance = await vaultContract.balanceOf(account);
-      setVaultBalance(Number(ethers.formatUnits(rawBalance, 6))); // USDT has 6 decimals
-      // TODO: Add yield calculation when method is confirmed in ABI
-      setInterestEarned(0);
+      
+      // Get user info (balance + yield)
+      const userInfo = await vaultContract.getUserInfo(account);
+      setVaultBalance(Number(ethers.formatUnits(userInfo.depositAmount, 6)));
+      setInterestEarned(Number(ethers.formatUnits(userInfo.yieldEarned, 6)));
+
+      // Get vault stats (APY + total deposits)
+      const vaultStats = await vaultContract.getVaultStats();
+      setVaultAPY(Number(vaultStats.apy) / 100); // APY is in basis points (800 = 8%)
+      setVaultTotalDeposits(Number(ethers.formatUnits(vaultStats.totalDepositsAmount, 6)));
     } catch (error) {
       console.error("Error fetching vault data:",error);
     }
@@ -793,24 +801,28 @@ function App() {
   },[vaultAmount,showVaultModal,checkAllowance]);
 
 
+  const isLandingPage = location.pathname === '/';
+
   return (
     <>
-      <Header
-        account={account}
-        tokenBalance={tokenBalance}
-        onFundingModalOpen={handleFundingModalOpen}
-        onConnectGoogle={login}
-        onConnectMetaMask={connectWithMetaMask}
-        onViewNFTClick={handleViewNFTClick}
-        onMintNFTClick={mintNewTenantPassport}
-        onViewMyPropertiesClick={handleViewMyProperties}
-        onSavingsClick={handleVaultModalOpen}
-        onHowItWorksClick={() => setShowHowItWorksModal(true)}
-        tenantPassportData={tenantPassportData}
-        isCreatingWallet={isCreatingWallet}
-        setShowOnboarding={setShowOnboarding}
-        showOnboarding={showOnboarding}
-      />
+      {!isLandingPage && (
+        <Header
+          account={account}
+          tokenBalance={tokenBalance}
+          onFundingModalOpen={handleFundingModalOpen}
+          onConnectGoogle={login}
+          onConnectMetaMask={connectWithMetaMask}
+          onViewNFTClick={handleViewNFTClick}
+          onMintNFTClick={mintNewTenantPassport}
+          onViewMyPropertiesClick={handleViewMyProperties}
+          onSavingsClick={handleVaultModalOpen}
+          onHowItWorksClick={() => setShowHowItWorksModal(true)}
+          tenantPassportData={tenantPassportData}
+          isCreatingWallet={isCreatingWallet}
+          setShowOnboarding={setShowOnboarding}
+          showOnboarding={showOnboarding}
+        />
+      )}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/app" element={
@@ -830,7 +842,7 @@ function App() {
                       mb: 1
                     }}
                   >
-                    Encuentra tu Roomie ideal
+                    Find your ideal Roommate
                   </Typography>
                   <Typography
                     variant="h5"
@@ -842,7 +854,7 @@ function App() {
                       mb: 1
                     }}
                   >
-                    Somos RoomFi, una plataforma amigable, confiable y tecnológica para encontrar compañeros de cuarto y compartir hogar de forma segura gracias a Web3, ¡sin complicaciones!
+                    RoomFi is a friendly, reliable, and tech-driven platform to find roommates and share homes securely with Web3, hassle-free!
                   </Typography>
                   <Box sx={{
                     mt: 2,
@@ -861,7 +873,7 @@ function App() {
                         px: 2.5
                       }}
                     >
-                      Buscar Roomies
+                      Find Roommates
                     </Button>
                     <Button
                       variant="outlined"
@@ -875,7 +887,7 @@ function App() {
                       }}
                       onClick={() => navigate('/dashboard')}
                     >
-                      Publicar propiedades
+                      List Properties
                     </Button>
                   </Box>
                 </Grid>
@@ -892,14 +904,14 @@ function App() {
                         <Box sx={{ display: 'flex',flexDirection: 'column',gap: 1.5 }}>
                           <TextField
                             fullWidth
-                            label="¿En dónde buscas departamento?"
+                            label="Where are you looking for an apartment?"
                             variant="outlined"
                             size="small"
                             sx={{ bgcolor: 'white',borderRadius: 2,mb: 1 }}
                           />
                           <Box sx={{ mt: 0.5,px: 2.5 }}>
                             <Typography gutterBottom sx={{ fontWeight: 500,color: 'primary.main',mb: 0.5,fontSize: '0.95rem',textAlign: 'left' }}>
-                              ¿Qué precio buscas?
+                              What's your budget?
                             </Typography>
                             <Slider
                               value={precio}
@@ -916,7 +928,7 @@ function App() {
                             />
                           </Box>
                           <FormControl fullWidth sx={{ mt: 1.5,bgcolor: 'white',borderRadius: 2 }} size="small">
-                            <InputLabel id="amenidad-label" sx={{ fontSize: '0.95rem' }}>¿Qué amenidades buscas?</InputLabel>
+                            <InputLabel id="amenidad-label" sx={{ fontSize: '0.95rem' }}>What amenities are you looking for?</InputLabel>
                             <Select
                               fullWidth
                               labelId="amenidad-label"
@@ -924,7 +936,7 @@ function App() {
                               multiple
                               value={amenidades}
                               onChange={handleAmenidadChange}
-                              input={<OutlinedInput label="¿Qué amenidades buscas?" />}
+                              input={<OutlinedInput label="What amenities are you looking for?" />}
                               renderValue={(selected) => (
                                 <Box sx={{ display: 'flex',flexWrap: 'wrap',gap: 0.5 }}>
                                   {(selected as string[]).map((value) => (
@@ -933,11 +945,11 @@ function App() {
                                 </Box>
                               )}
                             >
-                              <MenuItem value="amueblado"><BedIcon sx={{ color: '#6d4c41',fontSize: 20,mr: 1 }} />Amueblado</MenuItem>
-                              <MenuItem value="baño privado"><MeetingRoomIcon sx={{ color: '#43a047',fontSize: 20,mr: 1 }} />Baño privado</MenuItem>
+                              <MenuItem value="amueblado"><BedIcon sx={{ color: '#6d4c41',fontSize: 20,mr: 1 }} />Furnished</MenuItem>
+                              <MenuItem value="baño privado"><MeetingRoomIcon sx={{ color: '#43a047',fontSize: 20,mr: 1 }} />Private bathroom</MenuItem>
                               <MenuItem value="pet friendly"><PetsIcon sx={{ color: '#ff9800',fontSize: 20,mr: 1 }} />Pet friendly</MenuItem>
-                              <MenuItem value="estacionamiento"><LocalParkingIcon sx={{ color: '#1976d2',fontSize: 20,mr: 1 }} />Estacionamiento</MenuItem>
-                              <MenuItem value="piscina"><PoolIcon sx={{ color: '#00bcd4',fontSize: 20,mr: 1 }} />Piscina</MenuItem>
+                              <MenuItem value="estacionamiento"><LocalParkingIcon sx={{ color: '#1976d2',fontSize: 20,mr: 1 }} />Parking</MenuItem>
+                              <MenuItem value="piscina"><PoolIcon sx={{ color: '#00bcd4',fontSize: 20,mr: 1 }} />Pool</MenuItem>
                             </Select>
                           </FormControl>
                         </Box>
@@ -945,29 +957,29 @@ function App() {
                       <Grid item xs={12} md={6}>
                         <Box sx={{ display: 'flex',flexDirection: 'column',gap: 1.5 }}>
                           <FormControl fullWidth sx={{ bgcolor: 'white',borderRadius: 2 }} size="small">
-                            <InputLabel id="tipo-propiedad-label" sx={{ fontSize: '0.95rem' }}>Tipo de propiedad</InputLabel>
+                            <InputLabel id="tipo-propiedad-label" sx={{ fontSize: '0.95rem' }}>Property type</InputLabel>
                             <Select
                               labelId="tipo-propiedad-label"
                               id="tipo-propiedad-select"
-                              label="Tipo de propiedad"
+                              label="Property type"
                               defaultValue=""
                             >
-                              <MenuItem value="departamento"><ApartmentIcon sx={{ color: '#1976d2',fontSize: 20,mr: 1 }} />Departamento completo</MenuItem>
-                              <MenuItem value="privada"><MeetingRoomIcon sx={{ color: '#43a047',fontSize: 20,mr: 1 }} />Habitación privada</MenuItem>
-                              <MenuItem value="compartida"><GroupIcon sx={{ color: '#fbc02d',fontSize: 20,mr: 1 }} />Habitación compartida</MenuItem>
+                              <MenuItem value="departamento"><ApartmentIcon sx={{ color: '#1976d2',fontSize: 20,mr: 1 }} />Full apartment</MenuItem>
+                              <MenuItem value="privada"><MeetingRoomIcon sx={{ color: '#43a047',fontSize: 20,mr: 1 }} />Private room</MenuItem>
+                              <MenuItem value="compartida"><GroupIcon sx={{ color: '#fbc02d',fontSize: 20,mr: 1 }} />Shared room</MenuItem>
                             </Select>
                           </FormControl>
                           <FormControl fullWidth sx={{ bgcolor: 'white',borderRadius: 2,mt: { xs: 2,md: 4 } }} size="small">
-                            <InputLabel id="genero-label" sx={{ fontSize: '0.95rem' }}>Preferencia de roomie</InputLabel>
+                            <InputLabel id="genero-label" sx={{ fontSize: '0.95rem' }}>Roommate preference</InputLabel>
                             <Select
                               labelId="genero-label"
                               id="genero-select"
-                              label="Preferencia de roomie"
+                              label="Roommate preference"
                               defaultValue=""
                             >
-                              <MenuItem value="mujeres"><FemaleIcon sx={{ color: '#e91e63',fontSize: 20,mr: 1 }} />Solo mujeres</MenuItem>
-                              <MenuItem value="hombres"><MaleIcon sx={{ color: '#1976d2',fontSize: 20,mr: 1 }} />Solo hombres</MenuItem>
-                              <MenuItem value="igual"><span style={{ fontSize: 20,marginRight: 8 }}>⚧️</span>Me da igual</MenuItem>
+                              <MenuItem value="mujeres"><FemaleIcon sx={{ color: '#e91e63',fontSize: 20,mr: 1 }} />Women only</MenuItem>
+                              <MenuItem value="hombres"><MaleIcon sx={{ color: '#1976d2',fontSize: 20,mr: 1 }} />Men only</MenuItem>
+                              <MenuItem value="igual"><span style={{ fontSize: 20,marginRight: 8 }}>⚧️</span>No preference</MenuItem>
                               <MenuItem value="lgbtq"><span style={{ fontSize: 20,marginRight: 8 }}>🏳️‍🌈</span>LGBTQ+</MenuItem>
                             </Select>
                           </FormControl>
@@ -1107,7 +1119,7 @@ function App() {
                                 sx={{ width: { xs: '100%',sm: 'auto' },fontSize: { xs: '0.75rem',sm: '1rem' },py: 1.1,px: 2.5 }}
                                 onClick={() => { setSelectedInterestListing(listing); setShowInterestModal(true); }}
                               >
-                                ¡Me interesa!
+                                I'm interested!
                               </Button>
                             </Box>
                           )}
@@ -1125,7 +1137,7 @@ function App() {
 
             <Box sx={{ bgcolor: '#222',color: 'white',py: 3,textAlign: 'center' }}>
               <Typography variant="body2" sx={{ fontSize: { xs: '0.8rem',sm: '0.875rem' } }}>
-                &copy; {new Date().getFullYear()} RoomFi. Todos los derechos reservados.
+                &copy; {new Date().getFullYear()} RoomFi. All rights reserved.
               </Typography>
             </Box>
 
@@ -1138,7 +1150,7 @@ function App() {
             <Modal open={showMyPropertiesModal} onClose={() => setShowMyPropertiesModal(false)} sx={{ display: 'flex',alignItems: 'center',justifyContent: 'center' }}>
               <Paper sx={{ p: 4,borderRadius: 4,maxWidth: 700,width: '100%',maxHeight: '90vh',overflowY: 'auto' }}>
                 <Typography variant="h5" component="h2" sx={{ mb: 3,fontWeight: 700 }}>
-                  Panel de Mis Propiedades
+                  My Properties Panel
                 </Typography>
                 {myProperties.length > 0 ? (
                   <Stack spacing={3}>
@@ -1148,21 +1160,21 @@ function App() {
                       const isInVault = amountInVault > 0;
 
                       const statusMap: { [key: number]: { text: string; color: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' } } = {
-                        0: { text: 'Activo (Abierto)',color: 'primary' },
-                        1: { text: 'Activo (Fondeando)',color: 'secondary' },
-                        2: { text: 'Rentado',color: 'success' },
-                        3: { text: 'Cancelado',color: 'error' }
+                        0: { text: 'Active (Open)',color: 'primary' },
+                        1: { text: 'Active (Funding)',color: 'secondary' },
+                        2: { text: 'Rented',color: 'success' },
+                        3: { text: 'Cancelled',color: 'error' }
                       };
-                      const currentStatus = statusMap[prop.state] || { text: 'Desconocido',color: 'info' };
+                      const currentStatus = statusMap[prop.state] || { text: 'Unknown',color: 'info' };
 
                       return (
                         <Paper key={prop.id} variant="outlined" sx={{ p: 3,borderRadius: 3 }}>
                           <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                             <Typography variant="h6" fontWeight="600">
-                              {prop.name || `Propiedad ID: ${prop.id.toString()}`}
+                              {prop.name || `Property ID: ${prop.id.toString()}`}
                             </Typography>
                             <Chip
-                              label={isInVault ? "En Bóveda" : currentStatus.text}
+                              label={isInVault ? "In Vault" : currentStatus.text}
                               color={isInVault ? "success" : currentStatus.color}
                               variant="filled"
                             />
@@ -1171,27 +1183,27 @@ function App() {
                           <Grid container spacing={2} sx={{ mb: 2 }}>
                             <Grid item xs={12}>
                               <Typography variant="body1">
-                                <Typography component="span" fontWeight="bold">Interesados:</Typography> {prop.interestedTenants.length} de {prop.requiredTenantCount.toString()}
+                                <Typography component="span" fontWeight="bold">Interested:</Typography> {prop.interestedTenants.length} de {prop.requiredTenantCount.toString()}
                               </Typography>
                             </Grid>
                             <Grid item xs={12} sm={6}>
                               <Typography variant="body1">
-                                <Typography component="span" fontWeight="bold">Renta Mensual:</Typography> {ethers.formatUnits(prop.totalRentAmount,tokenDecimals)} MXNBT
+                                <Typography component="span" fontWeight="bold">Monthly Rent:</Typography> {ethers.formatUnits(prop.totalRentAmount,tokenDecimals)} MXNBT
                               </Typography>
                             </Grid>
                             <Grid item xs={12} sm={6}>
                               <Typography variant="body1">
-                                <Typography component="span" fontWeight="bold">Depósito de Seriedad:</Typography> {ethers.formatUnits(prop.seriousnessDeposit,tokenDecimals)} MXNBT
+                                <Typography component="span" fontWeight="bold">Security Deposit:</Typography> {ethers.formatUnits(prop.seriousnessDeposit,tokenDecimals)} MXNBT
                               </Typography>
                             </Grid>
                             <Grid item xs={12} sm={6}>
                               <Typography variant="body1">
-                                <Typography component="span" fontWeight="bold">Fondos en Pool:</Typography> {amountInPool.toFixed(4)} MXNBT
+                                <Typography component="span" fontWeight="bold">Pool Funds:</Typography> {amountInPool.toFixed(4)} MXNBT
                               </Typography>
                             </Grid>
                             <Grid item xs={12} sm={6}>
                               <Typography variant="body1">
-                                <Typography component="span" fontWeight="bold">Fondos en Bóveda:</Typography> {amountInVault.toFixed(4)} MXNBT
+                                <Typography component="span" fontWeight="bold">Vault Funds:</Typography> {amountInVault.toFixed(4)} MXNBT
                               </Typography>
                             </Grid>
                           </Grid>
@@ -1203,7 +1215,7 @@ function App() {
                               onClick={() => handleDepositPoolToVault(prop.id)}
                               disabled={amountInPool <= 0 || prop.state > 1}
                             >
-                              Mover Fondos a Bóveda
+                              Move Funds to Vault
                             </Button>
 
                             {isInVault && (
@@ -1212,7 +1224,7 @@ function App() {
                                 color="secondary"
                                 onClick={() => handleWithdrawPoolFromVault(prop.id,prop.amountInVault.toString())}
                               >
-                                Retirar de Bóveda
+                                Withdraw from Vault
                               </Button>
                             )}
 
@@ -1223,23 +1235,23 @@ function App() {
                               onClick={() => handleCancelPool(prop.id)}
                               disabled={prop.state !== 0 && prop.state !== 1}
                             >
-                              Cancelar Pool
+                              Cancel Pool
                             </Button>
 
                             {/* Sección para añadir fondos del landlord */}
                             <Box sx={{ pt: 2,borderTop: '1px solid #e0e0e0' }}>
-                              <Typography variant="body2" sx={{ mb: 1 }}>¿Deseas añadir tus propios fondos a este pool?</Typography>
+                              <Typography variant="body2" sx={{ mb: 1 }}>Would you like to add your own funds to this pool?</Typography>
                               <Stack direction="row" spacing={1}>
                                 <TextField
                                   fullWidth
                                   size="small"
                                   type="number"
-                                  label="Monto a añadir"
+                                  label="Amount to add"
                                   variant="outlined"
                                   onChange={(e) => setLandlordFundAmount(e.target.value)}
                                 />
-                                <Button onClick={() => handleApproveLandlordFunds(prop.id)}>Aprobar</Button>
-                                <Button onClick={() => handleAddLandlordFunds(prop.id)}>Añadir</Button>
+                                <Button onClick={() => handleApproveLandlordFunds(prop.id)}>Approve</Button>
+                                <Button onClick={() => handleAddLandlordFunds(prop.id)}>Add</Button>
                               </Stack>
                             </Box>
                           </Stack>
@@ -1248,31 +1260,31 @@ function App() {
                     })}
                   </Stack>
                 ) : (
-                  <Typography variant="body1">No has creado ninguna propiedad aún.</Typography>
+                  <Typography variant="body1">You haven't created any properties yet.</Typography>
                 )}
-                <Button variant="contained" fullWidth onClick={() => setShowMyPropertiesModal(false)} sx={{ mt: 3 }}>Cerrar</Button>
+                <Button variant="contained" fullWidth onClick={() => setShowMyPropertiesModal(false)} sx={{ mt: 3 }}>Close</Button>
               </Paper>
             </Modal>
 
             <Modal open={showTenantPassportModal} onClose={() => setShowTenantPassportModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
-                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Tu Tenant Passport</Typography>
+                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Your Tenant Passport</Typography>
                 {tenantPassportData ? (
                   <Stack spacing={1}>
                     <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Reputación:</Typography> {tenantPassportData.reputation}%
+                      <Typography component="span" fontWeight="bold">Reputation:</Typography> {tenantPassportData.reputation}%
                     </Typography>
                     <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Pagos a tiempo:</Typography> {tenantPassportData.paymentsMade}
+                      <Typography component="span" fontWeight="bold">On-time payments:</Typography> {tenantPassportData.paymentsMade}
                     </Typography>
                     <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Pagos no realizados:</Typography> {tenantPassportData.paymentsMissed}
+                      <Typography component="span" fontWeight="bold">Missed payments:</Typography> {tenantPassportData.paymentsMissed}
                     </Typography>
                     <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Propiedades Poseídas:</Typography> {tenantPassportData.propertiesOwned}
+                      <Typography component="span" fontWeight="bold">Properties Owned:</Typography> {tenantPassportData.propertiesOwned}
                     </Typography>
                     <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Saldo pendiente:</Typography> ${tenantPassportData.outstandingBalance.toLocaleString()} MXNB
+                      <Typography component="span" fontWeight="bold">Outstanding balance:</Typography> ${tenantPassportData.outstandingBalance.toLocaleString()} MXNB
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                       Token ID: {tenantPassportData.tokenId.toString()}
@@ -1284,40 +1296,40 @@ function App() {
                     )}
                   </Stack>
                 ) : (
-                  <Typography variant="body1">No se encontró un Tenant Passport para tu wallet.</Typography>
+                  <Typography variant="body1">No Tenant Passport found for your wallet.</Typography>
                 )}
-                <Button variant="contained" fullWidth onClick={() => setShowTenantPassportModal(false)} sx={{ mt: 3 }}>Cerrar</Button>
+                <Button variant="contained" fullWidth onClick={() => setShowTenantPassportModal(false)} sx={{ mt: 3 }}>Close</Button>
               </Paper>
             </Modal>
 
             <Modal open={showInterestModal} onClose={() => setShowInterestModal(false)} sx={{ display: 'flex',alignItems: 'center',justifyContent: 'center' }}>
               <Paper sx={{ p: 4,borderRadius: 2,maxWidth: 400,width: '100%' }}>
-                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Reservar propiedad</Typography>
+                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Reserve Property</Typography>
                 <Typography variant="body1" sx={{ mb: 3 }}>
-                  Necesita depositar el 5% del valor de la renta mensual como anticipo para reservar.
+                  You need to deposit 5% of the monthly rent as a reservation fee.
                 </Typography>
                 <Stack direction="row" spacing={2} justifyContent="flex-end">
-                  <Button variant="outlined" onClick={() => setShowInterestModal(false)}>Cancelar</Button>
-                  <Button variant="contained" color="primary" onClick={() => { setShowInterestModal(false); setShowSpeiModal(true); }}>De acuerdo</Button>
+                  <Button variant="outlined" onClick={() => setShowInterestModal(false)}>Cancel</Button>
+                  <Button variant="contained" color="primary" onClick={() => { setShowInterestModal(false); setShowSpeiModal(true); }}>Agree</Button>
                 </Stack>
               </Paper>
             </Modal>
 
             <Modal open={showSpeiModal} onClose={() => setShowSpeiModal(false)} sx={{ display: 'flex',alignItems: 'center',justifyContent: 'center' }}>
               <Paper sx={{ p: 4,borderRadius: 2,maxWidth: 400,width: '100%' }}>
-                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Datos para transferencia SPEI</Typography>
+                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>SPEI Transfer Details</Typography>
                 <Typography variant="body1" sx={{ mb: 2 }}>
-                  Para reservar la propiedad, realiza una transferencia SPEI con los siguientes datos. Una vez realizado el pago, guarda tu comprobante y notifícalo en la plataforma.
+                  To reserve the property, make a SPEI transfer with the following details. Once payment is made, save your receipt and notify us on the platform.
                 </Typography>
                 <Stack spacing={1} sx={{ mb: 2 }}>
-                  <Typography variant="body2"><b>Banco:</b> Nvio</Typography>
-                  <Typography variant="body2"><b>Cuenta CLABE:</b> {user?.clabe || "Registrate primero"}</Typography>
-                  <Typography variant="body2"><b>Beneficiario:</b> RoomFi</Typography>
-                  <Typography variant="body2"><b>Monto sugerido:</b> $ {selectedInterestListing ? (selectedInterestListing.price * 0.05).toLocaleString() : '--'} MXN</Typography>
-                  <Typography variant="body2"><b>Referencia:</b> {selectedInterestListing ? `RESERVA-${selectedInterestListing.id}` : '--'} </Typography>
+                  <Typography variant="body2"><b>Bank:</b> Nvio</Typography>
+                  <Typography variant="body2"><b>CLABE Account:</b> {user?.clabe || "Register first"}</Typography>
+                  <Typography variant="body2"><b>Beneficiary:</b> RoomFi</Typography>
+                  <Typography variant="body2"><b>Suggested amount:</b> $ {selectedInterestListing ? (selectedInterestListing.price * 0.05).toLocaleString() : '--'} MXN</Typography>
+                  <Typography variant="body2"><b>Reference:</b> {selectedInterestListing ? `RESERVA-${selectedInterestListing.id}` : '--'} </Typography>
                 </Stack>
                 <Typography variant="body2" color="warning.main" sx={{ mb: 2 }}>
-                  * El depósito es un anticipo para reservar la propiedad. Si tienes dudas, contacta a soporte RoomFi.
+                  * The deposit is a reservation fee. If you have questions, contact RoomFi support.
                 </Typography>
                 <Button
                   variant="contained"
@@ -1330,7 +1342,7 @@ function App() {
                   }}
                   sx={{ mt: 2 }}
                 >
-                  {user?.clabe ? 'Cerrar' : 'Registrar'}
+                  {user?.clabe ? 'Close' : 'Register'}
                 </Button>
               </Paper>
             </Modal>
@@ -1344,20 +1356,27 @@ function App() {
         <Route path="/create-property" element={<CreatePropertyPage account={account} />} />
       </Routes>
 
-      {/* --- MODAL DE LA BÓVEDA (CORREGIDO) --- */}
+      {/* --- MODAL DE LA BÓVEDA (V2 con APY real) --- */}
       <Modal open={showVaultModal} onClose={handleVaultModalClose} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Paper sx={{ p: 4, borderRadius: 4, maxWidth: 480, width: '100%', textAlign: 'center' }}>
+        <Paper sx={{ p: 4, borderRadius: 4, maxWidth: 520, width: '100%', textAlign: 'center' }}>
           <Typography variant="h5" component="h2" sx={{ mb: 3, fontWeight: 700 }}>
-            Mi Bóveda de Ahorros
+            RoomFi Vault
           </Typography>
           
+          {/* APY Banner */}
+          <Paper sx={{ p: 2, mb: 3, borderRadius: 3, bgcolor: 'success.light', color: 'success.contrastText' }}>
+            <Typography variant="h3" fontWeight={700}>{vaultAPY.toFixed(2)}% APY</Typography>
+            <Typography variant="body2">Current annual yield (USDY Strategy)</Typography>
+          </Paper>
+
+          {/* User Balance */}
           <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3 }}>
-            <Typography variant="h6" color="text.secondary">Saldo en Bóveda</Typography>
+            <Typography variant="h6" color="text.secondary">Vault Balance</Typography>
             <Typography variant="h4" fontWeight="bold" color="primary.main" sx={{ mb: 1 }}>
               ${vaultBalance.toFixed(2)} USDT
             </Typography>
             <Typography variant="body1" color="success.main" sx={{ fontWeight: 600 }}>
-              + ${interestEarned.toFixed(4)} Yield Generado
+              + ${interestEarned.toFixed(4)} Yield Earned
             </Typography>
           </Paper>
 
@@ -1371,7 +1390,7 @@ function App() {
             </Grid>
             <Grid item xs={6}>
               <Paper variant="outlined" sx={{ p: 1.5 }}>
-                <Typography variant="caption" color="text.secondary">Tu Balance USDT</Typography>
+                <Typography variant="caption" color="text.secondary">Your USDT Balance</Typography>
                 <Typography variant="h6" fontWeight={600}>${tokenBalance.toFixed(2)}</Typography>
               </Paper>
             </Grid>
@@ -1380,7 +1399,7 @@ function App() {
           <TextField
             fullWidth
             type="number"
-            label="Monto (USDT)"
+            label="Amount (USDT)"
             variant="outlined"
             value={vaultAmount}
             onChange={(e) => setVaultAmount(e.target.value)}
@@ -1398,7 +1417,7 @@ function App() {
                 onClick={handleApprove}
                 disabled={!vaultAmount || parseFloat(vaultAmount) <= 0}
               >
-                Aprobar USDT
+                Approve USDT
               </Button>
             ) : (
               <Button
@@ -1407,7 +1426,7 @@ function App() {
                 onClick={handleDeposit}
                 disabled={!vaultAmount || parseFloat(vaultAmount) <= 0}
               >
-                Depositar
+                Deposit
               </Button>
             )}
             <Button
@@ -1416,12 +1435,12 @@ function App() {
               onClick={handleWithdrawFromVault}
               disabled={!vaultAmount || parseFloat(vaultAmount) <= 0 || vaultBalance <= 0}
             >
-              Retirar
+              Withdraw
             </Button>
           </Stack>
 
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
-            Los depósitos generan yield a través de USDY (Ondo Finance)
+            Deposits generate yield through USDY (Ondo Finance)
           </Typography>
         </Paper>
       </Modal>
@@ -1430,45 +1449,45 @@ function App() {
       <Modal open={showHowItWorksModal} onClose={() => setShowHowItWorksModal(false)} sx={{ display: 'flex',alignItems: 'center',justifyContent: 'center' }}>
         <Paper sx={{ p: 4,borderRadius: 4,maxWidth: 800,width: '100%',maxHeight: '90vh',overflowY: 'auto' }}>
           <Typography variant="h4" component="h2" sx={{ mb: 2,fontWeight: 700,textAlign: 'center' }}>
-            Cómo Funciona RoomFi: La Revolución DeFi en Bienes Raíces
+            How RoomFi Works: The DeFi Revolution in Real Estate
           </Typography>
           <Typography variant="body1" sx={{ mb: 3,textAlign: 'center',color: 'text.secondary' }}>
-            RoomFi es más que una plataforma para encontrar roomies; es un ecosistema financiero descentralizado (DeFi) construido sobre la red Arbitrum, diseñado para resolver los problemas de confianza, liquidez y acceso que sufren tanto arrendadores como inquilinos en el mercado tradicional. Nuestro motor es el <strong>token MXNB</strong>, que impulsa cada transacción y oportunidad de rendimiento dentro de <strong>México</strong>.
+            RoomFi is more than a platform to find roommates; it's a decentralized financial ecosystem (DeFi) built on Mantle Network, designed to solve trust, liquidity, and access problems faced by both landlords and tenants in the traditional market. Our engine is the <strong>USDT token</strong>, powering every transaction and yield opportunity.
           </Typography>
 
           <Grid container spacing={4}>
             <Grid item xs={12} md={6}>
               <Paper variant="outlined" sx={{ p: 3,height: '100%' }}>
                 <Typography variant="h6" component="h3" sx={{ mb: 2,fontWeight: 600 }}>
-                  Para Arrendadores: Liquidez y Rendimiento
+                  For Landlords: Liquidity and Yield
                 </Typography>
                 <Typography variant="body1" paragraph>
-                  <strong>1. Crea un "Pool de Interés":</strong> En lugar de un simple anuncio, creas un pool de liquidez para tu propiedad con la renta y depósito en tokens MXNB.
+                  <strong>1. Create an "Interest Pool":</strong> Instead of a simple listing, you create a liquidity pool for your property with rent and deposit in USDT tokens.
                 </Typography>
                 <Typography variant="body1" paragraph>
-                  <strong>2. Genera Ingresos Pasivos (DeFi):</strong> ¡Aquí está la magia! Mientras tu pool se llena, puedes depositar los fondos en nuestra <strong>Bóveda de Ahorros</strong>. Esta bóveda es un protocolo de rendimiento (yield protocol) que genera intereses sobre tus MXNB. Tu dinero trabaja para ti desde el día uno.
+                  <strong>2. Generate Passive Income (DeFi):</strong> Here's the magic! While your pool fills up, you can deposit funds in our <strong>Savings Vault</strong>. This vault is a yield protocol that generates interest on your USDT. Your money works for you from day one.
                 </Typography>
                 <Typography variant="body1" paragraph>
-                  <strong>3. Gestión Automatizada:</strong> El contrato inteligente gestiona depósitos, pagos y liberaciones de fondos de forma transparente y segura.
+                  <strong>3. Automated Management:</strong> The smart contract manages deposits, payments, and fund releases transparently and securely.
                 </Typography>
                 <Alert severity="success" sx={{ mt: 2 }}>
-                  <strong>Beneficio Clave:</strong> Obtienes liquidez inmediata y acceso a rendimiento DeFi sobre tu propiedad.
+                  <strong>Key Benefit:</strong> You get immediate liquidity and access to DeFi yield on your property.
                 </Alert>
               </Paper>
             </Grid>
             <Grid item xs={12} md={6}>
               <Paper variant="outlined" sx={{ p: 3,height: '100%' }}>
                 <Typography variant="h6" component="h3" sx={{ mb: 2,fontWeight: 600 }}>
-                  Para Inquilinos: Tu Reputación es tu Mejor Activo
+                  For Tenants: Your Reputation is Your Best Asset
                 </Typography>
                 <Typography variant="body1" paragraph>
-                  <strong>1. Tu Pasaporte de Inquilino (NFT):</strong> Al unirte, recibes un "Tenant Passport", un NFT único que registra tu historial de pagos en la blockchain. Cada pago a tiempo mejora tu reputación on-chain.
+                  <strong>1. Your Tenant Passport (NFT):</strong> When you join, you receive a "Tenant Passport", a unique NFT that records your payment history on the blockchain. Every on-time payment improves your on-chain reputation.
                 </Typography>
                 <Typography variant="body1" paragraph>
-                  <strong>2. Pagos Seguros y Transparentes:</strong> Todos los pagos se realizan en MXNB a través del contrato inteligente, eliminando intermediarios y asegurando tu dinero.
+                  <strong>2. Secure and Transparent Payments:</strong> All payments are made in USDT through the smart contract, eliminating intermediaries and securing your money.
                 </Typography>
                 <Alert severity="info" sx={{ mt: 2 }}>
-                  <strong>Beneficio Clave:</strong> Construyes una reputación verificable y portable que te dará acceso a mejores oportunidades de vivienda.
+                  <strong>Key Benefit:</strong> You build a verifiable and portable reputation that will give you access to better housing opportunities.
                 </Alert>
               </Paper>
             </Grid>
@@ -1476,21 +1495,21 @@ function App() {
 
           <Box sx={{ mt: 4 }}>
             <Typography variant="h5" component="h3" sx={{ mb: 2,fontWeight: 600,textAlign: 'center' }}>
-              Nuestro Ecosistema DeFi con MXNB
+              Our DeFi Ecosystem
             </Typography>
             <Typography variant="body1" paragraph>
-              <strong>El Token MXNB:</strong> Es el corazón de RoomFi. Se utiliza para pagar la renta, los depósitos, y es el activo que se deposita en la bóveda para generar rendimiento. Su integración total crea un ciclo económico virtuoso.
+              <strong>USDT Token:</strong> It's the heart of RoomFi. Used to pay rent, deposits, and is the asset deposited in the vault to generate yield. Its full integration creates a virtuous economic cycle.
             </Typography>
             <Typography variant="body1" paragraph>
-              <strong>La Bóveda de Ahorros:</strong> Es nuestro principal producto DeFi. Permite a los arrendadores convertirse en proveedores de liquidez, obteniendo un "yield" sobre su capital de renta, un concepto revolucionario en el sector inmobiliario.
+              <strong>The Savings Vault:</strong> It's our main DeFi product. It allows landlords to become liquidity providers, earning "yield" on their rental capital, a revolutionary concept in real estate.
             </Typography>
             <Typography variant="body1" paragraph>
-              <strong>Contratos Inteligentes:</strong> Son las reglas incorruptibles del juego. Automatizan los acuerdos, garantizan la custodia de los fondos y ejecutan los pagos sin necesidad de confianza ciega, solo confianza en el código.
+              <strong>Smart Contracts:</strong> They are the incorruptible rules of the game. They automate agreements, guarantee fund custody, and execute payments without blind trust, only trust in the code.
             </Typography>
           </Box>
 
           <Typography variant="h6" component="p" sx={{ mt: 4,fontWeight: 700,textAlign: 'center',color: 'primary.main' }}>
-            RoomFi es la simbiosis perfecta entre Real Estate y DeFi, creando un mercado más justo, eficiente y rentable para todos.
+            RoomFi is the perfect symbiosis between Real Estate and DeFi, creating a fairer, more efficient, and profitable market for everyone.
           </Typography>
         </Paper>
       </Modal>

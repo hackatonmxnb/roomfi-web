@@ -18,22 +18,22 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 // Badge types matching the contract enum
 export const BADGE_INFO = [
   // KYC Badges (0-5) - Require manual verification
-  { id: 0, name: 'ID Verificado', description: 'INE/Pasaporte verificado manualmente', icon: VerifiedUserIcon, color: '#4CAF50', isKYC: true },
-  { id: 1, name: 'Ingresos Verificados', description: 'Comprobantes de ingreso revisados', icon: AccountBalanceIcon, color: '#2196F3', isKYC: true },
-  { id: 2, name: 'Empleo Verificado', description: 'Carta laboral verificada', icon: WorkIcon, color: '#9C27B0', isKYC: true },
-  { id: 3, name: 'Educación Verificada', description: 'Título universitario verificado', icon: SchoolIcon, color: '#FF9800', isKYC: true },
-  { id: 4, name: 'Profesional Verificado', description: 'LinkedIn/empresa verificados', icon: BusinessIcon, color: '#00BCD4', isKYC: true },
-  { id: 5, name: 'Crédito Limpio', description: 'Buró de crédito verificado', icon: CreditScoreIcon, color: '#8BC34A', isKYC: true },
+  { id: 0, name: 'ID Verified', description: 'ID/Passport manually verified', icon: VerifiedUserIcon, color: '#4CAF50', isKYC: true },
+  { id: 1, name: 'Income Verified', description: 'Income documents reviewed', icon: AccountBalanceIcon, color: '#2196F3', isKYC: true },
+  { id: 2, name: 'Employment Verified', description: 'Employment letter verified', icon: WorkIcon, color: '#9C27B0', isKYC: true },
+  { id: 3, name: 'Education Verified', description: 'University degree verified', icon: SchoolIcon, color: '#FF9800', isKYC: true },
+  { id: 4, name: 'Professional Verified', description: 'LinkedIn/company verified', icon: BusinessIcon, color: '#00BCD4', isKYC: true },
+  { id: 5, name: 'Clean Credit', description: 'Credit bureau verified', icon: CreditScoreIcon, color: '#8BC34A', isKYC: true },
   
   // Automatic Badges (6-13) - Earned by on-chain metrics
-  { id: 6, name: 'Early Adopter', description: 'Primeros 1000 usuarios', icon: StarIcon, color: '#FFD700', isKYC: false },
-  { id: 7, name: 'Inquilino Confiable', description: '12 pagos consecutivos a tiempo', icon: ThumbUpIcon, color: '#4CAF50', isKYC: false },
-  { id: 8, name: 'Inquilino a Largo Plazo', description: '12+ meses en una propiedad', icon: AccessTimeIcon, color: '#3F51B5', isKYC: false },
-  { id: 9, name: 'Referidor Activo', description: '5+ referidos exitosos', icon: PeopleIcon, color: '#E91E63', isKYC: false },
-  { id: 10, name: 'Respuesta Rápida', description: 'Responde en <24h consistentemente', icon: SpeedIcon, color: '#FF5722', isKYC: false },
-  { id: 11, name: 'Cero Disputas', description: 'Sin disputas en 12+ meses', icon: BalanceIcon, color: '#009688', isKYC: false },
-  { id: 12, name: 'Sin Daños', description: '3+ propiedades sin daños', icon: HomeWorkIcon, color: '#795548', isKYC: false },
-  { id: 13, name: 'Super Inquilino', description: 'Reputación 90+ por 6 meses', icon: EmojiEventsIcon, color: '#FFC107', isKYC: false },
+  { id: 6, name: 'Early Adopter', description: 'First 1000 users', icon: StarIcon, color: '#FFD700', isKYC: false },
+  { id: 7, name: 'Reliable Tenant', description: '12 consecutive on-time payments', icon: ThumbUpIcon, color: '#4CAF50', isKYC: false },
+  { id: 8, name: 'Long-Term Tenant', description: '12+ months in one property', icon: AccessTimeIcon, color: '#3F51B5', isKYC: false },
+  { id: 9, name: 'Active Referrer', description: '5+ successful referrals', icon: PeopleIcon, color: '#E91E63', isKYC: false },
+  { id: 10, name: 'Quick Response', description: 'Responds in <24h consistently', icon: SpeedIcon, color: '#FF5722', isKYC: false },
+  { id: 11, name: 'Zero Disputes', description: 'No disputes in 12+ months', icon: BalanceIcon, color: '#009688', isKYC: false },
+  { id: 12, name: 'No Damages', description: '3+ properties without damages', icon: HomeWorkIcon, color: '#795548', isKYC: false },
+  { id: 13, name: 'Super Tenant', description: '90+ reputation for 6 months', icon: EmojiEventsIcon, color: '#FFC107', isKYC: false },
 ];
 
 interface BadgesDisplayProps {
@@ -73,7 +73,7 @@ export default function BadgesDisplay({ badges, compact = false, onRequestVerifi
           );
         })}
         {earnedBadges.length === 0 && (
-          <Typography variant="caption" color="text.secondary">Sin badges</Typography>
+          <Typography variant="caption" color="text.secondary">No badges</Typography>
         )}
       </Box>
     );
@@ -87,7 +87,7 @@ export default function BadgesDisplay({ badges, compact = false, onRequestVerifi
 
       {/* KYC Badges Section */}
       <Typography variant="subtitle2" color="text.secondary" mb={1}>
-        Verificación KYC
+        KYC Verification
       </Typography>
       <Grid container spacing={1} mb={2}>
         {kycBadges.map((badge) => {
@@ -119,7 +119,7 @@ export default function BadgesDisplay({ badges, compact = false, onRequestVerifi
 
       {/* Automatic Badges Section */}
       <Typography variant="subtitle2" color="text.secondary" mb={1}>
-        Badges Automáticos
+        Automatic Badges
       </Typography>
       <Grid container spacing={1}>
         {autoBadges.map((badge) => {

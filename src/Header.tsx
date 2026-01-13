@@ -47,15 +47,15 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
               {/* Botones que solo aparecen si la wallet está conectada */}
               {account && (
                 <>
-                  <Button component={RouterLink} to="/my-properties" sx={{ color: 'primary.main', fontWeight: 600 }}>Mis Propiedades</Button>
-                  <Button component={RouterLink} to="/agreements" sx={{ color: 'primary.main', fontWeight: 600 }}>Mis Contratos</Button>
-                  <Button onClick={onSavingsClick} sx={{ color: 'primary.main', fontWeight: 600 }}>Bóveda</Button>
+                  <Button component={RouterLink} to="/my-properties" sx={{ color: 'primary.main', fontWeight: 600 }}>My Properties</Button>
+                  <Button component={RouterLink} to="/agreements" sx={{ color: 'primary.main', fontWeight: 600 }}>My Contracts</Button>
+                  <Button onClick={onSavingsClick} sx={{ color: 'primary.main', fontWeight: 600 }}>Vault</Button>
                 </>
               )}
               {/* Botones que siempre son visibles en desktop */}
-              <Button onClick={onHowItWorksClick} sx={{ color: 'primary.main', fontWeight: 600 }}>Como funciona</Button>
-              <Button sx={{ color: 'primary.main', fontWeight: 600 }}>Verifica roomie</Button>
-              <Button sx={{ color: 'primary.main', fontWeight: 600 }}>Para empresas</Button>
+              <Button onClick={onHowItWorksClick} sx={{ color: 'primary.main', fontWeight: 600 }}>How It Works</Button>
+              <Button sx={{ color: 'primary.main', fontWeight: 600 }}>Verify Roommate</Button>
+              <Button sx={{ color: 'primary.main', fontWeight: 600 }}>For Business</Button>
             </Box>
           )}
           {isMobile && <Box sx={{ flexGrow: 1 }} />}
@@ -78,16 +78,16 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
                 >
                   <List>
                     <ListItem disablePadding>
-                      <ListItemButton><ListItemText primary="Como funciona" /></ListItemButton>
+                      <ListItemButton><ListItemText primary="How It Works" /></ListItemButton>
                     </ListItem>
                     <ListItem disablePadding>
-                      <ListItemButton><ListItemText primary="Verifica roomie" /></ListItemButton>
+                      <ListItemButton><ListItemText primary="Verify Roommate" /></ListItemButton>
                     </ListItem>
                     <ListItem disablePadding>
-                      <ListItemButton><ListItemText primary="Para empresas" /></ListItemButton>
+                      <ListItemButton><ListItemText primary="For Business" /></ListItemButton>
                     </ListItem>
                     <ListItem disablePadding>
-                      <ListItemButton onClick={handleOpenOnboarding}><ListItemText primary="Conectar" /></ListItemButton>
+                      <ListItemButton onClick={handleOpenOnboarding}><ListItemText primary="Connect" /></ListItemButton>
                     </ListItem>
                   </List>
                 </Box>
@@ -101,12 +101,12 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{tokenBalance?.toFixed(2)} USDT</Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>{`${account?.substring(0, 6)}...${account?.substring(account.length - 4)}`}</Typography>
                   </Box>
-                  <Button variant="contained" size="small" onClick={onFundingModalOpen}>Añadir Fondos</Button>
+                  <Button variant="contained" size="small" onClick={onFundingModalOpen}>Add Funds</Button>
                   {account && (
                     tenantPassportData ? (
-                      <Button variant="outlined" size="small" onClick={onViewNFTClick}>Ver mi NFT</Button>
+                      <Button variant="outlined" size="small" onClick={onViewNFTClick}>View my NFT</Button>
                     ) : (
-                      <Button variant="contained" size="small" color="secondary" onClick={onMintNFTClick}>Crear Passport</Button>
+                      <Button variant="contained" size="small" color="secondary" onClick={onMintNFTClick}>Create Passport</Button>
                     )
                   )}
                 </Paper>
@@ -117,7 +117,7 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
                   onClick={handleOpenOnboarding}
                   sx={{ ml: 2, bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
                 >
-                  Conectar
+                  Connect
                 </Button>
               )}
             </>
@@ -140,8 +140,8 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
           alignItems: 'center',
           gap: 2
         }}>
-          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Conecta tu Wallet</Typography>
-          <Button variant="contained" fullWidth onClick={() => { onConnectMetaMask(); setShowOnboarding(false); }}>Conectar con MetaMask</Button>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Connect your Wallet</Typography>
+          <Button variant="contained" fullWidth onClick={() => { onConnectMetaMask(); setShowOnboarding(false); }}>Connect with MetaMask</Button>
           <Button
             variant="outlined"
             fullWidth
@@ -156,7 +156,7 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
             disabled={isCreatingWallet}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
-            {isCreatingWallet ? 'Creando wallet...' : 'Iniciar sesión con Google'}
+            {isCreatingWallet ? 'Creating wallet...' : 'Sign in with Google'}
           </Button>
         </Box>
       </Modal>

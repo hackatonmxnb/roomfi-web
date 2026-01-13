@@ -19,15 +19,15 @@ interface CreatePropertyPageProps {
 }
 
 const PROPERTY_TYPES = [
-  { value: 0, label: 'Apartamento' },
-  { value: 1, label: 'Casa' },
-  { value: 2, label: 'Estudio' },
-  { value: 3, label: 'Habitación' },
+  { value: 0, label: 'Apartment' },
+  { value: 1, label: 'House' },
+  { value: 2, label: 'Studio' },
+  { value: 3, label: 'Room' },
   { value: 4, label: 'Loft' },
   { value: 5, label: 'Penthouse' },
 ];
 
-const steps = ['Información Básica', 'Ubicación', 'Detalles', 'Precio'];
+const steps = ['Basic Info', 'Location', 'Details', 'Pricing'];
 
 export default function CreatePropertyPage({ account }: CreatePropertyPageProps) {
   const [activeStep, setActiveStep] = useState(0);
@@ -97,45 +97,45 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
 
     try {
       if (!window.ethereum) {
-        throw new Error("MetaMask no está instalado.");
+        throw new Error("MetaMask is not installed.");
       }
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const network = await provider.getNetwork();
       
       if (Number(network.chainId) !== NETWORK_CONFIG.chainId) {
-        throw new Error(`Por favor cambia a la red ${NETWORK_CONFIG.chainName}`);
+        throw new Error(`Please switch to ${NETWORK_CONFIG.chainName} network`);
       }
 
       const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
 
       // 1. Verificar TenantPassport
-      setStatusMessage('Verificando TenantPassport...');
+      setStatusMessage('Verifying TenantPassport...');
       const passportContract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, provider);
       const hasPassport = await passportContract.hasPassport(signerAddress);
       
       if (!hasPassport) {
-        throw new Error("Necesitas crear tu TenantPassport primero. Ve a la página principal y haz clic en 'Crear mi NFT'.");
+        throw new Error("You need to create your TenantPassport first. Go to the main page and click 'Create Passport'.");
       }
 
       const contract = new ethers.Contract(PROPERTY_REGISTRY_ADDRESS, PROPERTY_REGISTRY_ABI, signer);
 
       // 2. Crear hash del documento legal (simulado)
-      setStatusMessage('Preparando documentos legales...');
+      setStatusMessage('Preparing legal documents...');
       const legalDocumentHash = ethers.keccak256(
         ethers.toUtf8Bytes(`RoomFi Property: ${form.name} - ${form.fullAddress} - ${Date.now()}`)
       );
 
       // 3. Firmar el hash (Ricardian Contract)
-      setStatusMessage('Firmando contrato digital...');
+      setStatusMessage('Signing digital contract...');
       const signature = await signer.signMessage(ethers.getBytes(legalDocumentHash));
 
       // Convert rent and deposit to USDT units (6 decimals)
       const monthlyRentWei = ethers.parseUnits(form.monthlyRent, 6);
       const securityDepositWei = ethers.parseUnits(form.securityDeposit, 6);
 
-      setStatusMessage('Registrando propiedad en la blockchain...');
+      setStatusMessage('Registering property on blockchain...');
 
       // registerProperty parameters
       const tx = await contract.registerProperty(
@@ -163,15 +163,15 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
         signature                           // signature
       );
 
-      setStatusMessage('Esperando confirmación...');
+      setStatusMessage('Waiting for confirmation...');
       await tx.wait();
 
-      setStatusMessage('¡Propiedad registrada exitosamente!');
+      setStatusMessage('Property registered successfully!');
       setTimeout(() => navigate('/my-properties'), 2000);
 
     } catch (err: any) {
       console.error('Error registering property:', err);
-      setError(err.reason || err.message || 'Error al registrar la propiedad');
+      setError(err.reason || err.message || 'Error registering property');
       setStatusMessage('');
     } finally {
       setLoading(false);
@@ -184,19 +184,19 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
         return (
           <Stack spacing={3}>
             <TextField
-              label="Nombre de la Propiedad"
+              label="Property Name"
               name="name"
               value={form.name}
               onChange={handleChange}
               fullWidth
               required
-              placeholder="Ej: Departamento Centro Histórico"
+              placeholder="E.g.: Downtown Apartment"
             />
             <FormControl fullWidth>
-              <InputLabel>Tipo de Propiedad</InputLabel>
+              <InputLabel>Property Type</InputLabel>
               <Select
                 value={form.propertyType}
-                label="Tipo de Propiedad"
+                label="Property Type"
                 onChange={(e) => handleSelectChange('propertyType', e.target.value)}
               >
                 {PROPERTY_TYPES.map(type => (
@@ -211,17 +211,17 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
         return (
           <Stack spacing={3}>
             <TextField
-              label="Dirección Completa"
+              label="Full Address"
               name="fullAddress"
               value={form.fullAddress}
               onChange={handleChange}
               fullWidth
               required
-              placeholder="Calle, Número, Colonia"
+              placeholder="Street, Number, Neighborhood"
             />
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
-                label="Ciudad"
+                label="City"
                 name="city"
                 value={form.city}
                 onChange={handleChange}
@@ -230,7 +230,7 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
                 sx={{ flex: 1 }}
               />
               <TextField
-                label="Estado"
+                label="State"
                 name="state"
                 value={form.state}
                 onChange={handleChange}
@@ -240,7 +240,7 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
             </Box>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
-                label="Código Postal"
+                label="Postal Code"
                 name="postalCode"
                 value={form.postalCode}
                 onChange={handleChange}
@@ -248,7 +248,7 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
                 sx={{ flex: 1 }}
               />
               <TextField
-                label="Colonia/Barrio"
+                label="Neighborhood"
                 name="neighborhood"
                 value={form.neighborhood}
                 onChange={handleChange}
@@ -265,7 +265,7 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
             <Grid container spacing={2}>
               <Grid item xs={6} sm={3}>
                 <TextField
-                  label="Recámaras"
+                  label="Bedrooms"
                   name="bedrooms"
                   type="number"
                   value={form.bedrooms}
@@ -276,7 +276,7 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
               </Grid>
               <Grid item xs={6} sm={3}>
                 <TextField
-                  label="Baños"
+                  label="Bathrooms"
                   name="bathrooms"
                   type="number"
                   value={form.bathrooms}
@@ -287,7 +287,7 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
               </Grid>
               <Grid item xs={6} sm={3}>
                 <TextField
-                  label="Ocupantes Máx."
+                  label="Max Occupants"
                   name="maxOccupants"
                   type="number"
                   value={form.maxOccupants}
@@ -298,7 +298,7 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
               </Grid>
               <Grid item xs={6} sm={3}>
                 <TextField
-                  label="Piso"
+                  label="Floor"
                   name="floorNumber"
                   type="number"
                   value={form.floorNumber}
@@ -309,7 +309,7 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
               </Grid>
             </Grid>
             <TextField
-              label="Metros Cuadrados"
+              label="Square Meters"
               name="squareMeters"
               type="number"
               value={form.squareMeters}
@@ -326,7 +326,7 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
                     name="utilitiesIncluded"
                   />
                 }
-                label="Servicios incluidos"
+                label="Utilities included"
               />
               <FormControlLabel
                 control={
@@ -336,7 +336,7 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
                     name="furnishedIncluded"
                   />
                 }
-                label="Amueblado"
+                label="Furnished"
               />
             </Stack>
           </Stack>
@@ -346,53 +346,53 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
         return (
           <Stack spacing={3}>
             <TextField
-              label="Renta Mensual (USDT)"
+              label="Monthly Rent (USDT)"
               name="monthlyRent"
               type="number"
               value={form.monthlyRent}
               onChange={handleChange}
               fullWidth
               required
-              placeholder="Ej: 1500"
+              placeholder="E.g.: 1500"
               InputProps={{
                 startAdornment: <Typography color="text.secondary" mr={1}>$</Typography>
               }}
             />
             <TextField
-              label="Depósito de Seguridad (USDT)"
+              label="Security Deposit (USDT)"
               name="securityDeposit"
               type="number"
               value={form.securityDeposit}
               onChange={handleChange}
               fullWidth
               required
-              placeholder="Ej: 3000"
+              placeholder="E.g.: 3000"
               InputProps={{
                 startAdornment: <Typography color="text.secondary" mr={1}>$</Typography>
               }}
             />
             <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
               <Typography variant="subtitle2" color="text.secondary" mb={1}>
-                Resumen
+                Summary
               </Typography>
               <Grid container spacing={1}>
                 <Grid item xs={6}>
-                  <Typography variant="body2"><strong>Propiedad:</strong> {form.name || '-'}</Typography>
+                  <Typography variant="body2"><strong>Property:</strong> {form.name || '-'}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2"><strong>Tipo:</strong> {PROPERTY_TYPES[form.propertyType]?.label}</Typography>
+                  <Typography variant="body2"><strong>Type:</strong> {PROPERTY_TYPES[form.propertyType]?.label}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2"><strong>Ciudad:</strong> {form.city || '-'}</Typography>
+                  <Typography variant="body2"><strong>City:</strong> {form.city || '-'}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2"><strong>Tamaño:</strong> {form.squareMeters}m²</Typography>
+                  <Typography variant="body2"><strong>Size:</strong> {form.squareMeters}m²</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2"><strong>Recámaras:</strong> {form.bedrooms}</Typography>
+                  <Typography variant="body2"><strong>Bedrooms:</strong> {form.bedrooms}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2"><strong>Baños:</strong> {form.bathrooms}</Typography>
+                  <Typography variant="body2"><strong>Bathrooms:</strong> {form.bathrooms}</Typography>
                 </Grid>
               </Grid>
             </Paper>
@@ -408,10 +408,10 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
     <Box maxWidth={700} mx="auto" mt={4} p={3}>
       <Paper sx={{ p: 4, borderRadius: 3 }}>
         <Typography variant="h4" fontWeight={700} mb={1}>
-          Registrar Nueva Propiedad
+          Register New Property
         </Typography>
         <Typography variant="body2" color="text.secondary" mb={4}>
-          Completa la información para registrar tu propiedad en la blockchain.
+          Complete the information to register your property on the blockchain.
         </Typography>
 
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
@@ -432,7 +432,7 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
             disabled={activeStep === 0 || loading}
             onClick={handleBack}
           >
-            Atrás
+            Back
           </Button>
           
           {activeStep === steps.length - 1 ? (
@@ -442,7 +442,7 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
               disabled={loading || !validateStep(activeStep)}
               startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
             >
-              {loading ? 'Registrando...' : 'Registrar Propiedad'}
+              {loading ? 'Registering...' : 'Register Property'}
             </Button>
           ) : (
             <Button
@@ -450,7 +450,7 @@ export default function CreatePropertyPage({ account }: CreatePropertyPageProps)
               onClick={handleNext}
               disabled={!validateStep(activeStep)}
             >
-              Siguiente
+              Next
             </Button>
           )}
         </Stack>

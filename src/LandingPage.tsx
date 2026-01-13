@@ -103,7 +103,7 @@ const LandingPage = () => {
                     <Stack direction="row" alignItems="center" justifyContent="space-between">
                         <Box
                             component="img"
-                            src="/roomcasa.png"
+                            src="/roomfilogo2transp.png"
                             alt="RoomFi Logo"
                             sx={{
                                 height: { xs: '40px',sm: '50px' },
@@ -653,7 +653,7 @@ const LandingPage = () => {
                     <Stack spacing={3} alignItems="center">
                         <Box
                             component="img"
-                            src="/roomfilogo.png"
+                            src="/roomfilogo2transp.png"
                             alt="RoomFi Logo"
                             sx={{
                                 height: { xs: '60px',sm: '70px' },
@@ -665,7 +665,7 @@ const LandingPage = () => {
                             Institutional-grade RWA protocol for rental housing on Mantle Network
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#64748B',fontSize: '0.875rem' }}>
-                            © 2025 RoomFi Protocol. Built for Mantle Global Hackathon
+                            © 2026 RoomFi Protocol. Built for Mantle Global Hackathon
                         </Typography>
                     </Stack>
                 </Container>

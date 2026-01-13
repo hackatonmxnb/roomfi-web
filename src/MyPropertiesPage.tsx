@@ -39,7 +39,7 @@ interface MyPropertiesPageProps {
   provider: ethers.BrowserProvider | null;
 }
 
-const PROPERTY_TYPES = ['Apartamento', 'Casa', 'Estudio', 'Habitación', 'Loft', 'Penthouse'];
+const PROPERTY_TYPES = ['Apartment', 'House', 'Studio', 'Room', 'Loft', 'Penthouse'];
 
 export default function MyPropertiesPage({ account, provider }: MyPropertiesPageProps) {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -67,7 +67,7 @@ export default function MyPropertiesPage({ account, provider }: MyPropertiesPage
           if (p.landlord && p.landlord.toLowerCase() === account.toLowerCase()) {
             props.push({
               id: i,
-              name: p.name || `Propiedad ${i}`,
+              name: p.name || `Property ${i}`,
               propertyType: Number(p.propertyType),
               fullAddress: p.fullAddress || '',
               city: p.city || '',
@@ -89,7 +89,7 @@ export default function MyPropertiesPage({ account, provider }: MyPropertiesPage
       setProperties(props);
     } catch (err: any) {
       console.error('Error fetching properties:', err);
-      setError('Error al cargar propiedades. Verifica tu conexión.');
+      setError('Error loading properties. Check your connection.');
     } finally {
       setLoading(false);
     }
@@ -112,7 +112,7 @@ export default function MyPropertiesPage({ account, provider }: MyPropertiesPage
     return (
       <Box maxWidth={800} mx="auto" mt={6} p={3}>
         <Alert severity="warning">
-          Por favor conecta tu wallet para ver tus propiedades.
+          Please connect your wallet to view your properties.
         </Alert>
       </Box>
     );
@@ -122,14 +122,14 @@ export default function MyPropertiesPage({ account, provider }: MyPropertiesPage
     <Box maxWidth={1200} mx="auto" mt={4} p={3}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={4}>
         <Typography variant="h4" fontWeight={700}>
-          Mis Propiedades
+          My Properties
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => navigate('/create-property')}
         >
-          Registrar Nueva Propiedad
+          Register New Property
         </Button>
       </Stack>
 
@@ -143,17 +143,17 @@ export default function MyPropertiesPage({ account, provider }: MyPropertiesPage
         <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3 }}>
           <HomeIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" color="text.secondary" mb={2}>
-            No tienes propiedades registradas
+            You don't have any registered properties
           </Typography>
           <Typography variant="body2" color="text.secondary" mb={3}>
-            Registra tu primera propiedad para comenzar a recibir inquilinos.
+            Register your first property to start receiving tenants.
           </Typography>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => navigate('/create-property')}
           >
-            Registrar Propiedad
+            Register Property
           </Button>
         </Paper>
       ) : (
@@ -171,10 +171,10 @@ export default function MyPropertiesPage({ account, provider }: MyPropertiesPage
                     </Box>
                     <Stack direction="row" spacing={0.5}>
                       {prop.isVerified && (
-                        <Chip label="Verificada" color="success" size="small" />
+                        <Chip label="Verified" color="success" size="small" />
                       )}
                       <Chip 
-                        label={prop.isActive ? "Activa" : "Inactiva"} 
+                        label={prop.isActive ? "Active" : "Inactive"} 
                         color={prop.isActive ? "primary" : "default"} 
                         size="small" 
                       />
@@ -182,11 +182,11 @@ export default function MyPropertiesPage({ account, provider }: MyPropertiesPage
                   </Stack>
 
                   <Typography variant="body2" color="text.secondary" mb={2}>
-                    {prop.fullAddress || prop.city || 'Sin dirección'}
+                    {prop.fullAddress || prop.city || 'No address'}
                   </Typography>
 
                   <Typography variant="caption" color="text.secondary" display="block" mb={1}>
-                    {PROPERTY_TYPES[prop.propertyType] || 'Propiedad'}
+                    {PROPERTY_TYPES[prop.propertyType] || 'Property'}
                   </Typography>
 
                   <Grid container spacing={1} mb={2}>
@@ -213,13 +213,13 @@ export default function MyPropertiesPage({ account, provider }: MyPropertiesPage
                   <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
                     <Grid container>
                       <Grid item xs={6}>
-                        <Typography variant="caption" color="text.secondary">Renta Mensual</Typography>
+                        <Typography variant="caption" color="text.secondary">Monthly Rent</Typography>
                         <Typography variant="h6" fontWeight={600} color="primary">
                           ${prop.monthlyRent.toLocaleString()}
                         </Typography>
                       </Grid>
                       <Grid item xs={6}>
-                        <Typography variant="caption" color="text.secondary">Depósito</Typography>
+                        <Typography variant="caption" color="text.secondary">Deposit</Typography>
                         <Typography variant="body1" fontWeight={500}>
                           ${prop.securityDeposit.toLocaleString()}
                         </Typography>
@@ -235,7 +235,7 @@ export default function MyPropertiesPage({ account, provider }: MyPropertiesPage
                     fullWidth
                     onClick={() => navigate(`/agreements?propertyId=${prop.id}`)}
                   >
-                    Crear Contrato
+                    Create Contract
                   </Button>
                 </CardActions>
               </Card>
@@ -246,10 +246,10 @@ export default function MyPropertiesPage({ account, provider }: MyPropertiesPage
 
       <Box mt={4} p={3} bgcolor="grey.100" borderRadius={3}>
         <Typography variant="subtitle2" color="text.secondary" mb={1}>
-          Información de Red
+          Network Info
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Red: {NETWORK_CONFIG.chainName} | Contrato: {PROPERTY_REGISTRY_ADDRESS.slice(0, 10)}...
+          Network: {NETWORK_CONFIG.chainName} | Contract: {PROPERTY_REGISTRY_ADDRESS.slice(0, 10)}...
         </Typography>
       </Box>
     </Box>
