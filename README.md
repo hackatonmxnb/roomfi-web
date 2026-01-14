@@ -30,11 +30,12 @@ The traditional rental market suffers from three critical inefficiencies:
 
 ### Our Solution
 
-RoomFi introduces a decentralized rental ecosystem with three core innovations:
+RoomFi introduces a decentralized rental ecosystem with four core innovations:
 
 1. **Tenant Reputation NFTs**: Soul-bound tokens that build portable, verifiable rental history
-2. **Yield-Generating Deposits**: Security deposits earn 4-6% APY through battle-tested DeFi protocols
-3. **NFT Rental Agreements**: ERC721 tokens representing each lease, enabling programmable rental economics
+2. **Yield-Generating Deposits**: Security deposits earn 4.29% APY through Ondo USDY (US Treasury bonds)
+3. **NFT Rental Agreements**: ERC721 tokens representing each lease, enabling tradeable future rent payments
+4. **Ricardian Contracts**: Legally-binding digital agreements compliant with NOM-247 (Mexico) regulations
 
 ### Key Features
 
@@ -81,6 +82,51 @@ Core Contracts
 | **Frontend** | React 19, TypeScript, Vite |
 | **Yield Sources** | Ondo USDY, Lendle Protocol |
 | **Standards** | ERC721, ERC20, Ownable |
+
+---
+
+## Try the Demo
+
+> **For Hackathon Judges**: Follow these steps to test the complete rental flow.
+
+### Prerequisites
+- MetaMask installed and connected to **Mantle Sepolia** (Chain ID: 5003)
+- Get testnet MNT from [Mantle Faucet](https://faucet.sepolia.mantle.xyz)
+
+### Demo Flow
+
+**1. Connect Wallet**
+- Visit the app and click "Connect Wallet"
+- Approve MetaMask connection
+
+**2. Create Tenant Passport**
+- Click "Create Passport" to mint your soul-bound NFT
+- View your passport with 14 potential badges
+
+**3. Register Property** (as Landlord)
+- Go to "My Properties" → "Register New Property"
+- Fill property details and sign the Ricardian contract PDF
+- Click "Verify (Demo)" to self-verify for testing
+
+**4. Create Rental Agreement**
+- Go to "Agreements" → "Create New Agreement"
+- Select your verified property from dropdown
+- Enter tenant address and terms
+
+**5. Complete Agreement Flow**
+- Both parties sign the agreement
+- Tenant pays security deposit → goes to Vault → earns USDY yield
+- Tenant pays monthly rent → landlord receives 85% (15% protocol fee)
+
+---
+
+## Team
+
+| Name | Role | Location | Contact |
+|------|------|----------|---------|
+| **Daniel Hidalgo** | Lead Developer - DeFi, RWA, Smart Contracts & Architecture | Bolivia | [X](https://x.com/FirrtonH) • [Telegram](https://t.me/Firrton) • [Email](mailto:danyhidalgof@gmail.com) |
+| **Jazmine JB** | Frontend Development | Mexico | [X](https://x.com/jazminew76) • [Telegram](https://t.me/jazminew76) |
+| **Carlos Ceron** | Backend Development | Mexico | |
 
 ---
 
@@ -145,21 +191,20 @@ The contracts are already deployed on Mantle Sepolia. See [deployment addresses]
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| **USDT (Mock)** | `0xd615074c2603336fa0da8af44b5ccb9d9c0b2f9c` | [View](https://explorer.sepolia.mantle.xyz/address/0xd615074c2603336fa0da8af44b5ccb9d9c0b2f9c) |
-| **TenantPassportV2** | `0xf6a6e553834ff33fc819b6639a557f1f4c647d86` | [View](https://explorer.sepolia.mantle.xyz/address/0xf6a6e553834ff33fc819b6639a557f1f4c647d86) |
-| **PropertyRegistry** | `0xf8bb2ce2643f89e6b80fdac94483cda91110d95a` | [View](https://explorer.sepolia.mantle.xyz/address/0xf8bb2ce2643f89e6b80fdac94483cda91110d95a) |
-| **DisputeResolver** | `0x1acb65533d0f5dbb99d6f3c30acad0a5499325c2` | [View](https://explorer.sepolia.mantle.xyz/address/0x1acb65533d0f5dbb99d6f3c30acad0a5499325c2) |
-| **RoomFiVault** | `0x111592714036d6870f63807f1b659b4def2c6c43` | [View](https://explorer.sepolia.mantle.xyz/address/0x111592714036d6870f63807f1b659b4def2c6c43) |
-| **RentalAgreementNFT** | `0xa70efcb817358689e46b664602b757f9fd183c6b` | [View](https://explorer.sepolia.mantle.xyz/address/0xa70efcb817358689e46b664602b757f9fd183c6b) |
-| **Factory** | `0x1b8e378f489021029b4e9049f261b204def16974` | [View](https://explorer.sepolia.mantle.xyz/address/0x1b8e378f489021029b4e9049f261b204def16974) |
-| **USDYStrategy** | `0x61fc4578863da32dc4e879f59e1cb673da498618` | [View](https://explorer.sepolia.mantle.xyz/address/0x61fc4578863da32dc4e879f59e1cb673da498618) |
-| **LendleStrategy** | `0x098ff07f87c1aaec0dd5b16c2f0199aa2b60bb75` | [View](https://explorer.sepolia.mantle.xyz/address/0x098ff07f87c1aaec0dd5b16c2f0199aa2b60bb75) |
+| **USDT (Mock)** | `0x5602fec1b2B14D7f7099cE6d8acAa96233F7d837` | [View](https://explorer.sepolia.mantle.xyz/address/0x5602fec1b2B14D7f7099cE6d8acAa96233F7d837) |
+| **TenantPassportV2** | `0x5DB2fa1e9eB8DB2A9F12ea39f4A95BcaEC671bd5` | [View](https://explorer.sepolia.mantle.xyz/address/0x5DB2fa1e9eB8DB2A9F12ea39f4A95BcaEC671bd5) |
+| **PropertyRegistry** | `0x4D796A99e55c72373f14324e938EFD53B98C456F` | [View](https://explorer.sepolia.mantle.xyz/address/0x4D796A99e55c72373f14324e938EFD53B98C456F) |
+| **RoomFiVault** | `0x7b4289aB2eBeC7c1A1776aAD758E00Be4A942e5A` | [View](https://explorer.sepolia.mantle.xyz/address/0x7b4289aB2eBeC7c1A1776aAD758E00Be4A942e5A) |
+| **RentalAgreementNFT** | `0x152f3f422f9148f51a840A765E3DfC3fb5097335` | [View](https://explorer.sepolia.mantle.xyz/address/0x152f3f422f9148f51a840A765E3DfC3fb5097335) |
+| **Factory** | `0xf944dfB7895D05AB71f8D512E93C34E19F58b3b2` | [View](https://explorer.sepolia.mantle.xyz/address/0xf944dfB7895D05AB71f8D512E93C34E19F58b3b2) |
+| **MockCivilRegistry** | `0xe5A870dF209072885f60F5C5C3FCde409e78c871` | [View](https://explorer.sepolia.mantle.xyz/address/0xe5A870dF209072885f60F5C5C3FCde409e78c871) |
+| **USDY (Mock)** | `0x219284CFEE97741AEd3E3A7d193c1c1F360a780D` | [View](https://explorer.sepolia.mantle.xyz/address/0x219284CFEE97741AEd3E3A7d193c1c1F360a780D) |
 
 **Network Details**
 - Chain ID: 5003
 - RPC: https://rpc.sepolia.mantle.xyz
 - Explorer: https://explorer.sepolia.mantle.xyz
-- Deployed: January 7, 2026
+- Deployed: January 2025
 
 View complete deployment info: [deployment-addresses.json](Foundry/deployment-addresses.json)
 
@@ -324,18 +369,20 @@ RoomFi leverages Mantle's infrastructure for:
 
 ## Project Status
 
-**Current Phase**: Testnet Deployment (Mantle Global Hackathon 2025)
+**Current Phase**: Testnet Deployment Complete (Mantle Global Hackathon 2025)
 
-- Contracts deployed on Mantle Sepolia
-- Integration tests passing (19/20)
-- Frontend in development
-- Documentation complete
+- ✅ Smart contracts deployed on Mantle Sepolia
+- ✅ Frontend fully functional with MetaMask integration
+- ✅ Property registration with Ricardian contract signing
+- ✅ Tenant Passport minting with 14 achievement badges
+- ✅ Rental agreement creation as ERC-721 NFTs
+- ✅ Security deposit yield via Ondo USDY (4.29% APY)
+- ✅ Demo verification mode for testing
 
-**Next Steps**:
-- Complete frontend integration
-- End-to-end testing
-- Security review
-- Mainnet deployment preparation
+**Ready for**:
+- Production security audit
+- Mainnet deployment
+- Notary/verifier network partnerships
 
 ---
 
