@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React,{ useState,useEffect,useCallback } from 'react';
 import { ethers } from 'ethers';
 import {
-  Box, Typography, Paper, Button, Grid, Card, CardContent,
-  Chip, Modal, TextField, Stack, Alert, CircularProgress, Divider,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow
+  Box,Typography,Paper,Button,Grid,Card,CardContent,
+  Chip,Modal,TextField,Stack,Alert,CircularProgress,Divider,
+  Table,TableBody,TableCell,TableContainer,TableHead,TableRow,
+  FormControl,InputLabel,Select,MenuItem
 } from '@mui/material';
 import {
   FACTORY_ADDRESS,
@@ -41,27 +42,27 @@ interface Agreement {
 }
 
 const STATUS_LABELS: { [key: number]: { label: string; color: 'default' | 'warning' | 'success' | 'error' | 'info' } } = {
-  0: { label: 'Pending', color: 'warning' },
-  1: { label: 'Active', color: 'success' },
-  2: { label: 'Completed', color: 'info' },
-  3: { label: 'Terminated', color: 'error' },
-  4: { label: 'In Dispute', color: 'error' },
+  0: { label: 'Pending',color: 'warning' },
+  1: { label: 'Active',color: 'success' },
+  2: { label: 'Completed',color: 'info' },
+  3: { label: 'Terminated',color: 'error' },
+  4: { label: 'In Dispute',color: 'error' },
 };
 
-export default function RentalAgreementsPage({ account, provider }: RentalAgreementsPageProps) {
-  const [agreements, setAgreements] = useState<Agreement[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [notification, setNotification] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'error' });
-  
+export default function RentalAgreementsPage({ account,provider }: RentalAgreementsPageProps) {
+  const [agreements,setAgreements] = useState<Agreement[]>([]);
+  const [loading,setLoading] = useState(false);
+  const [error,setError] = useState('');
+  const [notification,setNotification] = useState({ open: false,message: '',severity: 'info' as 'info' | 'success' | 'error' });
+
   // Modal states
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showPayRentModal, setShowPayRentModal] = useState(false);
-  const [showPayDepositModal, setShowPayDepositModal] = useState(false);
-  const [selectedAgreement, setSelectedAgreement] = useState<Agreement | null>(null);
-  
+  const [showCreateModal,setShowCreateModal] = useState(false);
+  const [showPayRentModal,setShowPayRentModal] = useState(false);
+  const [showPayDepositModal,setShowPayDepositModal] = useState(false);
+  const [selectedAgreement,setSelectedAgreement] = useState<Agreement | null>(null);
+
   // Form states
-  const [createForm, setCreateForm] = useState({
+  const [createForm,setCreateForm] = useState({
     propertyId: '',
     tenantAddress: '',
     monthlyRent: '',
@@ -69,8 +70,18 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
     duration: '12',
   });
 
-  const [userRole, setUserRole] = useState<'landlord' | 'tenant' | 'none'>('none');
-  const [factoryStats, setFactoryStats] = useState({ total: 0, active: 0, completed: 0 });
+  const [userRole,setUserRole] = useState<'landlord' | 'tenant' | 'none'>('none');
+  const [factoryStats,setFactoryStats] = useState({ total: 0,active: 0,completed: 0 });
+
+  // User properties for selector
+  interface UserProperty {
+    id: string;
+    name: string;
+    city: string;
+    monthlyRent: number;
+    securityDeposit: number;
+  }
+  const [userProperties,setUserProperties] = useState<UserProperty[]>([]);
 
   const fetchAgreements = useCallback(async () => {
     if (!account || !provider) return;
@@ -78,11 +89,11 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
     setError('');
 
     try {
-      const factoryContract = new ethers.Contract(FACTORY_ADDRESS, RENTAL_AGREEMENT_FACTORY_ABI, provider);
-      const nftContract = new ethers.Contract(RENTAL_AGREEMENT_NFT_ADDRESS, RENTAL_AGREEMENT_NFT_ABI, provider);
+      const factoryContract = new ethers.Contract(FACTORY_ADDRESS,RENTAL_AGREEMENT_FACTORY_ABI,provider);
+      const nftContract = new ethers.Contract(RENTAL_AGREEMENT_NFT_ADDRESS,RENTAL_AGREEMENT_NFT_ABI,provider);
 
       // Get stats
-      const [total, active, completed] = await factoryContract.getFactoryStats();
+      const [total,active,completed] = await factoryContract.getFactoryStats();
       setFactoryStats({
         total: Number(total),
         active: Number(active),
@@ -90,14 +101,14 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
       });
 
       // Get agreements for user (as landlord and tenant)
-      const [landlordAgreementIds, tenantAgreementIds] = await Promise.all([
+      const [landlordAgreementIds,tenantAgreementIds] = await Promise.all([
         factoryContract.getLandlordAgreements(account),
         factoryContract.getTenantAgreements(account)
       ]);
 
       // Combine and deduplicate
-      const combinedIds = [...landlordAgreementIds.map(Number), ...tenantAgreementIds.map(Number)];
-      const allIds = combinedIds.filter((id, index) => combinedIds.indexOf(id) === index);
+      const combinedIds = [...landlordAgreementIds.map(Number),...tenantAgreementIds.map(Number)];
+      const allIds = combinedIds.filter((id,index) => combinedIds.indexOf(id) === index);
 
       const agreementPromises = allIds.map(async (id) => {
         const data = await nftContract.getAgreement(id);
@@ -106,14 +117,14 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
           propertyId: Number(data.propertyId),
           landlord: data.landlord,
           tenant: data.tenant,
-          monthlyRent: Number(ethers.formatUnits(data.monthlyRent, 6)),
-          securityDeposit: Number(ethers.formatUnits(data.securityDeposit, 6)),
+          monthlyRent: Number(ethers.formatUnits(data.monthlyRent,6)),
+          securityDeposit: Number(ethers.formatUnits(data.securityDeposit,6)),
           startDate: Number(data.startDate),
           endDate: Number(data.endDate),
           duration: Number(data.duration),
           status: Number(data.status),
-          depositAmount: Number(ethers.formatUnits(data.depositAmount, 6)),
-          totalPaid: Number(ethers.formatUnits(data.totalPaid, 6)),
+          depositAmount: Number(ethers.formatUnits(data.depositAmount,6)),
+          totalPaid: Number(ethers.formatUnits(data.totalPaid,6)),
           paymentsMade: Number(data.paymentsMade),
           paymentsMissed: Number(data.paymentsMissed),
           landlordSigned: data.landlordSigned,
@@ -132,16 +143,56 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
       }
 
     } catch (err: any) {
-      console.error('Error fetching agreements:', err);
+      console.error('Error fetching agreements:',err);
       setError(err.message || 'Error loading agreements');
     } finally {
       setLoading(false);
     }
-  }, [account, provider]);
+  },[account,provider]);
 
   useEffect(() => {
     fetchAgreements();
-  }, [fetchAgreements]);
+  },[fetchAgreements]);
+
+  // Fetch user's properties for the selector
+  const fetchUserProperties = useCallback(async () => {
+    if (!account || !provider) return;
+    try {
+      const propertyContract = new ethers.Contract(PROPERTY_REGISTRY_ADDRESS,PROPERTY_REGISTRY_ABI,provider);
+      const propertyIds: bigint[] = await propertyContract.getPropertiesByLandlord(account);
+
+      const props: UserProperty[] = [];
+      for (const propertyId of propertyIds) {
+        try {
+          const p = await propertyContract.getProperty(propertyId);
+          // V2 nested struct access
+          const basicInfo = p.basicInfo || p[2];
+          const financialInfo = p.financialInfo || p[4];
+
+          props.push({
+            id: propertyId.toString(),
+            name: basicInfo?.name || `Property ${propertyId.toString().slice(0,8)}...`,
+            city: basicInfo?.city || '',
+            monthlyRent: financialInfo?.monthlyRent ? Number(ethers.formatUnits(financialInfo.monthlyRent,6)) : 0,
+            securityDeposit: financialInfo?.securityDeposit ? Number(ethers.formatUnits(financialInfo.securityDeposit,6)) : 0,
+          });
+        } catch (e) {
+          console.log(`Property ${propertyId} error:`,e);
+        }
+      }
+      setUserProperties(props);
+    } catch (err) {
+      console.error('Error fetching user properties:',err);
+    }
+  },[account,provider]);
+
+  // Load properties when create modal opens
+  useEffect(() => {
+    if (showCreateModal) {
+      fetchUserProperties();
+    }
+  },[showCreateModal,fetchUserProperties]);
+
 
   const handleCreateAgreement = async () => {
     if (!account || !provider) return;
@@ -149,12 +200,12 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
 
     try {
       const signer = await provider.getSigner();
-      const factoryContract = new ethers.Contract(FACTORY_ADDRESS, RENTAL_AGREEMENT_FACTORY_ABI, signer);
+      const factoryContract = new ethers.Contract(FACTORY_ADDRESS,RENTAL_AGREEMENT_FACTORY_ABI,signer);
 
-      const monthlyRentWei = ethers.parseUnits(createForm.monthlyRent, 6);
-      const securityDepositWei = ethers.parseUnits(createForm.securityDeposit, 6);
+      const monthlyRentWei = ethers.parseUnits(createForm.monthlyRent,6);
+      const securityDepositWei = ethers.parseUnits(createForm.securityDeposit,6);
 
-      setNotification({ open: true, message: 'Creating rental agreement...', severity: 'info' });
+      setNotification({ open: true,message: 'Creating rental agreement...',severity: 'info' });
 
       const tx = await factoryContract.createAgreement(
         createForm.propertyId,
@@ -166,28 +217,28 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
 
       await tx.wait();
 
-      setNotification({ open: true, message: 'Agreement created successfully!', severity: 'success' });
+      setNotification({ open: true,message: 'Agreement created successfully!',severity: 'success' });
       setShowCreateModal(false);
-      setCreateForm({ propertyId: '', tenantAddress: '', monthlyRent: '', securityDeposit: '', duration: '12' });
+      setCreateForm({ propertyId: '',tenantAddress: '',monthlyRent: '',securityDeposit: '',duration: '12' });
       await fetchAgreements();
 
     } catch (err: any) {
-      console.error('Error creating agreement:', err);
-      setNotification({ open: true, message: err.reason || 'Error creating agreement', severity: 'error' });
+      console.error('Error creating agreement:',err);
+      setNotification({ open: true,message: err.reason || 'Error creating agreement',severity: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSignAgreement = async (agreementId: number, asLandlord: boolean) => {
+  const handleSignAgreement = async (agreementId: number,asLandlord: boolean) => {
     if (!account || !provider) return;
     setLoading(true);
 
     try {
       const signer = await provider.getSigner();
-      const nftContract = new ethers.Contract(RENTAL_AGREEMENT_NFT_ADDRESS, RENTAL_AGREEMENT_NFT_ABI, signer);
+      const nftContract = new ethers.Contract(RENTAL_AGREEMENT_NFT_ADDRESS,RENTAL_AGREEMENT_NFT_ABI,signer);
 
-      setNotification({ open: true, message: 'Signing agreement...', severity: 'info' });
+      setNotification({ open: true,message: 'Signing agreement...',severity: 'info' });
 
       const tx = asLandlord
         ? await nftContract.signAsLandlord(agreementId)
@@ -195,78 +246,78 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
 
       await tx.wait();
 
-      setNotification({ open: true, message: 'Agreement signed!', severity: 'success' });
+      setNotification({ open: true,message: 'Agreement signed!',severity: 'success' });
       await fetchAgreements();
 
     } catch (err: any) {
-      console.error('Error signing agreement:', err);
-      setNotification({ open: true, message: err.reason || 'Error signing', severity: 'error' });
+      console.error('Error signing agreement:',err);
+      setNotification({ open: true,message: err.reason || 'Error signing',severity: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePayDeposit = async (agreementId: number, amount: number) => {
+  const handlePayDeposit = async (agreementId: number,amount: number) => {
     if (!account || !provider) return;
     setLoading(true);
 
     try {
       const signer = await provider.getSigner();
-      const nftContract = new ethers.Contract(RENTAL_AGREEMENT_NFT_ADDRESS, RENTAL_AGREEMENT_NFT_ABI, signer);
-      const usdtContract = new ethers.Contract(USDT_ADDRESS, USDT_ABI, signer);
+      const nftContract = new ethers.Contract(RENTAL_AGREEMENT_NFT_ADDRESS,RENTAL_AGREEMENT_NFT_ABI,signer);
+      const usdtContract = new ethers.Contract(USDT_ADDRESS,USDT_ABI,signer);
 
-      const amountWei = ethers.parseUnits(amount.toString(), 6);
+      const amountWei = ethers.parseUnits(amount.toString(),6);
 
       // Approve USDT
-      setNotification({ open: true, message: 'Approving USDT...', severity: 'info' });
-      const approveTx = await usdtContract.approve(RENTAL_AGREEMENT_NFT_ADDRESS, amountWei);
+      setNotification({ open: true,message: 'Approving USDT...',severity: 'info' });
+      const approveTx = await usdtContract.approve(RENTAL_AGREEMENT_NFT_ADDRESS,amountWei);
       await approveTx.wait();
 
       // Pay deposit
-      setNotification({ open: true, message: 'Paying security deposit...', severity: 'info' });
+      setNotification({ open: true,message: 'Paying security deposit...',severity: 'info' });
       const tx = await nftContract.paySecurityDeposit(agreementId);
       await tx.wait();
 
-      setNotification({ open: true, message: 'Deposit paid! Your deposit is now generating yield in the vault.', severity: 'success' });
+      setNotification({ open: true,message: 'Deposit paid! Your deposit is now generating yield in the vault.',severity: 'success' });
       setShowPayDepositModal(false);
       await fetchAgreements();
 
     } catch (err: any) {
-      console.error('Error paying deposit:', err);
-      setNotification({ open: true, message: err.reason || 'Error paying deposit', severity: 'error' });
+      console.error('Error paying deposit:',err);
+      setNotification({ open: true,message: err.reason || 'Error paying deposit',severity: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePayRent = async (agreementId: number, amount: number) => {
+  const handlePayRent = async (agreementId: number,amount: number) => {
     if (!account || !provider) return;
     setLoading(true);
 
     try {
       const signer = await provider.getSigner();
-      const nftContract = new ethers.Contract(RENTAL_AGREEMENT_NFT_ADDRESS, RENTAL_AGREEMENT_NFT_ABI, signer);
-      const usdtContract = new ethers.Contract(USDT_ADDRESS, USDT_ABI, signer);
+      const nftContract = new ethers.Contract(RENTAL_AGREEMENT_NFT_ADDRESS,RENTAL_AGREEMENT_NFT_ABI,signer);
+      const usdtContract = new ethers.Contract(USDT_ADDRESS,USDT_ABI,signer);
 
-      const amountWei = ethers.parseUnits(amount.toString(), 6);
+      const amountWei = ethers.parseUnits(amount.toString(),6);
 
       // Approve USDT
-      setNotification({ open: true, message: 'Approving USDT...', severity: 'info' });
-      const approveTx = await usdtContract.approve(RENTAL_AGREEMENT_NFT_ADDRESS, amountWei);
+      setNotification({ open: true,message: 'Approving USDT...',severity: 'info' });
+      const approveTx = await usdtContract.approve(RENTAL_AGREEMENT_NFT_ADDRESS,amountWei);
       await approveTx.wait();
 
       // Pay rent
-      setNotification({ open: true, message: 'Paying monthly rent...', severity: 'info' });
+      setNotification({ open: true,message: 'Paying monthly rent...',severity: 'info' });
       const tx = await nftContract.payRent(agreementId);
       await tx.wait();
 
-      setNotification({ open: true, message: 'Rent paid successfully!', severity: 'success' });
+      setNotification({ open: true,message: 'Rent paid successfully!',severity: 'success' });
       setShowPayRentModal(false);
       await fetchAgreements();
 
     } catch (err: any) {
-      console.error('Error paying rent:', err);
-      setNotification({ open: true, message: err.reason || 'Error paying rent', severity: 'error' });
+      console.error('Error paying rent:',err);
+      setNotification({ open: true,message: err.reason || 'Error paying rent',severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -278,19 +329,19 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
   };
 
   const truncateAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+    return `${address.slice(0,6)}...${address.slice(-4)}`;
   };
 
   if (!account) {
     return (
-      <Box sx={{ p: 4, textAlign: 'center' }}>
+      <Box sx={{ p: 4,textAlign: 'center' }}>
         <Typography variant="h5">Connect your wallet to view your rental agreements</Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+    <Box sx={{ p: 3,maxWidth: 1200,mx: 'auto' }}>
       <Typography variant="h4" fontWeight={700} mb={3}>
         Rental Agreements (NFT)
       </Typography>
@@ -298,19 +349,19 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
       {/* Stats Cards */}
       <Grid container spacing={2} mb={3}>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
+          <Paper sx={{ p: 2,textAlign: 'center' }}>
             <Typography variant="h6">Total Agreements</Typography>
             <Typography variant="h4" color="primary">{factoryStats.total}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
+          <Paper sx={{ p: 2,textAlign: 'center' }}>
             <Typography variant="h6">Active</Typography>
             <Typography variant="h4" color="success.main">{factoryStats.active}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
+          <Paper sx={{ p: 2,textAlign: 'center' }}>
             <Typography variant="h6">Completed</Typography>
             <Typography variant="h4" color="info.main">{factoryStats.completed}</Typography>
           </Paper>
@@ -318,7 +369,7 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
       </Grid>
 
       {/* Action Buttons */}
-      <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+      <Box sx={{ mb: 3,display: 'flex',gap: 2 }}>
         <Button variant="contained" onClick={() => setShowCreateModal(true)}>
           Create New Agreement
         </Button>
@@ -375,12 +426,12 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
                       {agreement.status === 0 && (
                         <>
                           {agreement.landlord.toLowerCase() === account.toLowerCase() && !agreement.landlordSigned && (
-                            <Button size="small" variant="outlined" onClick={() => handleSignAgreement(agreement.id, true)}>
+                            <Button size="small" variant="outlined" onClick={() => handleSignAgreement(agreement.id,true)}>
                               Sign (L)
                             </Button>
                           )}
                           {agreement.tenant.toLowerCase() === account.toLowerCase() && !agreement.tenantSigned && (
-                            <Button size="small" variant="outlined" onClick={() => handleSignAgreement(agreement.id, false)}>
+                            <Button size="small" variant="outlined" onClick={() => handleSignAgreement(agreement.id,false)}>
                               Sign (T)
                             </Button>
                           )}
@@ -424,44 +475,75 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
 
       {/* Create Agreement Modal */}
       <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)}>
-        <Paper sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', p: 4, maxWidth: 500, width: '90%' }}>
-          <Typography variant="h6" mb={2}>Create New Rental Agreement</Typography>
-          <Stack spacing={2}>
-            <TextField
-              label="Property ID"
-              value={createForm.propertyId}
-              onChange={(e) => setCreateForm({ ...createForm, propertyId: e.target.value })}
-              type="number"
-              fullWidth
-            />
+        <Paper sx={{ position: 'absolute',top: '50%',left: '50%',transform: 'translate(-50%, -50%)',p: 4,maxWidth: 550,width: '95%',maxHeight: '90vh',overflow: 'auto' }}>
+          <Typography variant="h6" mb={2}>📝 Create New Rental Agreement</Typography>
+          <Typography variant="body2" color="text.secondary" mb={3}>
+            Select a property and fill in tenant details. After creation, both parties must sign and tenant must pay deposit.
+          </Typography>
+          <Stack spacing={2.5}>
+            {/* Property Selector */}
+            <FormControl fullWidth>
+              <InputLabel id="property-select-label">Select Property</InputLabel>
+              <Select
+                labelId="property-select-label"
+                value={createForm.propertyId}
+                label="Select Property"
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  setCreateForm({ ...createForm,propertyId: selectedId });
+                  // Auto-fill rent and deposit from property
+                  const selectedProperty = userProperties.find(p => p.id === selectedId);
+                  if (selectedProperty) {
+                    setCreateForm(prev => ({
+                      ...prev,
+                      propertyId: selectedId,
+                      monthlyRent: selectedProperty.monthlyRent.toString(),
+                      securityDeposit: selectedProperty.securityDeposit.toString(),
+                    }));
+                  }
+                }}
+              >
+                {userProperties.length === 0 ? (
+                  <MenuItem disabled value="">
+                    <em>No properties found. Register a property first.</em>
+                  </MenuItem>
+                ) : (
+                  userProperties.map((prop) => (
+                    <MenuItem key={prop.id} value={prop.id}>
+                      {prop.name} - {prop.city || 'No city'} (${prop.monthlyRent.toFixed(0)}/mo)
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+            </FormControl>
             <TextField
               label="Tenant Address"
               value={createForm.tenantAddress}
-              onChange={(e) => setCreateForm({ ...createForm, tenantAddress: e.target.value })}
+              onChange={(e) => setCreateForm({ ...createForm,tenantAddress: e.target.value })}
               fullWidth
               placeholder="0x..."
             />
             <TextField
               label="Monthly Rent (USDT)"
               value={createForm.monthlyRent}
-              onChange={(e) => setCreateForm({ ...createForm, monthlyRent: e.target.value })}
+              onChange={(e) => setCreateForm({ ...createForm,monthlyRent: e.target.value })}
               type="number"
               fullWidth
             />
             <TextField
               label="Security Deposit (USDT)"
               value={createForm.securityDeposit}
-              onChange={(e) => setCreateForm({ ...createForm, securityDeposit: e.target.value })}
+              onChange={(e) => setCreateForm({ ...createForm,securityDeposit: e.target.value })}
               type="number"
               fullWidth
             />
             <TextField
               label="Duration (months)"
               value={createForm.duration}
-              onChange={(e) => setCreateForm({ ...createForm, duration: e.target.value })}
+              onChange={(e) => setCreateForm({ ...createForm,duration: e.target.value })}
               type="number"
               fullWidth
-              inputProps={{ min: 1, max: 24 }}
+              inputProps={{ min: 1,max: 24 }}
             />
             <Button variant="contained" onClick={handleCreateAgreement} disabled={loading} fullWidth>
               {loading ? <CircularProgress size={20} /> : 'Create Agreement'}
@@ -472,7 +554,7 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
 
       {/* Pay Deposit Modal */}
       <Modal open={showPayDepositModal} onClose={() => setShowPayDepositModal(false)}>
-        <Paper sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', p: 4, maxWidth: 400 }}>
+        <Paper sx={{ position: 'absolute',top: '50%',left: '50%',transform: 'translate(-50%, -50%)',p: 4,maxWidth: 400 }}>
           <Typography variant="h6" mb={2}>Pay Security Deposit</Typography>
           {selectedAgreement && (
             <>
@@ -485,7 +567,7 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
               </Typography>
               <Button
                 variant="contained"
-                onClick={() => handlePayDeposit(selectedAgreement.id, selectedAgreement.securityDeposit)}
+                onClick={() => handlePayDeposit(selectedAgreement.id,selectedAgreement.securityDeposit)}
                 disabled={loading}
                 fullWidth
               >
@@ -498,7 +580,7 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
 
       {/* Pay Rent Modal */}
       <Modal open={showPayRentModal} onClose={() => setShowPayRentModal(false)}>
-        <Paper sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', p: 4, maxWidth: 400 }}>
+        <Paper sx={{ position: 'absolute',top: '50%',left: '50%',transform: 'translate(-50%, -50%)',p: 4,maxWidth: 400 }}>
           <Typography variant="h6" mb={2}>Pay Monthly Rent</Typography>
           {selectedAgreement && (
             <>
@@ -511,7 +593,7 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
               <Button
                 variant="contained"
                 color="success"
-                onClick={() => handlePayRent(selectedAgreement.id, selectedAgreement.monthlyRent)}
+                onClick={() => handlePayRent(selectedAgreement.id,selectedAgreement.monthlyRent)}
                 disabled={loading}
                 fullWidth
               >
@@ -526,8 +608,8 @@ export default function RentalAgreementsPage({ account, provider }: RentalAgreem
       {notification.open && (
         <Alert
           severity={notification.severity}
-          onClose={() => setNotification({ ...notification, open: false })}
-          sx={{ position: 'fixed', bottom: 20, right: 20, zIndex: 9999 }}
+          onClose={() => setNotification({ ...notification,open: false })}
+          sx={{ position: 'fixed',bottom: 20,right: 20,zIndex: 9999 }}
         >
           {notification.message}
         </Alert>
