@@ -27,9 +27,9 @@ mantle_sepolia = "https://rpc.sepolia.mantle.xyz"
 mantle_mainnet = "https://rpc.mantle.xyz"
 
 # Etherscan configuration for verification
-[etherscan]
-mantle_sepolia = { key = "${MANTLE_API_KEY}", url = "https://explorer.sepolia.mantle.xyz/api" }
-mantle_mainnet = { key = "${MANTLE_API_KEY}", url = "https://explorer.mantle.xyz/api" }
+# [etherscan]
+# mantle_sepolia = { key = "${MANTLE_API_KEY}", url = "https://explorer.sepolia.mantle.xyz/api" }
+# mantle_mainnet = { key = "${MANTLE_API_KEY}", url = "https://explorer.mantle.xyz/api" }
 
 # Chain-specific settings
 [profile.mantle-sepolia]

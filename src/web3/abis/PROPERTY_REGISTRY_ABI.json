@@ -1625,6 +1625,19 @@
     "stateMutability": "view"
   },
   {
+    "type": "function",
+    "name": "verifyPropertyDemo",
+    "inputs": [
+      {
+        "name": "propertyId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
     "type": "event",
     "name": "Approval",
     "inputs": [

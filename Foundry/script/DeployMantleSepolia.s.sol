@@ -242,6 +242,13 @@ contract DeployMantleSepolia is Script {
         console.log("  Authorizing RentalAgreementNFT in PropertyRegistry...");
         propertyRegistry.authorizeUpdater(address(rentalAgreementNFT));
 
+        console.log("  Authorizing PropertyRegistry in TenantPassport...");
+        tenantPassport.authorizeUpdater(address(propertyRegistry));
+
+        console.log("  Authorizing DisputeResolver in TenantPassport and PropertyRegistry...");
+        tenantPassport.authorizeUpdater(address(disputeResolver));
+        propertyRegistry.authorizeUpdater(address(disputeResolver));
+
         console.log("  Authorizing RentalAgreementNFT in Vault...");
         vault.setAuthorizedDepositor(address(rentalAgreementNFT), true);
 
@@ -256,6 +263,9 @@ contract DeployMantleSepolia is Script {
         } catch {
             console.log("    Passport already exists or error");
         }
+        
+        // Ensure deployer has sufficient reputation to be landlord (mint sets initial to 70)
+        // MIN_LANDLORD_REPUTATION is 50, so default mint is fine.
 
         console.log("  Deployment completed successfully!");
     }

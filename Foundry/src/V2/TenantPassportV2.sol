@@ -496,6 +496,37 @@ contract TenantPassportV2 is ERC721, Ownable {
         emit BadgeRevoked(tokenId, badgeType, address(this), block.timestamp);
     }
 
+    /**
+     * @notice Autoverificación para DEMO (Hackathon Only)
+     * @dev Permite al tenant verificar su identidad sin proceso manual
+     */
+    function verifyTenantDemo(BadgeType badgeType)
+        external
+        tokenExists(uint256(uint160(msg.sender)))
+    {
+        uint256 tokenId = uint256(uint160(msg.sender));
+        require(uint8(badgeType) <= LAST_KYC_BADGE, "Solo badges KYC");
+        
+        // Otorgar badge directamente
+        badges[tokenId][badgeType] = true;
+        badgeVerifiedAt[tokenId][badgeType] = block.timestamp;
+        
+        // Actualizar request si existía
+        VerificationRequest storage request = verificationRequests[tokenId][badgeType];
+        if (request.status == VerificationStatus.PENDING) {
+            request.status = VerificationStatus.APPROVED;
+            request.reviewedAt = block.timestamp;
+            request.reviewedBy = msg.sender;
+            _checkAndRemoveFromPending(tokenId);
+        }
+
+        tenantInfo[tokenId].isVerified = true;
+        tenantInfo[tokenId].lastActivityTime = block.timestamp;
+
+        emit VerificationApproved(tokenId, badgeType, msg.sender, block.timestamp);
+        emit BadgeAwarded(tokenId, badgeType, msg.sender, block.timestamp);
+    }
+
     function _checkAndRemoveFromPending(uint256 tokenId) internal {
         bool hasAnyPending = false;
 

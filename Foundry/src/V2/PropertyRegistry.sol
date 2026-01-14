@@ -705,6 +705,43 @@ contract PropertyRegistry is ERC721, Ownable {
     }
 
     /**
+     * @notice Autoverificación para DEMO y Jueces (Hackathon Only)
+     * @dev Permite al owner verificar su propia propiedad sin notario
+     */
+    function verifyPropertyDemo(uint256 propertyId)
+        external
+        onlyLandlord(propertyId)
+        propertyExists(propertyId)
+    {
+        Property storage prop = properties[propertyId];
+        
+        // Validar estado
+        require(
+            prop.verificationStatus != PropertyVerificationStatus.VERIFIED,
+            "Ya esta verificada"
+        );
+
+        // Si hay request pendiente, marcarlo como completado
+        if (hasPendingVerification[propertyId]) {
+             VerificationRequest storage request = verificationRequests[propertyId];
+             request.status = PropertyVerificationStatus.VERIFIED;
+             request.reviewedAt = block.timestamp;
+             request.reviewedBy = msg.sender;
+             _removeFromPendingVerifications(propertyId);
+        }
+
+        // Actualizar propiedad
+        prop.verificationStatus = PropertyVerificationStatus.VERIFIED;
+        prop.isActive = true; 
+        prop.lastUpdatedAt = block.timestamp;
+
+        // Otorgar badge VERIFIED_OWNERSHIP
+        _awardPropertyBadgeInternal(propertyId, PropertyBadgeType.VERIFIED_OWNERSHIP);
+
+        emit VerificationApproved(propertyId, msg.sender, block.timestamp);
+    }
+
+    /**
      * @notice Rechaza verificación de propiedad
      * @dev Solo verificadores autorizados pueden rechazar
      */

@@ -1,192 +1,1899 @@
 [
   {
-    "inputs": [{"name": "initialOwner", "type": "address"}],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "inputs": [{"name": "account", "type": "address"}],
-    "name": "balanceOf",
-    "outputs": [{"name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"name": "tokenId", "type": "uint256"}],
-    "name": "ownerOf",
-    "outputs": [{"name": "", "type": "address"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "mintForSelf",
-    "outputs": [{"name": "tokenId", "type": "uint256"}],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"name": "tokenId", "type": "uint256"}],
-    "name": "getTenantInfo",
-    "outputs": [
+    "type": "constructor",
+    "inputs": [
       {
-        "components": [
-          {"name": "reputation", "type": "uint32"},
-          {"name": "paymentsMade", "type": "uint32"},
-          {"name": "paymentsMissed", "type": "uint32"},
-          {"name": "propertiesRented", "type": "uint32"},
-          {"name": "propertiesOwned", "type": "uint32"},
-          {"name": "consecutiveOnTimePayments", "type": "uint32"},
-          {"name": "totalMonthsRented", "type": "uint32"},
-          {"name": "referralCount", "type": "uint32"},
-          {"name": "disputesCount", "type": "uint32"},
-          {"name": "outstandingBalance", "type": "uint256"},
-          {"name": "totalRentPaid", "type": "uint256"},
-          {"name": "lastActivityTime", "type": "uint256"},
-          {"name": "lastPaymentTime", "type": "uint256"},
-          {"name": "isVerified", "type": "bool"}
-        ],
-        "name": "",
-        "type": "tuple"
+        "name": "initialOwner",
+        "type": "address",
+        "internalType": "address"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [{"name": "tokenId", "type": "uint256"}],
-    "name": "tenantInfo",
-    "outputs": [
-      {"name": "reputation", "type": "uint32"},
-      {"name": "paymentsMade", "type": "uint32"},
-      {"name": "paymentsMissed", "type": "uint32"},
-      {"name": "propertiesRented", "type": "uint32"},
-      {"name": "propertiesOwned", "type": "uint32"},
-      {"name": "consecutiveOnTimePayments", "type": "uint32"},
-      {"name": "totalMonthsRented", "type": "uint32"},
-      {"name": "referralCount", "type": "uint32"},
-      {"name": "disputesCount", "type": "uint32"},
-      {"name": "outstandingBalance", "type": "uint256"},
-      {"name": "totalRentPaid", "type": "uint256"},
-      {"name": "lastActivityTime", "type": "uint256"},
-      {"name": "lastPaymentTime", "type": "uint256"},
-      {"name": "isVerified", "type": "bool"}
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"name": "user", "type": "address"}],
-    "name": "hasPassport",
-    "outputs": [{"name": "", "type": "bool"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"name": "user", "type": "address"}],
-    "name": "getTokenIdByAddress",
-    "outputs": [{"name": "", "type": "uint256"}],
-    "stateMutability": "pure",
-    "type": "function"
-  },
-  {
-    "inputs": [{"name": "tokenId", "type": "uint256"}],
-    "name": "getReputationWithDecay",
-    "outputs": [{"name": "", "type": "uint32"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
+    "type": "function",
+    "name": "approve",
     "inputs": [
-      {"name": "tokenId", "type": "uint256"},
-      {"name": "badgeType", "type": "uint8"}
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
     ],
-    "name": "hasBadge",
-    "outputs": [{"name": "", "type": "bool"}],
-    "stateMutability": "view",
-    "type": "function"
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [{"name": "tokenId", "type": "uint256"}],
+    "type": "function",
+    "name": "approveVerification",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "authorizeUpdater",
+    "inputs": [
+      {
+        "name": "updater",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "authorizedUpdaters",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "awardBadge",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "badgeVerifiedAt",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "badges",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "balanceOf",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "fastResponseCount",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getAllBadges",
-    "outputs": [{"name": "badgeList", "type": "bool[14]"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"name": "tokenId", "type": "uint256"}],
-    "name": "getBadgeCount",
-    "outputs": [{"name": "count", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"name": "tokenId", "type": "uint256"}],
-    "name": "getTenantMetrics",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "outputs": [
-      {"name": "score", "type": "uint32"},
-      {"name": "totalPayments", "type": "uint32"},
-      {"name": "paymentSuccessRate", "type": "uint32"},
-      {"name": "badgeCount", "type": "uint256"},
-      {"name": "isActive", "type": "bool"}
+      {
+        "name": "badgeList",
+        "type": "bool[14]",
+        "internalType": "bool[14]"
+      }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "stateMutability": "view"
   },
   {
+    "type": "function",
+    "name": "getAllVerificationRequests",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "requests",
+        "type": "tuple[6]",
+        "internalType": "struct TenantPassportV2.VerificationRequest[6]",
+        "components": [
+          {
+            "name": "badgeType",
+            "type": "uint8",
+            "internalType": "enum TenantPassportV2.BadgeType"
+          },
+          {
+            "name": "status",
+            "type": "uint8",
+            "internalType": "enum TenantPassportV2.VerificationStatus"
+          },
+          {
+            "name": "documentsURI",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "requestedAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "reviewedAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "reviewedBy",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "rejectionReason",
+            "type": "string",
+            "internalType": "string"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getApproved",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getBadgeCount",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "count",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPendingVerificationCount",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "count",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPendingVerifications",
     "inputs": [],
-    "name": "totalSupply",
-    "outputs": [{"name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-    "inputs": [{"name": "index", "type": "uint256"}],
+    "type": "function",
+    "name": "getReputationWithDecay",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getTenantInfo",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct TenantPassportV2.TenantInfo",
+        "components": [
+          {
+            "name": "reputation",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "paymentsMade",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "paymentsMissed",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "propertiesRented",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "propertiesOwned",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "consecutiveOnTimePayments",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "totalMonthsRented",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "referralCount",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "disputesCount",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "outstandingBalance",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "totalRentPaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lastActivityTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lastPaymentTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "isVerified",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getTenantMetrics",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "score",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "totalPayments",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "paymentSuccessRate",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "badgeCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "isActive",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getTokenIdByAddress",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "getVerificationRequest",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct TenantPassportV2.VerificationRequest",
+        "components": [
+          {
+            "name": "badgeType",
+            "type": "uint8",
+            "internalType": "enum TenantPassportV2.BadgeType"
+          },
+          {
+            "name": "status",
+            "type": "uint8",
+            "internalType": "enum TenantPassportV2.VerificationStatus"
+          },
+          {
+            "name": "documentsURI",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "requestedAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "reviewedAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "reviewedBy",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "rejectionReason",
+            "type": "string",
+            "internalType": "string"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "hasBadge",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "hasPassport",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "hasPendingVerification",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "incrementDisputes",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "incrementMonthsRented",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "incrementPropertiesOwned",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "incrementPropertiesRented",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "isApprovedForAll",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "operator",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isAuthorizedUpdater",
+    "inputs": [
+      {
+        "name": "updater",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isVerificationExpired",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "markVerificationExpired",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "mintForSelf",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "name",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "owner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ownerOf",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pendingVerifications",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "propertyNoIssuesCount",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "recordFastResponse",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "recordPropertyNoIssues",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "recordReferral",
+    "inputs": [
+      {
+        "name": "referrerTokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "referredAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "rejectVerification",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      },
+      {
+        "name": "reason",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "renounceOwnership",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "requestVerification",
+    "inputs": [
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      },
+      {
+        "name": "documentsURI",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "revokeBadge",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "revokeUpdater",
+    "inputs": [
+      {
+        "name": "updater",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "safeTransferFrom",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "safeTransferFrom",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "data",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setApprovalForAll",
+    "inputs": [
+      {
+        "name": "operator",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "approved",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setVerificationStatus",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "verified",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "supportsInterface",
+    "inputs": [
+      {
+        "name": "interfaceId",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "symbol",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "tenantInfo",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "reputation",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "paymentsMade",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "paymentsMissed",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "propertiesRented",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "propertiesOwned",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "consecutiveOnTimePayments",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "totalMonthsRented",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "referralCount",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "disputesCount",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "outstandingBalance",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "totalRentPaid",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "lastActivityTime",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "lastPaymentTime",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "isVerified",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "tokenByIndex",
-    "outputs": [{"name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
+    "type": "function",
+    "name": "tokenURI",
     "inputs": [
-      {"name": "owner", "type": "address"},
-      {"name": "index", "type": "uint256"}
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
     ],
-    "name": "tokenOfOwnerByIndex",
-    "outputs": [{"name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {"indexed": true, "name": "user", "type": "address"},
-      {"indexed": true, "name": "tokenId", "type": "uint256"},
-      {"indexed": false, "name": "timestamp", "type": "uint256"}
+    "type": "function",
+    "name": "totalSupply",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
     ],
-    "name": "PassportMinted",
-    "type": "event"
+    "stateMutability": "view"
   },
   {
-    "anonymous": false,
+    "type": "function",
+    "name": "transferFrom",
     "inputs": [
-      {"indexed": true, "name": "tokenId", "type": "uint256"},
-      {"indexed": false, "name": "oldReputation", "type": "uint32"},
-      {"indexed": false, "name": "newReputation", "type": "uint32"},
-      {"indexed": false, "name": "reason", "type": "string"}
+      {
+        "name": "from",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
     ],
-    "name": "ReputationUpdated",
-    "type": "event"
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
-    "anonymous": false,
+    "type": "function",
+    "name": "transferOwnership",
     "inputs": [
-      {"indexed": true, "name": "tokenId", "type": "uint256"},
-      {"indexed": true, "name": "badgeType", "type": "uint8"},
-      {"indexed": true, "name": "awardedBy", "type": "address"},
-      {"indexed": false, "name": "timestamp", "type": "uint256"}
+      {
+        "name": "newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updateTenantInfo",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "paymentOnTime",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "rentAmountPaid",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "verificationRequests",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      },
+      {
+        "name": "status",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.VerificationStatus"
+      },
+      {
+        "name": "documentsURI",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "requestedAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "reviewedAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "reviewedBy",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "rejectionReason",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "verifyTenantDemo",
+    "inputs": [
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "internalType": "enum TenantPassportV2.BadgeType"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "ActivityRecorded",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "activityType",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Approval",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "approved",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ApprovalForAll",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "operator",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "approved",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "BadgeAwarded",
-    "type": "event"
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "enum TenantPassportV2.BadgeType"
+      },
+      {
+        "name": "awardedBy",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "BadgeRevoked",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "enum TenantPassportV2.BadgeType"
+      },
+      {
+        "name": "revokedBy",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferred",
+    "inputs": [
+      {
+        "name": "previousOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PassportMinted",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ReferralRecorded",
+    "inputs": [
+      {
+        "name": "referrerTokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "referredTokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "referrer",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "referred",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ReputationUpdated",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "oldReputation",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      },
+      {
+        "name": "newReputation",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      },
+      {
+        "name": "reason",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Transfer",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "VerificationApproved",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "enum TenantPassportV2.BadgeType"
+      },
+      {
+        "name": "approvedBy",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "VerificationExpired",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "enum TenantPassportV2.BadgeType"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "VerificationRejected",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "enum TenantPassportV2.BadgeType"
+      },
+      {
+        "name": "rejectedBy",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "reason",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "VerificationRequested",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "badgeType",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "enum TenantPassportV2.BadgeType"
+      },
+      {
+        "name": "documentsURI",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "VerificationStatusChanged",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "isVerified",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      },
+      {
+        "name": "changedBy",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "ERC721IncorrectOwner",
+    "inputs": [
+      {
+        "name": "sender",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC721InsufficientApproval",
+    "inputs": [
+      {
+        "name": "operator",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC721InvalidApprover",
+    "inputs": [
+      {
+        "name": "approver",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC721InvalidOperator",
+    "inputs": [
+      {
+        "name": "operator",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC721InvalidOwner",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC721InvalidReceiver",
+    "inputs": [
+      {
+        "name": "receiver",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC721InvalidSender",
+    "inputs": [
+      {
+        "name": "sender",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC721NonexistentToken",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OwnableInvalidOwner",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OwnableUnauthorizedAccount",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   }
 ]

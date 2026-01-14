@@ -33,6 +33,7 @@ interface Property {
   isVerified: boolean;
   isActive: boolean;
   landlord: string;
+  verificationStatus: number;
 }
 
 interface MyPropertiesPageProps {
@@ -59,32 +60,31 @@ export default function MyPropertiesPage({ account,provider }: MyPropertiesPageP
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(PROPERTY_REGISTRY_ADDRESS,PROPERTY_REGISTRY_ABI,signer);
 
-      // Step 1: Request verification
-      setNotification({ open: true,message: 'Step 1/2: Requesting verification...',severity: 'info' });
-      const tx1 = await contract.requestPropertyVerification(propertyId,'ipfs://demo-verification-docs');
-      await tx1.wait();
+      setNotification({ open: true,message: 'Requesting demo verification...',severity: 'info' });
 
-      // Step 2: Approve verification (normally done by authorized verifier)
-      setNotification({ open: true,message: 'Step 2/2: Approving verification...',severity: 'info' });
-      const tx2 = await contract.approvePropertyVerification(propertyId);
-      await tx2.wait();
+      // Call the new demo verification function
+      // This is a single step that bypasses the notary requirement for the hackathon
+      const tx = await contract.verifyPropertyDemo(propertyId);
+      await tx.wait();
 
-      setNotification({ open: true,message: '✅ Property verified successfully!',severity: 'success' });
+      setNotification({ open: true,message: '✅ Property verified successfully! (Demo Mode)',severity: 'success' });
 
       // Refresh properties
       await fetchProperties();
 
     } catch (err: any) {
       console.error('Error verifying property:',err);
+
       const errorMsg = err.reason || err.message || 'Verification failed';
 
-      // Check if user is not an authorized verifier
-      if (errorMsg.includes('Not authorized') || errorMsg.includes('onlyAuthorizedVerifier')) {
+      // Handle the "Ya esta verificada" error specifically
+      if (errorMsg.includes('Ya esta verificada')) {
         setNotification({
           open: true,
-          message: 'You need to be an authorized verifier. Contact the contract owner to get verified.',
-          severity: 'error'
+          message: 'Propiedad ya verificada (actualizando estado...)',
+          severity: 'success'
         });
+        await fetchProperties();
       } else {
         setNotification({ open: true,message: errorMsg,severity: 'error' });
       }
@@ -138,6 +138,7 @@ export default function MyPropertiesPage({ account,provider }: MyPropertiesPageP
             isVerified: p.verificationStatus === 2 || p[6] === 2, // VERIFIED = 2
             isActive: p.isActive ?? p[8] ?? false,
             landlord: p.landlord || p[1],
+            verificationStatus: Number(p.verificationStatus ?? p[6] ?? 0),
           });
         } catch (e) {
           console.log(`Property ${propertyId} error:`,e);
@@ -311,16 +312,18 @@ export default function MyPropertiesPage({ account,provider }: MyPropertiesPageP
                         arrow
                         placement="top"
                       >
-                        <Button
-                          size="small"
-                          variant="contained"
-                          color="warning"
-                          onClick={() => handleVerifyProperty(prop.id)}
-                          disabled={verifyingId === prop.id}
-                          startIcon={verifyingId === prop.id ? <CircularProgress size={16} /> : <VerifiedIcon />}
-                        >
-                          {verifyingId === prop.id ? 'Verifying...' : 'Verify (Demo)'}
-                        </Button>
+                        <Box component="span">
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="warning"
+                            onClick={() => handleVerifyProperty(prop.id)}
+                            disabled={verifyingId === prop.id}
+                            startIcon={verifyingId === prop.id ? <CircularProgress size={16} /> : <VerifiedIcon />}
+                          >
+                            {verifyingId === prop.id ? 'Verifying...' : 'Verify (Demo)'}
+                          </Button>
+                        </Box>
                       </Tooltip>
                     )}
                     <Button
