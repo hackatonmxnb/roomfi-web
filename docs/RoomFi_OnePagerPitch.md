@@ -1,14 +1,3 @@
----
-title: RoomFi Strategic Memorandum - Mantle Hackathon Edition
-author: RoomFi Protocol Core Team
-date: 2026-01-14
-geometry: margin=2.5cm
-header-left: RoomFi Protocol
-header-right: Hackathon Submission Disclosure
-footer-left: Mantle Global Hackathon 2025
-footer-right: Confidential
----
-
 <img src="../public/roomfilogo2transp.png" align="right" width="120" />
 
 # STRATEGIC PROJECT MEMORANDUM
@@ -77,4 +66,4 @@ The Protocol operates on a **Diversified Revenue Model** designed to capture val
 
 ----
 **RoomFi Protocol - Founding Team**
-*Carlos (Backend & Risk) | FirrtonH (DeFi Architecture) | Jazmine (Frontend & UX)*
+*Carlos (Backend) | FirrtonH (DeFi Architecture adn Risk) | Jazmine (Frontend & UX)*
