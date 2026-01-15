@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-19%2F20_Passing-success)](TESTING_REPORT.md)
 [![Compliance](https://img.shields.io/badge/Legal-Compliance_Memo-green?style=flat&logo=law)](https://drive.google.com/file/d/1odprzaqWJjhS-phbcdnd_AzA371tT9gn/view)
-[![Strategy](https://img.shields.io/badge/Strategy-One_Pager-blueviolet?style=flat&logo=target)](docs/RoomFi_OnePagerPitch.md)
+[![One Pager Pitch](https://img.shields.io/badge/Hackathon-One_Pager_Pitch-bf00ff?style=flat&logo=target)](docs/RoomFi_OnePagerPitch.md)
 
 [Documentation](docs/README.md) • [Smart Contracts](Foundry/src/V2/) • [Deployment](Foundry/deployment-addresses.json) • [Live Demo](#)
 
